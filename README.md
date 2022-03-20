@@ -1,21 +1,21 @@
-# logging-bc
+# scheduling-bc
 
-**EXPERIMENTAL** vNext Logging Bounded Context Mono Repository
+**EXPERIMENTAL** vNext Scheduling Bounded Context Mono Repository
 
 {{DESCRIPTION}}
 
 ## Modules
 
-### logging-svc
+### scheduling-svc
 
 {{DESCRIPTION}}
 
-[README](./modules/logging-svc/README.md)
+[README](./modules/scheduling-svc/README.md)
 
 #### Run
 
 ```bash
-yarn start:logging-svc
+yarn start:scheduling-svc
 ```
 
 ## Usage
