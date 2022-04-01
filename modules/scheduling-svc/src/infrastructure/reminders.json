@@ -1,0 +1,42 @@
+{
+  "entries": [
+    {
+      "id": "task0",
+      "task": {
+        "taskType": 0,
+        "payload": {
+          "string": "task0",
+          "int": 0
+        },
+        "uRL": "http://localhost:1234/"
+      },
+      "time": "*/5 * * * *"
+    },
+    {
+      "id": "task1",
+      "task": {
+        "taskType": 1,
+        "payload": {
+          "string": "task1",
+          "int": 1
+        },
+        "topic": "TODO",
+        "eventName": "TODO"
+      },
+      "time": "*/30 * * * *"
+    },
+    {
+      "id": "task2",
+      "task": {
+        "taskType": 0,
+        "payload": {
+          "string": "task2",
+          "int": 2
+        },
+        "uRL": "http://localhost:1234/"
+      },
+      "time": "0 1 * * *"
+    }
+  ],
+  "count": 3
+}
