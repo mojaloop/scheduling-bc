@@ -32,8 +32,8 @@
 
 import {ISchedulingRepository} from "./ischeduling_repository";
 import {CronJob} from "cron";
-import {HTTPPost, Reminder, ReminderTask, ReminderTaskType} from "./types";
-import fetch, {RequestInfo} from "node-fetch";
+import {Reminder, ReminderTask, ReminderTaskType, TaskEvent, TaskHTTPPost} from "./types";
+import * as fetch from "node-fetch";
 
 const TIME_ZONE = "UTC";
 
@@ -45,43 +45,53 @@ export class SchedulingAggregate {
     }
 
     async createReminder(reminder: Reminder): Promise<void> {
-        new CronJob(
+        await this.repository.storeReminder(reminder);
+        const cronJob: CronJob = new CronJob(
             reminder.time,
-            this.getReminderTask(reminder.task).bind(this), // TODO.
+            () => {
+                this.runReminder(reminder.id);
+            },
             null,
             true,
-            TIME_ZONE);
-        await this.repository.storeReminder(reminder);
+            TIME_ZONE,
+            this /* Context. */);
     }
 
-    private getReminderTask(reminderTask: ReminderTask): (() => Promise<void>) {
-        switch (reminderTask.taskType) {
+    private async runReminder(reminderId: string): Promise<void> {
+        /*const reminderTask: ReminderTask = (await this.getReminder(
+            // this.mapCronJobToReminderId.get(this /!* CronJob. *!/)
+            reminderId
+        )).task;*/
+        const reminder = await this.repository.getReminder(reminderId);
+        if (reminder == null) {
+            return;
+        }
+        switch (reminder.taskType) {
             case ReminderTaskType.HTTP_POST:
-                return async () => {
-                    await fetch( // TODO: ignore response?
-                        (reminderTask as HTTPPost).uRL as RequestInfo, // TODO: check.
-                        {
-                            method: "POST",
-                            body: reminderTask.payload,
-                            headers: { // TODO: necessary?
-                                "Content-Type": "application/json"
-                            }
-                        })
-                }
+                await this.sendHTTPPost(reminder);
+                break;
             case ReminderTaskType.EVENT:
-                return async () => {
-                    throw new Error("Not Implemented Yet")
-                }
+                await this.sendEvent(reminder);
+                break;
             default:
                 // TODO.
         }
     }
 
-    async deleteReminder(reminderId: string): Promise<void> {
-        await this.repository.deleteReminder(reminderId);
+    private async sendHTTPPost(reminder: Reminder): Promise<void> {
+        // 
+        /*await fetch.Request( // TODO: ignore response?
+            task.uRL as fetch.RequestInfo, // TODO: check.
+            {
+                method: "POST",
+                body: task.payload,
+                headers: { // TODO: necessary?
+                    "Content-Type": "application/json"
+                }
+            })*/
     }
 
-    async getReminders(): Promise<void> {
-        return await this.repository.getReminders(); // TODO: await.
+    private async sendEvent(reminder: Reminder): Promise<void> {
+        //
     }
 }

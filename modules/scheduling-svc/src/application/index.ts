@@ -58,16 +58,17 @@ function setUpExpress() {
 }
 
 function setUpRoutes() {
-    app.use(URL_PATH_REMINDERS, router); // TODO: before setting up the routes?
-    router.post("/", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    // app.use(URL_PATH_REMINDERS, router); // TODO: before setting up the routes?
+    app.post("/reminders/", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         await schedulingAggregate.createReminder(req.body); // TODO: await?
     }); // TODO.
-    router.delete("/:reminderId", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    /*router.delete("/:reminderId", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         await schedulingAggregate.deleteReminder(req.params.reminderId); // TODO: await?
-    }); // TODO.
+    }); // TODO.*/
 }
 
 async function start(): Promise<void> {
+    // await memorySchedulingRepository.init();
     setUpExpress();
     setUpRoutes();
     app.listen(PORT_NO, () => {
