@@ -32,36 +32,61 @@
 
 import {ISchedulingRepository} from "./ischeduling_repository";
 import {CronJob} from "cron";
-import {Reminder, ReminderTask, ReminderTaskType, TaskEvent, TaskHTTPPost} from "./types";
-import * as fetch from "node-fetch";
+import {Reminder, ReminderTaskType} from "./types";
+import * as  uuid from "uuid";
+import axios, {AxiosResponse, AxiosInstance} from "axios";
+import {InvalidReminderError, InvalidTaskTypeError} from "./errors";
+import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 
 const TIME_ZONE = "UTC";
+const HTTP_CLIENT_TIMEOUT_MS = 5000;
 
 export class SchedulingAggregate {
+    private logger: ILogger;
     private repository: ISchedulingRepository;
+    private cronJobs: Map<string, CronJob>; // TODO.
+    private httpClient: AxiosInstance;
+    // private kafkaProducer: MLKafkaProducer =  new MLKafkaProducer(producerOptions, logger)
 
     constructor(repository: ISchedulingRepository) {
+        this.logger = new ConsoleLogger();
         this.repository = repository;
+        this.cronJobs = new Map();
+        this.httpClient = axios.create({
+            // baseURL: this.authBaseUrl,
+            timeout: HTTP_CLIENT_TIMEOUT_MS,
+        });
     }
 
-    async createReminder(reminder: Reminder): Promise<void> {
+    async createReminder(reminder: Reminder): Promise<string> {
+        // TODO.
+        /*if (reminder.id == undefined
+            || reminder.time == undefined
+            || reminder.payload == undefined
+            || reminder.taskType == undefined
+            || reminder.hTTPPostTaskDetails == undefined
+            || reminder.eventTaskDetails == undefined) {
+            throw new InvalidReminderError();
+        }*/
+        if (!reminder.id) { // TODO.
+            do {
+                reminder.id = uuid.v4();
+            } while (await this.repository.reminderExists(reminder.id));
+        }
         await this.repository.storeReminder(reminder);
-        const cronJob: CronJob = new CronJob(
+        this.cronJobs.set(reminder.id, new CronJob( // TODO.
             reminder.time,
             () => {
-                this.runReminder(reminder.id);
+                this.runReminderTask(<string>reminder.id); // TODO.
             },
             null,
             true,
             TIME_ZONE,
-            this /* Context. */);
+            this /* Context. */));
+        return reminder.id; // TODO.
     }
 
-    private async runReminder(reminderId: string): Promise<void> {
-        /*const reminderTask: ReminderTask = (await this.getReminder(
-            // this.mapCronJobToReminderId.get(this /!* CronJob. *!/)
-            reminderId
-        )).task;*/
+    private async runReminderTask(reminderId: string): Promise<void> {
         const reminder = await this.repository.getReminder(reminderId);
         if (reminder == null) {
             return;
@@ -74,24 +99,45 @@ export class SchedulingAggregate {
                 await this.sendEvent(reminder);
                 break;
             default:
-                // TODO.
+                throw new InvalidTaskTypeError(); // TODO.
         }
     }
 
-    private async sendHTTPPost(reminder: Reminder): Promise<void> {
-        // 
-        /*await fetch.Request( // TODO: ignore response?
-            task.uRL as fetch.RequestInfo, // TODO: check.
-            {
-                method: "POST",
-                body: task.payload,
-                headers: { // TODO: necessary?
-                    "Content-Type": "application/json"
-                }
-            })*/
+    private async sendHTTPPost(reminder: Reminder): Promise<void> { // TODO.
+        try {
+            const res: AxiosResponse<any> = await this.httpClient.post(
+                <string>reminder.httpPostTaskDetails?.url, // TODO.
+                reminder.payload, {
+                    validateStatus: (status) => {
+                        // Resolve only if the status code is 200 or 404, everything else throws.
+                        // return status == 200 || status == 404;
+                        return status == 200;
+                    }
+                });
+            /*if (res.status != 200) {
+                return null;
+            }*/
+            this.logger.info(res);
+        } catch (e: any) {
+            this.logger.error(e);
+        }
     }
 
     private async sendEvent(reminder: Reminder): Promise<void> {
-        //
+        throw new Error("not implemented");
+    }
+
+    async deleteReminder(reminderId: string): Promise<void> { // TODO: return type.
+        await this.repository.deleteReminder(reminderId);
+        this.cronJobs.get(reminderId)?.stop();
+        this.cronJobs.delete(reminderId);
+    }
+
+    async getReminder(reminderId: string): Promise<Reminder> { // TODO: return type.
+        return await this.repository.getReminder(reminderId); // TODO: return await?
+    }
+
+    async getReminders(): Promise<Reminder[]> { // TODO: return type.
+        return await this.repository.getReminders(); // TODO: return await?
     }
 }

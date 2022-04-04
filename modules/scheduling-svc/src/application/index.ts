@@ -34,6 +34,8 @@ import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import express from "express";
 import {SchedulingAggregate} from "../domain/scheduling_aggregate";
 import {MemorySchedulingRepository} from "../infrastructure/memory_scheduling_repository";
+import {InvalidReminderError, NoSuchReminderError, ReminderAlreadyExistsError} from "../domain/errors";
+import {Reminder} from "../domain/types";
 
 // Constants.
 const SERVICE_NAME = "Scheduling";
@@ -58,13 +60,89 @@ function setUpExpress() {
 }
 
 function setUpRoutes() {
-    // app.use(URL_PATH_REMINDERS, router); // TODO: before setting up the routes?
-    app.post("/reminders/", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-        await schedulingAggregate.createReminder(req.body); // TODO: await?
-    }); // TODO.
-    /*router.delete("/:reminderId", async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-        await schedulingAggregate.deleteReminder(req.params.reminderId); // TODO: await?
-    }); // TODO.*/
+    app.use(URL_PATH_REMINDERS, router);
+    router.post("/", async (req: express.Request, res: express.Response, next: express.NextFunction) => { // TODO: next.
+        try {
+            const reminderId: string = await schedulingAggregate.createReminder(req.body);
+            res.status(200).json({
+                status: "ok", // TODO: ""?
+                reminderId: reminderId // TODO: why not purple?
+            });
+        } catch (e: any) { // TODO: any or Error?
+            if (e instanceof InvalidReminderError) {
+                res.status(200).json({ // TODO: status code.
+                    status: "error",
+                    message: "invalid reminder"
+                });
+            } else if (e instanceof ReminderAlreadyExistsError) {
+                res.status(400).json({ // TODO: status code.
+                    status: "error",
+                    message: "reminder already exists"
+                }); // TODO.
+            } else {
+                res.status(500).json({
+                    status: "error",
+                    message: "unknown error"
+                });
+            }
+        }
+    });
+    router.delete("/:reminderId", async (req: express.Request, res: express.Response, next: express.NextFunction) => { // TODO: next.
+        try {
+            await schedulingAggregate.deleteReminder(req.params.reminderId);
+            res.status(200).json({
+                status: "ok",
+                message: "reminder deleted"
+            });
+        } catch (e: any) { // TODO: any or Error?
+            if (e instanceof NoSuchReminderError) { // TODO: good error name?
+                res.status(400).json({ // TODO: status code.
+                    status: "error",
+                    message: "no such reminder"
+                });
+            } else {
+                res.status(500).json({
+                    status: "error",
+                    message: "unknown error"
+                });
+            }
+        }
+    });
+    router.get("/:reminderId", async (req: express.Request, res: express.Response, next: express.NextFunction) => { // TODO: next.
+        try {
+            const reminder: Reminder = await schedulingAggregate.getReminder(req.params.reminderId);
+            res.status(200).json({
+                status: "ok",
+                reminder: reminder
+            });
+        } catch (e: any) { // TODO: any or Error?
+            if (e instanceof NoSuchReminderError) { // TODO: good error name?
+                res.status(400).json({ // TODO: status code.
+                    status: "error",
+                    message: "no such reminder"
+                });
+            } else {
+                res.status(500).json({
+                    status: "error",
+                    message: "unknown error"
+                });
+            }
+        }
+    });
+    router.get("/", async (req: express.Request, res: express.Response, next: express.NextFunction) => { // TODO: next.
+        try {
+            const reminders: Reminder[] = await schedulingAggregate.getReminders();
+            res.status(200).json({
+                status: "ok",
+                reminders: reminders
+            });
+        } catch (e: any) { // TODO: any or Error?
+            res.status(500).json({
+                status: "error",
+                message: "unknown error"
+            });
+        }
+    });
 }
 
 async function start(): Promise<void> {
@@ -79,7 +157,6 @@ async function start(): Promise<void> {
     });
 }
 
-// TODO.
 async function handleIntAndTermSignals(signal: NodeJS.Signals): Promise<void> {
     logger.info(`${SERVICE_NAME} - ${signal} received, cleaning up...`);
     process.exit();

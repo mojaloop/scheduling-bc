@@ -1,39 +1,40 @@
 import {ISchedulingRepository} from "../domain/ischeduling_repository";
 import {Reminder} from "../domain/types";
+import {throws} from "assert";
+import {NoSuchReminderError} from "../domain/errors";
 
 export class MemorySchedulingRepository implements ISchedulingRepository {
-    private map: Map<string, Reminder> = new Map<string, Reminder>();
+    private map: Map<string, Reminder>;
+
+    constructor() {
+        this.map = new Map();
+    }
 
     async storeReminder(reminder: Reminder): Promise<void> {
-        try {
-            this.map.set(reminder.id, reminder);
-        } catch (err) {
-            return Promise.reject();
+        this.map.set(<string>reminder.id, reminder); // TODO: <>string.
+    }
+
+    async deleteReminder(reminderId: string): Promise<void> { // TODO: return type.
+        if (!this.map.delete(reminderId)) { // TODO: other ways to write this.
+            throw new NoSuchReminderError();
         }
     }
 
-    async deleteReminder(reminderId: string): Promise<void> {
-        try {
-            //await this.reminders.deleteOne(reminderId);
-        } catch (err) {
-            return Promise.reject();
+    async reminderExists(reminderId: string): Promise<boolean> {
+        return this.map.has(reminderId);
+    }
+
+    async getReminder(reminderId:string): Promise<Reminder> {
+        // return this.map.get(reminderId) || null;
+        // TODO.
+        const reminder: Reminder | undefined = this.map.get(reminderId);
+        if (!reminder) {
+            throw new NoSuchReminderError();
         }
+        return reminder;
     }
 
-    async getReminder(reminderId:string): Promise<Reminder | null> {
-        return this.map.get(reminderId) || null; // undefined if doesnt exist.
-    }
-
-    async getReminders(): Promise<Reminder[]> { // TODO: Array?
-        /*try {
-            return await this.reminders
-                .find(
-                    {}, // Query. All documents (entries) in the collection (reminders).
-                    {projection: {_id: 0}}) // All reminders.
-                .toArray();
-        } catch (err) {
-            return Promise.reject();
-        }*/
-        throw new Error("Not Implemented Yet")
+    async getReminders(): Promise<Reminder[]> {
+        return [...this.map.values()]; // TODO.
     }
 }

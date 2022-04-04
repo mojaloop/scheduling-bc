@@ -1,17 +1,18 @@
 export class Reminder {
-    id: string; // uuid. specified by the client; sent in the response.
-    taskType: ReminderTaskType;
-    payload: any | null; // TODO: any?
+    id: null | string; // UUId. specified by the client; sent in the response. TODO: or null?
     time: string | Date;
-    hTTPDetails: null | {
+    payload: any | null; // TODO: undefined?
+    taskType: ReminderTaskType;
+    httpPostTaskDetails: null | {
         url: string
     };
-    eventDetails: null | {
+    eventTaskDetails: null | {
         topic: string,
         eventName: string
     };
 }
 
+// TODO: export?
 export enum ReminderTaskType {
     HTTP_POST,
     EVENT // Kafka.
