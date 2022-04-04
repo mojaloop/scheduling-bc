@@ -34,8 +34,16 @@ import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import express from "express";
 import {SchedulingAggregate} from "../domain/scheduling_aggregate";
 import {MemorySchedulingRepository} from "../infrastructure/memory_scheduling_repository";
-import {InvalidReminderError, NoSuchReminderError, ReminderAlreadyExistsError} from "../domain/errors";
+import {
+    InvalidReminderIdError,
+    InvalidReminderTaskDetailsError,
+    InvalidReminderTaskTypeError,
+    InvalidReminderTimeError, MissingReminderPropertiesOrTaskDetailsError,
+    NoSuchReminderError,
+    ReminderAlreadyExistsError
+} from "../domain/errors";
 import {Reminder} from "../domain/types";
+import {MongoDBSchedulingRepository} from "../infrastructure/mongodb_scheduling_repository";
 
 // Constants.
 const SERVICE_NAME = "Scheduling";
@@ -51,8 +59,8 @@ const logger: ILogger = new ConsoleLogger();
 const app = express();
 const router = express.Router();
 // Domain and infrastructure.
-const memorySchedulingRepository = new MemorySchedulingRepository();
-const schedulingAggregate = new SchedulingAggregate(memorySchedulingRepository);
+const schedulingRepository = new MongoDBSchedulingRepository();
+const schedulingAggregate = new SchedulingAggregate(schedulingRepository);
 
 function setUpExpress() {
     app.use(express.json()); // For parsing application/json.
@@ -61,7 +69,7 @@ function setUpExpress() {
 
 function setUpRoutes() {
     app.use(URL_PATH_REMINDERS, router);
-    router.post("/", async (req: express.Request, res: express.Response, next: express.NextFunction) => { // TODO: next.
+    router.post("/", async (req: express.Request, res: express.Response) => { // TODO: next.
         try {
             const reminderId: string = await schedulingAggregate.createReminder(req.body);
             res.status(200).json({
@@ -69,10 +77,30 @@ function setUpRoutes() {
                 reminderId: reminderId // TODO: why not purple?
             });
         } catch (e: any) { // TODO: any or Error?
-            if (e instanceof InvalidReminderError) {
-                res.status(200).json({ // TODO: status code.
+            if (e instanceof MissingReminderPropertiesOrTaskDetailsError) {
+                res.status(400).json({ // TODO: status code.
                     status: "error",
-                    message: "invalid reminder"
+                    message: "missing reminder properties or task details"
+                });
+            } else if (e instanceof InvalidReminderIdError) {
+                res.status(400).json({ // TODO: status code.
+                    status: "error",
+                    message: "invalid reminder id"
+                });
+            } else if (e instanceof InvalidReminderTimeError) {
+                res.status(400).json({ // TODO: status code.
+                    status: "error",
+                    message: "invalid reminder time"
+                });
+            } else if (e instanceof InvalidReminderTaskTypeError) {
+                res.status(400).json({ // TODO: status code.
+                    status: "error",
+                    message: "invalid reminder task type"
+                });
+            } else if (e instanceof InvalidReminderTaskDetailsError) {
+                res.status(400).json({ // TODO: status code.
+                    status: "error",
+                    message: "invalid reminder task details"
                 });
             } else if (e instanceof ReminderAlreadyExistsError) {
                 res.status(400).json({ // TODO: status code.
@@ -146,7 +174,8 @@ function setUpRoutes() {
 }
 
 async function start(): Promise<void> {
-    // await memorySchedulingRepository.init();
+    await schedulingRepository.init();
+    await schedulingAggregate.init();
     setUpExpress();
     setUpRoutes();
     app.listen(PORT_NO, () => {

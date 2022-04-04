@@ -10,6 +10,10 @@ export class MemorySchedulingRepository implements ISchedulingRepository {
         this.map = new Map();
     }
 
+    async init(): Promise<Reminder[]> {
+        throw new Error("not implemented");
+    }
+
     async storeReminder(reminder: Reminder): Promise<void> {
         this.map.set(<string>reminder.id, reminder); // TODO: <>string.
     }
