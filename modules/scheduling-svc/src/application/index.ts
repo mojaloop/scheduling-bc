@@ -33,7 +33,12 @@
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import express from "express";
 import {SchedulingAggregate} from "../domain/scheduling_aggregate";
-import {MemorySchedulingRepository} from "../infrastructure/memory_scheduling_repository";
+import {Reminder} from "../domain/types";
+import {MongoDBSchedulingRepository} from "../infrastructure/mongodb_scheduling_repository";
+import {RedisSchedulingLocks} from "../infrastructure/redis_scheduling_locks";
+import {ISchedulingRepository} from "../domain/ischeduling_repository";
+import {ISchedulingLocks} from "../domain/ischeduling_locks";
+import {MLKafkaProducer} from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
 import {
     InvalidReminderIdError,
     InvalidReminderTaskDetailsError,
@@ -42,25 +47,59 @@ import {
     NoSuchReminderError,
     ReminderAlreadyExistsError
 } from "../domain/errors";
-import {Reminder} from "../domain/types";
-import {MongoDBSchedulingRepository} from "../infrastructure/mongodb_scheduling_repository";
 
-// Constants.
-const SERVICE_NAME = "Scheduling";
-const HOST = process.env.SCHEDULER_HOST || "localhost"; // TODO.
-const PORT_NO = process.env.SCHEDULER_PORT_NO || 1234; // TODO.
-// URLs.
-const URL_BASE = `http://${HOST}:${PORT_NO}`;
-const URL_PATH_REMINDERS = "/reminders";
+// TODO: why no types here?
+/* Constants. */
+const NAME_SERVICE = "scheduling";
+// Server.
+const HOST_SERVER = process.env.SCHEDULER_HOST_SERVER || "localhost";
+const PORT_NO_SERVER = process.env.SCHEDULER_PORT_NO_SERVER || 1234;
+const URL_SERVER_BASE = `http://${HOST_SERVER}:${PORT_NO_SERVER}`;
+const URL_SERVER_PATH_REMINDERS = "/reminders";
+// Repository.
+const HOST_REPO = process.env.SCHEDULER_HOST_REPO || "localhost";
+const PORT_NO_REPO = process.env.SCHEDULER_PORT_NO_REPO || 27017;
+const URL_REPO = `mongodb://${HOST_REPO}:${PORT_NO_REPO}`;
+const NAME_DB = "scheduling";
+const NAME_COLLECTION = "reminders";
+// Locks.
+const HOST_LOCKS = process.env.SCHEDULER_HOST_LOCKS || "localhost";
+// Message producer.
+const HOST_MESSAGE_BROKER = process.env.SCHEDULER_HOST_MESSAGE_BROKER || "localhost";
+const PORT_NO_MESSAGE_BROKER = process.env.SCHEDULER_PORT_NO_MESSAGE_BROKER || 9092;
+const MESSAGE_BROKER_LIST = `${HOST_MESSAGE_BROKER}:${PORT_NO_MESSAGE_BROKER}`; // TODO: name.
+const MESSAGE_PRODUCER_ID = NAME_SERVICE; // TODO: name.
+// Time.
+const TIME_ZONE = "UTC";
+const TIMEOUT_MS_HTTP_REQUEST = 5_000; // TODO.
+const TIMEOUT_MS_MESSAGE_PRODUCER = 5_000; // TODO.
 
 // Logger.
 const logger: ILogger = new ConsoleLogger();
 // Express.
 const app = express();
 const router = express.Router();
-// Domain and infrastructure.
-const schedulingRepository = new MongoDBSchedulingRepository();
-const schedulingAggregate = new SchedulingAggregate(schedulingRepository);
+// Infrastructure.
+const schedulingRepository: ISchedulingRepository = new MongoDBSchedulingRepository(
+    URL_REPO,
+    NAME_DB,
+    NAME_COLLECTION
+);
+const schedulingLocks: ISchedulingLocks = new RedisSchedulingLocks(
+    HOST_LOCKS
+);
+// Domain.
+const schedulingAggregate: SchedulingAggregate = new SchedulingAggregate(
+    schedulingRepository,
+    schedulingLocks,
+    new MLKafkaProducer({
+        kafkaBrokerList: MESSAGE_BROKER_LIST,
+        producerClientId: MESSAGE_PRODUCER_ID
+    }, logger),
+    TIME_ZONE,
+    TIMEOUT_MS_HTTP_REQUEST,
+    TIMEOUT_MS_MESSAGE_PRODUCER
+);
 
 function setUpExpress() {
     app.use(express.json()); // For parsing application/json.
@@ -68,8 +107,8 @@ function setUpExpress() {
 }
 
 function setUpRoutes() {
-    app.use(URL_PATH_REMINDERS, router);
-    router.post("/", async (req: express.Request, res: express.Response) => { // TODO: next.
+    app.use(URL_SERVER_PATH_REMINDERS, router);
+    router.post("/", async (req: express.Request, res: express.Response) => {
         try {
             const reminderId: string = await schedulingAggregate.createReminder(req.body);
             res.status(200).json({
@@ -115,7 +154,7 @@ function setUpRoutes() {
             }
         }
     });
-    router.delete("/:reminderId", async (req: express.Request, res: express.Response, next: express.NextFunction) => { // TODO: next.
+    router.delete("/:reminderId", async (req: express.Request, res: express.Response) => {
         try {
             await schedulingAggregate.deleteReminder(req.params.reminderId);
             res.status(200).json({
@@ -136,7 +175,7 @@ function setUpRoutes() {
             }
         }
     });
-    router.get("/:reminderId", async (req: express.Request, res: express.Response, next: express.NextFunction) => { // TODO: next.
+    router.get("/:reminderId", async (req: express.Request, res: express.Response) => {
         try {
             const reminder: Reminder = await schedulingAggregate.getReminder(req.params.reminderId);
             res.status(200).json({
@@ -157,7 +196,7 @@ function setUpRoutes() {
             }
         }
     });
-    router.get("/", async (req: express.Request, res: express.Response, next: express.NextFunction) => { // TODO: next.
+    router.get("/", async (req: express.Request, res: express.Response) => {
         try {
             const reminders: Reminder[] = await schedulingAggregate.getReminders();
             res.status(200).json({
@@ -178,16 +217,16 @@ async function start(): Promise<void> {
     await schedulingAggregate.init();
     setUpExpress();
     setUpRoutes();
-    app.listen(PORT_NO, () => {
+    app.listen(PORT_NO_SERVER, () => {
         logger.info("Server on.");
-        logger.info(`Host: ${HOST}`);
-        logger.info(`Port: ${PORT_NO}`);
-        logger.info(`Base URL: ${URL_BASE}`);
+        logger.info(`Host: ${HOST_SERVER}`);
+        logger.info(`Port: ${PORT_NO_SERVER}`);
+        logger.info(`Base URL: ${URL_SERVER_BASE}`);
     });
 }
 
 async function handleIntAndTermSignals(signal: NodeJS.Signals): Promise<void> {
-    logger.info(`${SERVICE_NAME} - ${signal} received, cleaning up...`);
+    logger.info(`${NAME_SERVICE} - ${signal} received, cleaning up...`);
     process.exit();
 }
 
@@ -197,7 +236,7 @@ process.on("SIGINT", handleIntAndTermSignals.bind(this));
 process.on("SIGTERM", handleIntAndTermSignals.bind(this));
 // Exit.
 process.on("exit", () => {
-    logger.info(`${SERVICE_NAME} - exiting...`);
+    logger.info(`${NAME_SERVICE} - exiting...`);
 });
 
 start();

@@ -1,6 +1,7 @@
+"use strict";
+
 import {ISchedulingRepository} from "../domain/ischeduling_repository";
 import {Reminder} from "../domain/types";
-import {throws} from "assert";
 import {NoSuchReminderError} from "../domain/errors";
 
 export class MemorySchedulingRepository implements ISchedulingRepository {
@@ -10,7 +11,7 @@ export class MemorySchedulingRepository implements ISchedulingRepository {
         this.map = new Map();
     }
 
-    async init(): Promise<Reminder[]> {
+    async init(): Promise<void> {
         throw new Error("not implemented");
     }
 

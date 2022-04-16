@@ -1,3 +1,5 @@
+"use strict";
+
 export class ReminderAlreadyExistsError extends Error{}
 export class NoSuchReminderError extends Error{}
 

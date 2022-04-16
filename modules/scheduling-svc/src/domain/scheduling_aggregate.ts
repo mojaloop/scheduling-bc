@@ -35,54 +35,56 @@ import {CronJob} from "cron";
 import {Reminder, ReminderTaskType} from "./types";
 import * as  uuid from "uuid";
 import axios, {AxiosResponse, AxiosInstance} from "axios";
+import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib"
+import {ISchedulingLocks} from "./ischeduling_locks";
 import {
     InvalidReminderIdError, InvalidReminderTaskDetailsError,
     InvalidReminderTaskTypeError,
     InvalidReminderTimeError, MissingReminderPropertiesOrTaskDetailsError, ReminderAlreadyExistsError
 } from "./errors";
-import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {
-    MLKafkaConsumerOptions,
-    MLKafkaConsumerOutputType,
-    MLKafkaProducer
-} from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
-
-const SERVICE_NAME = "Scheduling"; // TODO.
-const TIME_ZONE = "UTC";
-const HTTP_CLIENT_TIMEOUT_MS = 5000;
-// Kafka.
-const KAFKA_PORT_NO = 9092;
-const KAFKA_BROKER_LIST = `localhost:${KAFKA_PORT_NO}`;
-const KAFKA_PRODUCER_CLIENT_ID = SERVICE_NAME;
 
 export class SchedulingAggregate {
-    private logger: ILogger;
-    private repository: ISchedulingRepository;
-    private cronJobs: Map<string, CronJob>; // TODO.
-    private httpClient: AxiosInstance;
-    private kafkaProducer: MLKafkaProducer;
+    private readonly logger: ILogger;
+    private readonly repository: ISchedulingRepository;
+    private readonly locks: ISchedulingLocks;
+    private readonly cronJobs: Map<string, CronJob>;
+    private readonly httpClient: AxiosInstance;
+    private readonly messageProducer: IMessageProducer;
 
-    constructor(repository: ISchedulingRepository) {
+    // TODO: how to do this?
+    private readonly TIME_ZONE: string;
+    private readonly TIMEOUT_MS_HTTP_REQUEST: number;
+    private readonly TIMEOUT_MS_MESSAGE_PRODUCER: number;
+
+    constructor(
+        repository: ISchedulingRepository,
+        locks: ISchedulingLocks,
+        messageProducer: IMessageProducer,
+        timeZone: string,
+        httpRequestTimeoutMs: number,
+        messageProducerTimeoutMs: number) {
+
         this.logger = new ConsoleLogger();
+
         this.repository = repository;
-        this.cronJobs = new Map();
+        this.locks = locks;
+        this.messageProducer = messageProducer;
+
+        this.TIME_ZONE = timeZone;
+        this.TIMEOUT_MS_HTTP_REQUEST = httpRequestTimeoutMs;
+        this.TIMEOUT_MS_MESSAGE_PRODUCER = messageProducerTimeoutMs;
+
+        this.cronJobs = new Map<string, CronJob>();
         this.httpClient = axios.create({
-            // baseURL: this.authBaseUrl,
-            timeout: HTTP_CLIENT_TIMEOUT_MS,
+            timeout: this.TIMEOUT_MS_HTTP_REQUEST,
         });
-        this.kafkaProducer = new MLKafkaProducer({
-            kafkaBrokerList: KAFKA_BROKER_LIST,
-            producerClientId: KAFKA_PRODUCER_CLIENT_ID
-        }, this.logger);
-        /*// example to get delivery reports TODO.
-        this.kafkaProducer.on('deliveryReport', (topic: string, partition: number|null, offset: number|null) => {
-            this.logger.info(`delivery report event - topic: ${topic}, partition: ${partition}, offset: ${offset}`)
-            return;
-        })*/
     }
 
     async init(): Promise<void> {
-        (await this.repository.init()).forEach((reminder: Reminder) => {
+        await this.messageProducer.connect(); // TODO: first?
+        await this.repository.init();
+        (await this.repository.getReminders()).forEach((reminder: Reminder) => {
             this.cronJobs.set(reminder.id!, new CronJob( // TODO.
                 reminder.time,
                 () => {
@@ -90,10 +92,9 @@ export class SchedulingAggregate {
                 },
                 null,
                 true,
-                TIME_ZONE,
+                this.TIME_ZONE,
                 this /* Context. */));
         })
-        await this.kafkaProducer.connect();
     }
 
     async createReminder(reminder: Reminder): Promise<string> {
@@ -115,7 +116,7 @@ export class SchedulingAggregate {
             },
             null,
             true,
-            TIME_ZONE,
+            this.TIME_ZONE,
             this /* Context. */));
         return reminder.id; // TODO.
     }
@@ -135,7 +136,7 @@ export class SchedulingAggregate {
         }
         // time.
         if (typeof reminder.time !== "string" && !(reminder.time instanceof String)
-        /*&& typeof reminder.time !== Date*/ && !(reminder.time instanceof Date)) {
+            /*&& typeof reminder.time !== Date*/ && !(reminder.time instanceof Date)) {
             throw new InvalidReminderTimeError();
         }
         // taskType.
@@ -149,10 +150,13 @@ export class SchedulingAggregate {
         }
     }
 
-    private async runReminderTask(reminderId: string): Promise<void> {
+    private async runReminderTask(reminderId: string): Promise<boolean> {
+        if (!(await this.locks.acquire(reminderId, this.TIMEOUT_MS_MESSAGE_PRODUCER))) {
+            return false;
+        }
         const reminder = await this.repository.getReminder(reminderId);
         if (reminder == null) {
-            return;
+            return false;
         }
         switch (reminder.taskType) {
             case ReminderTaskType.HTTP_POST:
@@ -164,6 +168,9 @@ export class SchedulingAggregate {
             default:
                 throw new InvalidReminderTaskTypeError(); // TODO.
         }
+        await new Promise(resolve => setTimeout(resolve, 4000)); // Sleep for 3 minutes.
+        await this.locks.release(reminderId);
+        return true;
     }
 
     private async sendHTTPPost(reminder: Reminder): Promise<void> { // TODO.
@@ -190,7 +197,7 @@ export class SchedulingAggregate {
     }
 
     private async sendEvent(reminder: Reminder): Promise<void> {
-        await this.kafkaProducer.send({
+        await this.messageProducer.send({
             topic: reminder.eventTaskDetails?.topic,
             value: reminder.payload
         });
