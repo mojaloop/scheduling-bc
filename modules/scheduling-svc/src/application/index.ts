@@ -64,6 +64,8 @@ const NAME_DB = "scheduling";
 const NAME_COLLECTION = "reminders";
 // Locks.
 const HOST_LOCKS = process.env.SCHEDULER_HOST_LOCKS || "localhost";
+const MAX_LOCK_SPINS = 10; // Max number of attempts to acquire a lock. TODO.
+const CLOCK_DRIFT_FACTOR = 0.01;
 // Message producer.
 const HOST_MESSAGE_BROKER = process.env.SCHEDULER_HOST_MESSAGE_BROKER || "localhost";
 const PORT_NO_MESSAGE_BROKER = process.env.SCHEDULER_PORT_NO_MESSAGE_BROKER || 9092;
@@ -71,8 +73,12 @@ const MESSAGE_BROKER_LIST = `${HOST_MESSAGE_BROKER}:${PORT_NO_MESSAGE_BROKER}`; 
 const MESSAGE_PRODUCER_ID = NAME_SERVICE; // TODO: name.
 // Time.
 const TIME_ZONE = "UTC";
-const TIMEOUT_MS_HTTP_REQUEST = 5_000; // TODO.
-const TIMEOUT_MS_MESSAGE_PRODUCER = 5_000; // TODO.
+const DELAY_MS_LOCK_SPINS = 200; // Time between acquire attempts. TODO.
+const DELAY_MS_LOCK_SPINS_JITTER = 200; // TODO.
+const THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION = 500; // TODO.
+const TIMEOUT_MS_LOCK_ACQUIRED = 30_000; // TODO.
+const TIMEOUT_MS_HTTP_REQUEST = 10_000; // TODO.
+const TIMEOUT_MS_MESSAGE_PRODUCER = 10_000; // TODO.
 
 // Logger.
 const logger: ILogger = new ConsoleLogger();
@@ -86,19 +92,24 @@ const schedulingRepository: ISchedulingRepository = new MongoDBSchedulingReposit
     NAME_COLLECTION
 );
 const schedulingLocks: ISchedulingLocks = new RedisSchedulingLocks(
-    HOST_LOCKS
+    HOST_LOCKS,
+    CLOCK_DRIFT_FACTOR,
+    MAX_LOCK_SPINS,
+    DELAY_MS_LOCK_SPINS,
+    DELAY_MS_LOCK_SPINS_JITTER,
+    THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION
 );
 // Domain.
 const schedulingAggregate: SchedulingAggregate = new SchedulingAggregate(
     schedulingRepository,
     schedulingLocks,
-    new MLKafkaProducer({
+    new MLKafkaProducer({ // TODO: timeout.
         kafkaBrokerList: MESSAGE_BROKER_LIST,
         producerClientId: MESSAGE_PRODUCER_ID
     }, logger),
     TIME_ZONE,
-    TIMEOUT_MS_HTTP_REQUEST,
-    TIMEOUT_MS_MESSAGE_PRODUCER
+    TIMEOUT_MS_LOCK_ACQUIRED,
+    TIMEOUT_MS_HTTP_REQUEST
 );
 
 function setUpExpress() {

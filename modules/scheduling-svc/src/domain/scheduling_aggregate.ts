@@ -30,14 +30,15 @@
 
 "use strict";
 
-import {ISchedulingRepository} from "./ischeduling_repository";
-import {CronJob} from "cron";
-import {Reminder, ReminderTaskType} from "./types";
-import * as  uuid from "uuid";
-import axios, {AxiosResponse, AxiosInstance} from "axios";
+// TODO: syntax imports.
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib"
+import {ISchedulingRepository} from "./ischeduling_repository";
 import {ISchedulingLocks} from "./ischeduling_locks";
+import axios, {AxiosResponse, AxiosInstance} from "axios";
+import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib"
+import {Reminder, ReminderTaskType} from "./types";
+import {CronJob} from "cron";
+import * as uuid from "uuid";
 import {
     InvalidReminderIdError, InvalidReminderTaskDetailsError,
     InvalidReminderTaskTypeError,
@@ -54,16 +55,16 @@ export class SchedulingAggregate {
 
     // TODO: how to do this?
     private readonly TIME_ZONE: string;
+    private readonly TIMEOUT_MS_LOCK_ACQUIRED: number;
     private readonly TIMEOUT_MS_HTTP_REQUEST: number;
-    private readonly TIMEOUT_MS_MESSAGE_PRODUCER: number;
 
     constructor(
         repository: ISchedulingRepository,
         locks: ISchedulingLocks,
         messageProducer: IMessageProducer,
         timeZone: string,
-        httpRequestTimeoutMs: number,
-        messageProducerTimeoutMs: number) {
+        timeoutMsLockAcquired: number,
+        timeoutMsHttpRequest: number) {
 
         this.logger = new ConsoleLogger();
 
@@ -72,8 +73,8 @@ export class SchedulingAggregate {
         this.messageProducer = messageProducer;
 
         this.TIME_ZONE = timeZone;
-        this.TIMEOUT_MS_HTTP_REQUEST = httpRequestTimeoutMs;
-        this.TIMEOUT_MS_MESSAGE_PRODUCER = messageProducerTimeoutMs;
+        this.TIMEOUT_MS_LOCK_ACQUIRED = timeoutMsLockAcquired;
+        this.TIMEOUT_MS_HTTP_REQUEST = timeoutMsHttpRequest;
 
         this.cronJobs = new Map<string, CronJob>();
         this.httpClient = axios.create({
@@ -150,8 +151,9 @@ export class SchedulingAggregate {
         }
     }
 
+    // TODO: extend the lock? timeout getReminder.
     private async runReminderTask(reminderId: string): Promise<boolean> {
-        if (!(await this.locks.acquire(reminderId, this.TIMEOUT_MS_MESSAGE_PRODUCER))) {
+        if (!(await this.locks.acquire(reminderId, this.TIMEOUT_MS_LOCK_ACQUIRED))) {
             return false;
         }
         const reminder = await this.repository.getReminder(reminderId);
@@ -168,7 +170,6 @@ export class SchedulingAggregate {
             default:
                 throw new InvalidReminderTaskTypeError(); // TODO.
         }
-        await new Promise(resolve => setTimeout(resolve, 4000)); // Sleep for 3 minutes.
         await this.locks.release(reminderId);
         return true;
     }
