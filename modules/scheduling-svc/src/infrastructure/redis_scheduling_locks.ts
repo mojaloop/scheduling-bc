@@ -1,9 +1,9 @@
 "use strict";
 
 import {ISchedulingLocks} from "../domain/ischeduling_locks";
+import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import Client from "ioredis";
 import Redlock, {Lock} from "redlock";
-import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 
 export class RedisSchedulingLocks implements ISchedulingLocks {
     private readonly logger: ILogger;
@@ -20,6 +20,7 @@ export class RedisSchedulingLocks implements ISchedulingLocks {
     private readonly TIMEOUT_MS_LOCK_HOLD: number;
 
     constructor(
+        logger: ILogger,
         hostLocks: string,
         clockDriftFactor: number,
         maxLockSpins: number,
@@ -27,7 +28,7 @@ export class RedisSchedulingLocks implements ISchedulingLocks {
         delayMsLockSpinsJitter: number,
         thresholdMsLockAutomaticExtension: number) {
 
-        this.logger = new ConsoleLogger();
+        this.logger = logger;
 
         this.HOST_LOCKS = hostLocks;
         this.CLOCK_DRIFT_FACTOR = clockDriftFactor;
@@ -52,11 +53,6 @@ export class RedisSchedulingLocks implements ISchedulingLocks {
         this.map = new Map<string, Lock>();
     }
 
-    /*async init(): Promise<void> {
-        // return Promise.resolve(undefined); // TODO.
-        throw new Error("not implemented yet")
-    }*/
-
     async acquire(lockId: string, lockDurationMs: number): Promise<boolean> {
         try {
             this.map.set(
@@ -71,7 +67,6 @@ export class RedisSchedulingLocks implements ISchedulingLocks {
     }
 
     async release(lockId: string): Promise<boolean> {
-        await new Promise(resolve => setTimeout(resolve, this.TIMEOUT_MS_LOCK_HOLD)); // TODO.
         await this.map.get(lockId)?.release(); // TODO: ?.
         return true;
     }

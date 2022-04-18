@@ -30,11 +30,9 @@
 
 "use strict";
 
-// TODO: syntax imports.
-import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {ISchedulingRepository} from "./ischeduling_repository";
 import {ISchedulingLocks} from "./ischeduling_locks";
-import axios, {AxiosResponse, AxiosInstance} from "axios";
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib"
 import {Reminder, ReminderTaskType} from "./types";
 import {CronJob} from "cron";
@@ -44,42 +42,42 @@ import {
     InvalidReminderTaskTypeError,
     InvalidReminderTimeError, MissingReminderPropertiesOrTaskDetailsError, ReminderAlreadyExistsError
 } from "./errors";
+import {ISchedulingHTTPClient} from "./ischeduling_http_client";
 
 export class SchedulingAggregate {
     private readonly logger: ILogger;
     private readonly repository: ISchedulingRepository;
     private readonly locks: ISchedulingLocks;
     private readonly cronJobs: Map<string, CronJob>;
-    private readonly httpClient: AxiosInstance;
+    private readonly httpClient: ISchedulingHTTPClient;
     private readonly messageProducer: IMessageProducer;
 
-    // TODO: how to do this?
     private readonly TIME_ZONE: string;
     private readonly TIMEOUT_MS_LOCK_ACQUIRED: number;
-    private readonly TIMEOUT_MS_HTTP_REQUEST: number;
+    private readonly MIN_DURATION_MS_TASK: number;
 
     constructor(
+        logger: ILogger,
         repository: ISchedulingRepository,
         locks: ISchedulingLocks,
+        httpClient: ISchedulingHTTPClient,
         messageProducer: IMessageProducer,
         timeZone: string,
         timeoutMsLockAcquired: number,
-        timeoutMsHttpRequest: number) {
+        minDurationMsTask: number) {
 
-        this.logger = new ConsoleLogger();
+        this.logger = logger;
 
         this.repository = repository;
         this.locks = locks;
+        this.httpClient = httpClient;
         this.messageProducer = messageProducer;
 
         this.TIME_ZONE = timeZone;
         this.TIMEOUT_MS_LOCK_ACQUIRED = timeoutMsLockAcquired;
-        this.TIMEOUT_MS_HTTP_REQUEST = timeoutMsHttpRequest;
+        this.MIN_DURATION_MS_TASK = minDurationMsTask;
 
         this.cronJobs = new Map<string, CronJob>();
-        this.httpClient = axios.create({
-            timeout: this.TIMEOUT_MS_HTTP_REQUEST,
-        });
     }
 
     async init(): Promise<void> {
@@ -109,7 +107,12 @@ export class SchedulingAggregate {
                 reminder.id = uuid.v4();
             } while (await this.repository.reminderExists(reminder.id));
         }
-        await this.repository.storeReminder(reminder);
+        try {
+            await this.repository.storeReminder(reminder);
+        } catch (e: any) {
+            this.logger.debug(e);
+            throw e;
+        }
         this.cronJobs.set(reminder.id, new CronJob( // TODO.
             reminder.time,
             () => {
@@ -131,7 +134,8 @@ export class SchedulingAggregate {
             throw new MissingReminderPropertiesOrTaskDetailsError();
         }
         // id.
-        if (reminder.id !== undefined && reminder.id !== null
+        if (/*!reminde.id &&*/
+            reminder.id !== undefined && reminder.id !== null
             && typeof reminder.id !== "string") { // TODO.
             throw new InvalidReminderIdError();
         }
@@ -151,8 +155,11 @@ export class SchedulingAggregate {
         }
     }
 
-    // TODO: extend the lock? timeout getReminder.
+    // TODO: timeout getReminder, comment.
+    // This function takes at least MIN_DURATION_MS_TASK to execute.
+    // Duration of getReminder() + duration of httpPost()/event() <= TIMEOUT_MS_LOCK_ACQUIRED.
     private async runReminderTask(reminderId: string): Promise<boolean> {
+        const startTime = Date.now();
         if (!(await this.locks.acquire(reminderId, this.TIMEOUT_MS_LOCK_ACQUIRED))) {
             return false;
         }
@@ -162,42 +169,27 @@ export class SchedulingAggregate {
         }
         switch (reminder.taskType) {
             case ReminderTaskType.HTTP_POST:
-                await this.sendHTTPPost(reminder);
+                await this.httpPost(reminder);
                 break;
             case ReminderTaskType.EVENT:
-                await this.sendEvent(reminder);
+                await this.event(reminder);
                 break;
             default:
                 throw new InvalidReminderTaskTypeError(); // TODO.
+        }
+        const elapsedTimeMs = Date.now() - startTime;
+        if (elapsedTimeMs < this.MIN_DURATION_MS_TASK) {
+            await new Promise(resolve => setTimeout(resolve, this.MIN_DURATION_MS_TASK - elapsedTimeMs));
         }
         await this.locks.release(reminderId);
         return true;
     }
 
-    private async sendHTTPPost(reminder: Reminder): Promise<void> { // TODO.
-        try {
-            if (!reminder.httpPostTaskDetails) { // TODO.
-                throw new Error();
-            }
-            const res: AxiosResponse<any> = await this.httpClient.post(
-                reminder.httpPostTaskDetails!.url, // TODO.
-                reminder.payload, {
-                    validateStatus: (status) => {
-                        // Resolve only if the status code is 200 or 404, everything else throws.
-                        // return status == 200 || status == 404;
-                        return status == 200;
-                    }
-                });
-            /*if (res.status != 200) {
-                return null;
-            }*/
-            this.logger.info(res);
-        } catch (e: any) {
-            this.logger.error(e);
-        }
+    private async httpPost(reminder: Reminder): Promise<boolean> {
+        return await this.httpClient.post(reminder.httpPostTaskDetails!.url, reminder.payload);
     }
 
-    private async sendEvent(reminder: Reminder): Promise<void> {
+    private async event(reminder: Reminder): Promise<void> {
         await this.messageProducer.send({
             topic: reminder.eventTaskDetails?.topic,
             value: reminder.payload

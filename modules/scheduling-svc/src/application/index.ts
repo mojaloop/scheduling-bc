@@ -47,8 +47,8 @@ import {
     NoSuchReminderError,
     ReminderAlreadyExistsError
 } from "../domain/errors";
+import {AxiosSchedulingHTTPClient} from "../infrastructure/axios_http_client";
 
-// TODO: why no types here?
 /* Constants. */
 const NAME_SERVICE = "scheduling";
 // Server.
@@ -69,16 +69,17 @@ const CLOCK_DRIFT_FACTOR = 0.01;
 // Message producer.
 const HOST_MESSAGE_BROKER = process.env.SCHEDULER_HOST_MESSAGE_BROKER || "localhost";
 const PORT_NO_MESSAGE_BROKER = process.env.SCHEDULER_PORT_NO_MESSAGE_BROKER || 9092;
-const MESSAGE_BROKER_LIST = `${HOST_MESSAGE_BROKER}:${PORT_NO_MESSAGE_BROKER}`; // TODO: name.
-const MESSAGE_PRODUCER_ID = NAME_SERVICE; // TODO: name.
+const URL_MESSAGE_BROKER = `${HOST_MESSAGE_BROKER}:${PORT_NO_MESSAGE_BROKER}`; // TODO: name.
+const ID_MESSAGE_PRODUCER = NAME_SERVICE; // TODO: name.
 // Time.
 const TIME_ZONE = "UTC";
 const DELAY_MS_LOCK_SPINS = 200; // Time between acquire attempts. TODO.
 const DELAY_MS_LOCK_SPINS_JITTER = 200; // TODO.
 const THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION = 500; // TODO.
 const TIMEOUT_MS_LOCK_ACQUIRED = 30_000; // TODO.
+const MIN_DURATION_MS_TASK = 2_000; // TODO.
 const TIMEOUT_MS_HTTP_REQUEST = 10_000; // TODO.
-const TIMEOUT_MS_MESSAGE_PRODUCER = 10_000; // TODO.
+const TIMEOUT_MS_EVENT = 10_000; // TODO.
 
 // Logger.
 const logger: ILogger = new ConsoleLogger();
@@ -87,11 +88,13 @@ const app = express();
 const router = express.Router();
 // Infrastructure.
 const schedulingRepository: ISchedulingRepository = new MongoDBSchedulingRepository(
+    logger,
     URL_REPO,
     NAME_DB,
     NAME_COLLECTION
 );
 const schedulingLocks: ISchedulingLocks = new RedisSchedulingLocks(
+    logger,
     HOST_LOCKS,
     CLOCK_DRIFT_FACTOR,
     MAX_LOCK_SPINS,
@@ -100,16 +103,20 @@ const schedulingLocks: ISchedulingLocks = new RedisSchedulingLocks(
     THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION
 );
 // Domain.
+const httpClient = new AxiosSchedulingHTTPClient(logger, TIMEOUT_MS_HTTP_REQUEST);
+const messageProducer = new MLKafkaProducer({ // TODO: timeout.
+    kafkaBrokerList: URL_MESSAGE_BROKER,
+    producerClientId: ID_MESSAGE_PRODUCER
+}, logger);
 const schedulingAggregate: SchedulingAggregate = new SchedulingAggregate(
+    logger,
     schedulingRepository,
     schedulingLocks,
-    new MLKafkaProducer({ // TODO: timeout.
-        kafkaBrokerList: MESSAGE_BROKER_LIST,
-        producerClientId: MESSAGE_PRODUCER_ID
-    }, logger),
+    httpClient,
+    messageProducer,
     TIME_ZONE,
     TIMEOUT_MS_LOCK_ACQUIRED,
-    TIMEOUT_MS_HTTP_REQUEST
+    MIN_DURATION_MS_TASK
 );
 
 function setUpExpress() {

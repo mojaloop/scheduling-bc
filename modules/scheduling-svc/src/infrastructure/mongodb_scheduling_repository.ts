@@ -1,11 +1,13 @@
 "use strict";
 
 import {ISchedulingRepository} from "../domain/ischeduling_repository";
+import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {Reminder} from "../domain/types";
 import {MongoClient, Collection} from "mongodb";
 import {NoSuchReminderError} from "../domain/errors";
 
 export class MongoDBSchedulingRepository implements ISchedulingRepository {
+    private readonly logger: ILogger;
     private readonly mongoClient: MongoClient;
     private reminders: Collection;
 
@@ -14,9 +16,12 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
     private readonly NAME_COLLECTION: string;
 
     constructor(
+        logger: ILogger,
         urlRepo: string,
         nameDb: string,
         nameCollection: string) {
+
+        this.logger = logger;
 
         this.URL_REPO = urlRepo;
         this.NAME_DB = nameDb;
@@ -26,13 +31,9 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
     }
 
     async init(): Promise<void> {
-        try {
-            await this.mongoClient.connect();
-            this.reminders = this.mongoClient.db(this.NAME_DB).collection(this.NAME_COLLECTION);
-            // await this.bootstrap();
-        } catch(e: any) {
-            await this.mongoClient.close()
-        }
+        await this.mongoClient.connect();
+        this.reminders = this.mongoClient.db(this.NAME_DB).collection(this.NAME_COLLECTION);
+        // await this.bootstrap();
     }
 
     async reminderExists(reminderId: string): Promise<boolean> {
@@ -41,9 +42,6 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
 
     async storeReminder(reminder: Reminder): Promise<void> {
         await this.reminders.insertOne(reminder);
-        /*if ((await this.reminders.insertOne(reminder)).acknowledged) {
-            throw new ReminderAlreadyExistsError();
-        }*/
     }
 
     async deleteReminder(reminderId: string): Promise<void> {
