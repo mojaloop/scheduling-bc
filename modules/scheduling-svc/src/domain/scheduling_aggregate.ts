@@ -125,7 +125,7 @@ export class SchedulingAggregate {
         return reminder.id; // TODO.
     }
 
-    private validateReminder(reminder: Reminder): void { // TODO: return type.
+    private validateReminder(reminder: Reminder): void {
         // TODO.
         if (reminder.time == undefined
             || reminder.taskType == undefined
@@ -134,14 +134,13 @@ export class SchedulingAggregate {
             throw new MissingReminderPropertiesOrTaskDetailsError();
         }
         // id.
-        if (/*!reminde.id &&*/
-            reminder.id !== undefined && reminder.id !== null
-            && typeof reminder.id !== "string") { // TODO.
+        if (reminder.id !== undefined && reminder.id !== null && reminder.id !== ""
+            && typeof reminder.id != "string") { // TODO.
             throw new InvalidReminderIdError();
         }
         // time.
-        if (typeof reminder.time !== "string" && !(reminder.time instanceof String)
-            /*&& typeof reminder.time !== Date*/ && !(reminder.time instanceof Date)) {
+        if (typeof reminder.time != "string"
+            && !(reminder.time instanceof Date)) { // TODO.
             throw new InvalidReminderTimeError();
         }
         // taskType.
@@ -149,8 +148,8 @@ export class SchedulingAggregate {
             throw new InvalidReminderTaskTypeError();
         }
         // TaskDetails.
-        if (typeof reminder.httpPostTaskDetails?.url !== "string" /*&& reminder.httpPostTaskDetails.url instanceof String*/
-            && typeof reminder.eventTaskDetails?.topic !== "string" /*&& reminder.eventTaskDetails.topic instanceof String*/) {
+        if (typeof reminder.httpPostTaskDetails?.url != "string"
+            && typeof reminder.eventTaskDetails?.topic != "string") {
             throw new InvalidReminderTaskDetailsError();
         }
     }
