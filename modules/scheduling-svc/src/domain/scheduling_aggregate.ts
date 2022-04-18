@@ -125,8 +125,8 @@ export class SchedulingAggregate {
         return reminder.id; // TODO.
     }
 
+    // TODO.
     private validateReminder(reminder: Reminder): void {
-        // TODO.
         if (reminder.time == undefined
             || reminder.taskType == undefined
             || (reminder.httpPostTaskDetails?.url == undefined
@@ -135,12 +135,12 @@ export class SchedulingAggregate {
         }
         // id.
         if (reminder.id !== undefined && reminder.id !== null && reminder.id !== ""
-            && typeof reminder.id != "string") { // TODO.
+            && typeof reminder.id != "string") {
             throw new InvalidReminderIdError();
         }
         // time.
         if (typeof reminder.time != "string"
-            && !(reminder.time instanceof Date)) { // TODO.
+            && !(reminder.time instanceof Date)) {
             throw new InvalidReminderTimeError();
         }
         // taskType.
