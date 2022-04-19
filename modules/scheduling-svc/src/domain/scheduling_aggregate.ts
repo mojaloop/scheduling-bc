@@ -157,31 +157,33 @@ export class SchedulingAggregate {
     // TODO: timeout getReminder, comment.
     // This function takes at least MIN_DURATION_MS_TASK to execute.
     // Duration of getReminder() + duration of httpPost()/event() <= TIMEOUT_MS_LOCK_ACQUIRED.
-    private async runReminderTask(reminderId: string): Promise<boolean> {
+    private async runReminderTask(reminderId: string): Promise<void> {
         const startTime = Date.now();
         if (!(await this.locks.acquire(reminderId, this.TIMEOUT_MS_LOCK_ACQUIRED))) {
-            return false;
+            return;
         }
-        const reminder = await this.repository.getReminder(reminderId);
-        if (reminder == null) {
-            return false;
+        try {
+            const reminder = await this.repository.getReminder(reminderId);
+            if (reminder == null) {
+                return;
+            }
+            switch (reminder.taskType) {
+                case ReminderTaskType.HTTP_POST:
+                    await this.httpPost(reminder);
+                    break;
+                case ReminderTaskType.EVENT:
+                    await this.event(reminder);
+                    break;
+                default:
+                    throw new InvalidReminderTaskTypeError(); // TODO.
+            }
+            const elapsedTimeMs = Date.now() - startTime;
+            if (elapsedTimeMs < this.MIN_DURATION_MS_TASK) {
+                await new Promise(resolve => setTimeout(resolve, this.MIN_DURATION_MS_TASK - elapsedTimeMs));
+            }
+        } finally {
+            await this.locks.release(reminderId);
         }
-        switch (reminder.taskType) {
-            case ReminderTaskType.HTTP_POST:
-                await this.httpPost(reminder);
-                break;
-            case ReminderTaskType.EVENT:
-                await this.event(reminder);
-                break;
-            default:
-                throw new InvalidReminderTaskTypeError(); // TODO.
-        }
-        const elapsedTimeMs = Date.now() - startTime;
-        if (elapsedTimeMs < this.MIN_DURATION_MS_TASK) {
-            await new Promise(resolve => setTimeout(resolve, this.MIN_DURATION_MS_TASK - elapsedTimeMs));
-        }
-        await this.locks.release(reminderId);
-        return true;
     }
 
     private async httpPost(reminder: Reminder): Promise<boolean> {
