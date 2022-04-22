@@ -1,7 +1,7 @@
 "use strict";
 
 export class Reminder {
-    id: undefined | null | string; // UUId. specified by the client; sent in the response. TODO: undefined? null?
+    id: string;
     time: string | Date;
     payload: any;
     taskType: ReminderTaskType;

@@ -3,32 +3,21 @@
 import {ISchedulingRepository} from "../domain/ischeduling_repository";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {Reminder} from "../domain/types";
-import {MongoClient, Collection} from "mongodb";
+import {MongoClient, Collection, DeleteResult} from "mongodb";
 import {NoSuchReminderError} from "../domain/errors";
 
 export class MongoDBSchedulingRepository implements ISchedulingRepository {
-    private readonly logger: ILogger;
-    private readonly mongoClient: MongoClient;
+    constructor(
+        private readonly logger: ILogger,
+        private readonly URL_REPO: string,
+        private readonly NAME_DB: string,
+        private readonly NAME_COLLECTION: string
+    ) {}
+
+    private readonly mongoClient: MongoClient = new MongoClient(this.URL_REPO);
     private reminders: Collection;
 
-    private readonly URL_REPO: string;
-    private readonly NAME_DB: string;
-    private readonly NAME_COLLECTION: string;
-
-    constructor(
-        logger: ILogger,
-        urlRepo: string,
-        nameDb: string,
-        nameCollection: string) {
-
-        this.logger = logger;
-
-        this.URL_REPO = urlRepo;
-        this.NAME_DB = nameDb;
-        this.NAME_COLLECTION = nameCollection;
-
-        this.mongoClient = new MongoClient(this.URL_REPO);
-    }
+    /* END PROPERTIES */
 
     async init(): Promise<void> {
         await this.mongoClient.connect();
@@ -44,8 +33,12 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
         await this.reminders.insertOne(reminder);
     }
 
+    // TODO.
     async deleteReminder(reminderId: string): Promise<void> {
-        if ((await this.reminders.deleteOne({id: reminderId})).acknowledged) {
+        // deleteOne() doesn't throw if the item doesn't exist.
+        const ret: DeleteResult = await this.reminders.deleteOne({id: reminderId});
+        // ret.acknowledged is true whether the item exists or not.
+        if (ret.deletedCount === 0) {
             throw new NoSuchReminderError();
         }
     }

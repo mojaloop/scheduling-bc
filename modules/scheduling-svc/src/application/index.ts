@@ -193,6 +193,20 @@ function setUpRoutes() {
             }
         }
     });
+    router.delete("/", async (req: express.Request, res: express.Response) => {
+        try {
+            await schedulingAggregate.deleteReminders();
+            res.status(200).json({
+                status: "ok",
+                message: "reminders deleted"
+            });
+        } catch (e: any) { // TODO: any or Error?
+            res.status(500).json({
+                status: "error",
+                message: "unknown error"
+            });
+        }
+    });
     router.get("/:reminderId", async (req: express.Request, res: express.Response) => {
         try {
             const reminder: Reminder = await schedulingAggregate.getReminder(req.params.reminderId);

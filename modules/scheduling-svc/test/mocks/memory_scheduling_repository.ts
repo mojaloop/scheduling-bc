@@ -1,8 +1,8 @@
 "use strict";
 
-import {ISchedulingRepository} from "../domain/ischeduling_repository";
-import {Reminder} from "../domain/types";
-import {NoSuchReminderError} from "../domain/errors";
+import {ISchedulingRepository} from "../../src/domain/ischeduling_repository";
+import {Reminder} from "../../src/domain/types";
+import {NoSuchReminderError} from "../../src/domain/errors";
 
 export class MemorySchedulingRepository implements ISchedulingRepository {
     private map: Map<string, Reminder>;

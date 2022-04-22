@@ -1,16 +1,15 @@
-"use strict"
+"use strict";
 
-describe('example test', () => {
+describe("example test", () => {
+    beforeEach(async () => {
+        // Set up.
+    });
 
-  beforeEach(async () => {
-    // Setup
-  })
+    afterEach(async () => {
+        // Cleanup.
+    });
 
-  afterEach(async () => {
-    // Cleanup
-  })
-
-  test('should goes here', async () => {
-    await expect(true)
-  })
-})
+    test("should goes here", async () => {
+        await expect(true);
+    });
+});
