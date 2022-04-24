@@ -38,9 +38,7 @@ import {Reminder, ReminderTaskType} from "./types";
 import {CronJob, CronTime} from "cron";
 import * as uuid from "uuid";
 import {
-    InvalidReminderIdError, InvalidReminderTaskDetailsError,
-    InvalidReminderTaskTypeError,
-    InvalidReminderTimeError, MissingReminderPropertiesOrTaskDetailsError, ReminderAlreadyExistsError
+    InvalidReminderTaskTypeError, InvalidReminderTimeError, ReminderAlreadyExistsError
 } from "./errors";
 import {ISchedulingHTTPClient} from "./ischeduling_http_client";
 
@@ -79,7 +77,7 @@ export class SchedulingAggregate {
 
     async createReminder(reminder: Reminder): Promise<string> {
         this.validateReminder(reminder);
-        if (reminder.id === undefined || reminder.id === null || reminder.id === "") {
+        if (reminder.id === "") {
             do {
                 reminder.id = uuid.v4();
             } while (await this.repository.reminderExists(reminder.id));
@@ -103,39 +101,16 @@ export class SchedulingAggregate {
 
     // TODO.
     private validateReminder(reminder: Reminder): void {
-        // Check if the essential properties are present.
-        if (reminder.time === undefined
-            || reminder.taskType === undefined
-            || (reminder.httpPostTaskDetails?.url === undefined
-                && reminder.eventTaskDetails?.topic === undefined)) {
-            throw new MissingReminderPropertiesOrTaskDetailsError();
-        }
-        // id.
-        if (reminder.id !== undefined
-            && reminder.id !== null
-            && typeof reminder.id != "string") {
-            throw new InvalidReminderIdError();
-        }
-        // time.
-        /*if (typeof reminder.time != "string"
-            && !(reminder.time instanceof Date)) {
-            throw new InvalidReminderTimeError();
-        }*/
         // TODO: is this ok to do?
         try {
             new CronTime(reminder.time);
-        } catch (e: any) { // TODO: specify a type.
-            this.logger.debug(typeof e); // object.
+        } catch (e: unknown) { // TODO: specify a type.
+            // this.logger.debug(typeof e); // object.
             throw new InvalidReminderTimeError();
         }
         // taskType.
         if (!Object.values(ReminderTaskType).includes(reminder.taskType)) {
             throw new InvalidReminderTaskTypeError();
-        }
-        // TaskDetails.
-        if (typeof reminder.httpPostTaskDetails?.url != "string"
-            && typeof reminder.eventTaskDetails?.topic != "string") {
-            throw new InvalidReminderTaskDetailsError();
         }
     }
 
@@ -159,8 +134,6 @@ export class SchedulingAggregate {
                 case ReminderTaskType.EVENT:
                     await this.event(reminder);
                     break;
-                default:
-                    throw new InvalidReminderTaskTypeError(); // TODO.
             }
             const elapsedTimeMs = Date.now() - startTime;
             if (elapsedTimeMs < this.MIN_DURATION_MS_TASK) {

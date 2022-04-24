@@ -40,10 +40,10 @@ import {ISchedulingRepository} from "../domain/ischeduling_repository";
 import {ISchedulingLocks} from "../domain/ischeduling_locks";
 import {MLKafkaProducer} from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
 import {
-    InvalidReminderIdError,
-    InvalidReminderTaskDetailsError,
-    InvalidReminderTaskTypeError,
-    InvalidReminderTimeError, MissingReminderPropertiesOrTaskDetailsError,
+    InvalidReminderIdTypeError,
+    InvalidReminderTaskDetailsTypeError,
+    InvalidReminderTaskTypeError, InvalidReminderTaskTypeTypeError, InvalidReminderTimeError,
+    InvalidReminderTimeTypeError, MissingReminderPropertiesOrTaskDetailsError,
     NoSuchReminderError,
     ReminderAlreadyExistsError
 } from "../domain/errors";
@@ -73,6 +73,7 @@ const URL_MESSAGE_BROKER = `${HOST_MESSAGE_BROKER}:${PORT_NO_MESSAGE_BROKER}`; /
 const ID_MESSAGE_PRODUCER = NAME_SERVICE; // TODO: name.
 // Time.
 const TIME_ZONE = "UTC";
+const TIMEOUT_MS_REPO = 10_000; // TODO.
 const DELAY_MS_LOCK_SPINS = 200; // Time between acquire attempts. TODO.
 const DELAY_MS_LOCK_SPINS_JITTER = 200; // TODO.
 const THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION = 500; // TODO.
@@ -124,51 +125,67 @@ function setUpExpress() {
     app.use(express.urlencoded({extended: true})); // For parsing application/x-www-form-urlencoded.
 }
 
+// TODO: response structure; status codes.
 function setUpRoutes() {
     app.use(URL_SERVER_PATH_REMINDERS, router);
     router.post("/", async (req: express.Request, res: express.Response) => {
         try {
-            const reminderId: string = await schedulingAggregate.createReminder(req.body);
+            validateBodyReminder(req.body);
+            // If the id is undefined or null, change it to "".
+            if (typeof req.body.id != "string") {
+                req.body.id = "";
+            }
+            const reminderId: string = await schedulingAggregate.createReminder(req.body); // TODO: send the body directly?
             res.status(200).json({
-                status: "ok", // TODO: ""?
-                reminderId: reminderId // TODO: why not purple?
+                status: "ok",
+                reminderId: reminderId
             });
-        } catch (e: any) { // TODO: any or Error?
+        } catch (e: unknown) {
             if (e instanceof MissingReminderPropertiesOrTaskDetailsError) {
-                res.status(400).json({ // TODO: status code.
-                    status: "error",
-                    message: "missing reminder properties or task details"
-                });
-            } else if (e instanceof InvalidReminderIdError) {
-                res.status(400).json({ // TODO: status code.
-                    status: "error",
-                    message: "invalid reminder id"
-                });
+                sendError(
+                    res,
+                    400,
+                    "missing reminder properties or task details");
+            } else if (e instanceof InvalidReminderIdTypeError) {
+                sendError(
+                    res,
+                    400,
+                    "invalid reminder id type");
+            } else if (e instanceof InvalidReminderTimeTypeError) {
+                sendError(
+                    res,
+                    400,
+                    "invalid reminder time type");
+            } else if (e instanceof InvalidReminderTaskTypeTypeError) {
+                sendError(
+                    res,
+                    400,
+                    "invalid reminder task type type");
+            } else if (e instanceof InvalidReminderTaskDetailsTypeError) {
+                sendError(
+                    res,
+                    400,
+                    "invalid reminder task details type");
             } else if (e instanceof InvalidReminderTimeError) {
-                res.status(400).json({ // TODO: status code.
-                    status: "error",
-                    message: "invalid reminder time"
-                });
+                sendError(
+                    res,
+                    400,
+                    "invalid reminder time");
             } else if (e instanceof InvalidReminderTaskTypeError) {
-                res.status(400).json({ // TODO: status code.
-                    status: "error",
-                    message: "invalid reminder task type"
-                });
-            } else if (e instanceof InvalidReminderTaskDetailsError) {
-                res.status(400).json({ // TODO: status code.
-                    status: "error",
-                    message: "invalid reminder task details"
-                });
+                sendError(
+                    res,
+                    400,
+                    "invalid reminder task type");
             } else if (e instanceof ReminderAlreadyExistsError) {
-                res.status(400).json({ // TODO: status code.
-                    status: "error",
-                    message: "reminder already exists"
-                }); // TODO.
+                sendError(
+                    res,
+                    400,
+                    "reminder already exists");
             } else {
-                res.status(500).json({
-                    status: "error",
-                    message: "unknown error"
-                });
+                sendError(
+                    res,
+                    500,
+                    "unknown error");
             }
         }
     });
@@ -179,17 +196,17 @@ function setUpRoutes() {
                 status: "ok",
                 message: "reminder deleted"
             });
-        } catch (e: any) { // TODO: any or Error?
-            if (e instanceof NoSuchReminderError) { // TODO: good error name?
-                res.status(400).json({ // TODO: status code.
-                    status: "error",
-                    message: "no such reminder"
-                });
+        } catch (e: unknown) {
+            if (e instanceof NoSuchReminderError) {
+                sendError(
+                    res,
+                    400,
+                    "no such reminder");
             } else {
-                res.status(500).json({
-                    status: "error",
-                    message: "unknown error"
-                });
+                sendError(
+                    res,
+                    500,
+                    "unknown error");
             }
         }
     });
@@ -200,11 +217,11 @@ function setUpRoutes() {
                 status: "ok",
                 message: "reminders deleted"
             });
-        } catch (e: any) { // TODO: any or Error?
-            res.status(500).json({
-                status: "error",
-                message: "unknown error"
-            });
+        } catch (e: unknown) {
+            sendError(
+                res,
+                500,
+                "unknown error");
         }
     });
     router.get("/:reminderId", async (req: express.Request, res: express.Response) => {
@@ -214,17 +231,17 @@ function setUpRoutes() {
                 status: "ok",
                 reminder: reminder
             });
-        } catch (e: any) { // TODO: any or Error?
-            if (e instanceof NoSuchReminderError) { // TODO: good error name?
-                res.status(400).json({ // TODO: status code.
-                    status: "error",
-                    message: "no such reminder"
-                });
+        } catch (e: unknown) {
+            if (e instanceof NoSuchReminderError) {
+                sendError(
+                    res,
+                    400,
+                    "no such reminder");
             } else {
-                res.status(500).json({
-                    status: "error",
-                    message: "unknown error"
-                });
+                sendError(
+                    res,
+                    500,
+                    "unknown error");
             }
         }
     });
@@ -235,12 +252,51 @@ function setUpRoutes() {
                 status: "ok",
                 reminders: reminders
             });
-        } catch (e: any) { // TODO: any or Error?
-            res.status(500).json({
-                status: "error",
-                message: "unknown error"
-            });
+        } catch (e: unknown) {
+            sendError(
+                res,
+                500,
+                "unknown error");
         }
+    });
+}
+
+// TODO.
+function validateBodyReminder(body: any): void { // TODO: ReqBody type.
+    // Check if the essential properties are present.
+    if (body.time === undefined
+        || body.taskType === undefined
+        || (body.httpPostTaskDetails?.url === undefined
+            && body.eventTaskDetails?.topic === undefined)) {
+        throw new MissingReminderPropertiesOrTaskDetailsError();
+    }
+    // id.
+    if (body.id !== undefined
+        && body.id !== null
+        && typeof body.id != "string") {
+        throw new InvalidReminderIdTypeError();
+    }
+    // time.
+    if (typeof body.time != "string"
+        && !(body.time instanceof Date)) { // TODO: does Date make sense?
+        throw new InvalidReminderTimeTypeError();
+    }
+    // taskType.
+    if (typeof body.taskType != "number") { // TODO: number? ReminderTaskType?
+        throw new InvalidReminderTaskTypeTypeError();
+    }
+    // TaskDetails.
+    if (typeof body.httpPostTaskDetails?.url != "string"
+        && typeof body.eventTaskDetails?.topic != "string") {
+        throw new InvalidReminderTaskDetailsTypeError();
+    }
+}
+
+// TODO: response structure.
+function sendError(res: express.Response, statusCode: number, message: string) {
+    res.status(statusCode).json({
+        status: "error",
+        message: message
     });
 }
 
