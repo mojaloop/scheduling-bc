@@ -11,10 +11,16 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
         private readonly logger: ILogger,
         private readonly URL_REPO: string,
         private readonly NAME_DB: string,
-        private readonly NAME_COLLECTION: string
+        private readonly NAME_COLLECTION: string,
+        private readonly TIMEOUT_MS_REPO_OPERATIONS: number
     ) {}
 
-    private readonly mongoClient: MongoClient = new MongoClient(this.URL_REPO);
+    private readonly mongoClient: MongoClient = new MongoClient(
+        this.URL_REPO,
+        {
+            // TODO: are other timeouts required?
+            socketTimeoutMS: this.TIMEOUT_MS_REPO_OPERATIONS
+        });
     private reminders: Collection;
 
     /* END PROPERTIES */
@@ -50,8 +56,8 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
     async getReminders(): Promise<Reminder[]> { // TODO: Array?
         return (await this.reminders
             .find(
-                {},
-                {projection: {_id: 0}}) // All reminders.
+                {}, // All documents.
+                {projection: {_id: 0}}) // Don't return the _id field.
             .toArray()) as unknown as Reminder[];
         //throw new Error("not implemented");
     }

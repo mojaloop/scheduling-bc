@@ -38,7 +38,7 @@ export class RedisSchedulingLocks implements ISchedulingLocks {
                 await this.redLock.acquire([lockId], lockDurationMs)
             );
             return true;
-        } catch (e: any) { // An exception is thrown if the lock can't be acquired.
+        } catch (e: unknown) { // An exception is thrown if the lock can't be acquired.
             this.logger.debug("unable to acquire the lock");
             return false;
         }

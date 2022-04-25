@@ -1,3 +1,5 @@
+"use strict";
+
 import {ISchedulingHTTPClient} from "../domain/ischeduling_http_client";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import axios, {AxiosResponse} from "axios";
@@ -21,7 +23,7 @@ export class AxiosSchedulingHTTPClient implements ISchedulingHTTPClient {
                 url,
                 payload);
             return true;
-        } catch (e: any) {
+        } catch (e: unknown) {
             this.logger.debug(e);
             return false;
         }

@@ -73,7 +73,7 @@ const URL_MESSAGE_BROKER = `${HOST_MESSAGE_BROKER}:${PORT_NO_MESSAGE_BROKER}`; /
 const ID_MESSAGE_PRODUCER = NAME_SERVICE; // TODO: name.
 // Time.
 const TIME_ZONE = "UTC";
-const TIMEOUT_MS_REPO = 10_000; // TODO.
+const TIMEOUT_MS_REPO_OPERATIONS = 10_000; // TODO.
 const DELAY_MS_LOCK_SPINS = 200; // Time between acquire attempts. TODO.
 const DELAY_MS_LOCK_SPINS_JITTER = 200; // TODO.
 const THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION = 500; // TODO.
@@ -92,7 +92,8 @@ const schedulingRepository: ISchedulingRepository = new MongoDBSchedulingReposit
     logger,
     URL_REPO,
     NAME_DB,
-    NAME_COLLECTION
+    NAME_COLLECTION,
+    TIMEOUT_MS_REPO_OPERATIONS
 );
 const schedulingLocks: ISchedulingLocks = new RedisSchedulingLocks(
     logger,

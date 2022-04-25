@@ -5,21 +5,19 @@ import {Reminder} from "../../src/domain/types";
 import {NoSuchReminderError} from "../../src/domain/errors";
 
 export class MemorySchedulingRepository implements ISchedulingRepository {
-    private map: Map<string, Reminder>;
-
-    constructor() {
-        this.map = new Map();
-    }
+    constructor(
+        private readonly map: Map<string, Reminder>
+    ) {}
 
     async init(): Promise<void> {
-        throw new Error("not implemented");
+        return;
     }
 
     async storeReminder(reminder: Reminder): Promise<void> {
-        this.map.set(<string>reminder.id, reminder); // TODO: <>string.
+        this.map.set(reminder.id, reminder);
     }
 
-    async deleteReminder(reminderId: string): Promise<void> { // TODO: return type.
+    async deleteReminder(reminderId: string): Promise<void> {
         if (!this.map.delete(reminderId)) { // TODO: other ways to write this.
             throw new NoSuchReminderError();
         }
