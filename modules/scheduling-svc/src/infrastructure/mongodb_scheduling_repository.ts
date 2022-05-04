@@ -4,26 +4,40 @@ import {ISchedulingRepository} from "../domain/ischeduling_repository";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {Reminder} from "../domain/types";
 import {MongoClient, Collection, DeleteResult} from "mongodb";
-import {NoSuchReminderError} from "../domain/errors";
+import {NoSuchReminderError} from "../domain/domain_errors";
 
 export class MongoDBSchedulingRepository implements ISchedulingRepository {
-    constructor(
-        private readonly logger: ILogger,
-        private readonly URL_REPO: string,
-        private readonly NAME_DB: string,
-        private readonly NAME_COLLECTION: string,
-        private readonly TIMEOUT_MS_REPO_OPERATIONS: number
-    ) {}
-
-    private readonly mongoClient: MongoClient = new MongoClient(
-        this.URL_REPO,
-        {
-            // TODO: are other timeouts required?
-            socketTimeoutMS: this.TIMEOUT_MS_REPO_OPERATIONS
-        });
+    // Properties received through the constructor.
+    private readonly logger: ILogger;
+    private readonly URL_REPO: string;
+    private readonly NAME_DB: string;
+    private readonly NAME_COLLECTION: string;
+    private readonly TIMEOUT_MS_REPO_OPERATIONS: number;
+    // Other properties.
+    private readonly mongoClient: MongoClient;
     private reminders: Collection;
 
-    /* END PROPERTIES */
+    constructor(
+        logger: ILogger,
+        URL_REPO: string,
+        NAME_DB: string,
+        NAME_COLLECTION: string,
+        TIMEOUT_MS_REPO_OPERATIONS: number
+    ) {
+        this.logger = logger;
+        this.URL_REPO = URL_REPO;
+        this.NAME_DB = NAME_DB;
+        this.NAME_COLLECTION = NAME_COLLECTION;
+        this.TIMEOUT_MS_REPO_OPERATIONS = TIMEOUT_MS_REPO_OPERATIONS;
+
+        this.mongoClient = new MongoClient(
+            this.URL_REPO,
+            {
+                // TODO: are other timeouts required?
+                socketTimeoutMS: this.TIMEOUT_MS_REPO_OPERATIONS
+            }
+        );
+    }
 
     async init(): Promise<void> {
         await this.mongoClient.connect();
@@ -39,7 +53,7 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
         await this.reminders.insertOne(reminder);
     }
 
-    // TODO.
+    // TODO: verify.
     async deleteReminder(reminderId: string): Promise<void> {
         // deleteOne() doesn't throw if the item doesn't exist.
         const ret: DeleteResult = await this.reminders.deleteOne({id: reminderId});

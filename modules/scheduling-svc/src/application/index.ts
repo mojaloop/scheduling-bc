@@ -33,21 +33,14 @@
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import express from "express";
 import {SchedulingAggregate} from "../domain/scheduling_aggregate";
-import {Reminder} from "../domain/types";
 import {MongoDBSchedulingRepository} from "../infrastructure/mongodb_scheduling_repository";
 import {RedisSchedulingLocks} from "../infrastructure/redis_scheduling_locks";
 import {ISchedulingRepository} from "../domain/ischeduling_repository";
 import {ISchedulingLocks} from "../domain/ischeduling_locks";
 import {MLKafkaProducer} from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
-import {
-    InvalidReminderIdTypeError,
-    InvalidReminderTaskDetailsTypeError,
-    InvalidReminderTaskTypeError, InvalidReminderTaskTypeTypeError, InvalidReminderTimeError,
-    InvalidReminderTimeTypeError, MissingReminderPropertiesOrTaskDetailsError,
-    NoSuchReminderError,
-    ReminderAlreadyExistsError
-} from "../domain/errors";
 import {AxiosSchedulingHTTPClient} from "../infrastructure/axios_http_client";
+import {ExpressRoutes} from "./express_routes";
+import * as core from "express-serve-static-core";
 
 /* Constants. */
 const NAME_SERVICE = "scheduling";
@@ -84,9 +77,6 @@ const TIMEOUT_MS_EVENT = 10_000; // TODO.
 
 // Logger.
 const logger: ILogger = new ConsoleLogger();
-// Express.
-const app = express();
-const router = express.Router();
 // Infrastructure.
 const schedulingRepository: ISchedulingRepository = new MongoDBSchedulingRepository(
     logger,
@@ -120,192 +110,28 @@ const schedulingAggregate: SchedulingAggregate = new SchedulingAggregate(
     TIMEOUT_MS_LOCK_ACQUIRED,
     MIN_DURATION_MS_TASK
 );
+// Express.
+const app: core.Express = express(); // TODO: type.
+const routes: ExpressRoutes = new ExpressRoutes(
+    logger,
+    schedulingAggregate
+);
 
 function setUpExpress() {
     app.use(express.json()); // For parsing application/json.
     app.use(express.urlencoded({extended: true})); // For parsing application/x-www-form-urlencoded.
-}
-
-// TODO: response structure; status codes.
-function setUpRoutes() {
-    app.use(URL_SERVER_PATH_REMINDERS, router);
-    router.post("/", async (req: express.Request, res: express.Response) => {
-        try {
-            validateBodyReminder(req.body);
-            // If the id is undefined or null, change it to "".
-            if (typeof req.body.id != "string") {
-                req.body.id = "";
-            }
-            const reminderId: string = await schedulingAggregate.createReminder(req.body); // TODO: send the body directly?
-            res.status(200).json({
-                status: "ok",
-                reminderId: reminderId
-            });
-        } catch (e: unknown) {
-            if (e instanceof MissingReminderPropertiesOrTaskDetailsError) {
-                sendError(
-                    res,
-                    400,
-                    "missing reminder properties or task details");
-            } else if (e instanceof InvalidReminderIdTypeError) {
-                sendError(
-                    res,
-                    400,
-                    "invalid reminder id type");
-            } else if (e instanceof InvalidReminderTimeTypeError) {
-                sendError(
-                    res,
-                    400,
-                    "invalid reminder time type");
-            } else if (e instanceof InvalidReminderTaskTypeTypeError) {
-                sendError(
-                    res,
-                    400,
-                    "invalid reminder task type type");
-            } else if (e instanceof InvalidReminderTaskDetailsTypeError) {
-                sendError(
-                    res,
-                    400,
-                    "invalid reminder task details type");
-            } else if (e instanceof InvalidReminderTimeError) {
-                sendError(
-                    res,
-                    400,
-                    "invalid reminder time");
-            } else if (e instanceof InvalidReminderTaskTypeError) {
-                sendError(
-                    res,
-                    400,
-                    "invalid reminder task type");
-            } else if (e instanceof ReminderAlreadyExistsError) {
-                sendError(
-                    res,
-                    400,
-                    "reminder already exists");
-            } else {
-                sendError(
-                    res,
-                    500,
-                    "unknown error");
-            }
-        }
-    });
-    router.delete("/:reminderId", async (req: express.Request, res: express.Response) => {
-        try {
-            await schedulingAggregate.deleteReminder(req.params.reminderId);
-            res.status(200).json({
-                status: "ok",
-                message: "reminder deleted"
-            });
-        } catch (e: unknown) {
-            if (e instanceof NoSuchReminderError) {
-                sendError(
-                    res,
-                    400,
-                    "no such reminder");
-            } else {
-                sendError(
-                    res,
-                    500,
-                    "unknown error");
-            }
-        }
-    });
-    router.delete("/", async (req: express.Request, res: express.Response) => {
-        try {
-            await schedulingAggregate.deleteReminders();
-            res.status(200).json({
-                status: "ok",
-                message: "reminders deleted"
-            });
-        } catch (e: unknown) {
-            sendError(
-                res,
-                500,
-                "unknown error");
-        }
-    });
-    router.get("/:reminderId", async (req: express.Request, res: express.Response) => {
-        try {
-            const reminder: Reminder = await schedulingAggregate.getReminder(req.params.reminderId);
-            res.status(200).json({
-                status: "ok",
-                reminder: reminder
-            });
-        } catch (e: unknown) {
-            if (e instanceof NoSuchReminderError) {
-                sendError(
-                    res,
-                    400,
-                    "no such reminder");
-            } else {
-                sendError(
-                    res,
-                    500,
-                    "unknown error");
-            }
-        }
-    });
-    router.get("/", async (req: express.Request, res: express.Response) => {
-        try {
-            const reminders: Reminder[] = await schedulingAggregate.getReminders();
-            res.status(200).json({
-                status: "ok",
-                reminders: reminders
-            });
-        } catch (e: unknown) {
-            sendError(
-                res,
-                500,
-                "unknown error");
-        }
-    });
+    setUpRoutes(); // TODO.
 }
 
 // TODO.
-function validateBodyReminder(body: any): void { // TODO: ReqBody type.
-    // Check if the essential properties are present.
-    if (body.time === undefined
-        || body.taskType === undefined
-        || (body.httpPostTaskDetails?.url === undefined
-            && body.eventTaskDetails?.topic === undefined)) {
-        throw new MissingReminderPropertiesOrTaskDetailsError();
-    }
-    // id.
-    if (body.id !== undefined
-        && body.id !== null
-        && typeof body.id != "string") {
-        throw new InvalidReminderIdTypeError();
-    }
-    // time.
-    if (typeof body.time != "string"
-        && !(body.time instanceof Date)) { // TODO: does Date make sense?
-        throw new InvalidReminderTimeTypeError();
-    }
-    // taskType.
-    if (typeof body.taskType != "number") { // TODO: number? ReminderTaskType?
-        throw new InvalidReminderTaskTypeTypeError();
-    }
-    // TaskDetails.
-    if (typeof body.httpPostTaskDetails?.url != "string"
-        && typeof body.eventTaskDetails?.topic != "string") {
-        throw new InvalidReminderTaskDetailsTypeError();
-    }
-}
-
-// TODO: response structure.
-function sendError(res: express.Response, statusCode: number, message: string) {
-    res.status(statusCode).json({
-        status: "error",
-        message: message
-    });
+function setUpRoutes() {
+    routes.setUpRoutes();
+    app.use(URL_SERVER_PATH_REMINDERS, routes.router);
 }
 
 async function start(): Promise<void> {
-    await schedulingRepository.init();
-    await schedulingAggregate.init();
+    await schedulingAggregate.init(); // The aggregate initializes all the dependencies. TODO.
     setUpExpress();
-    setUpRoutes();
     app.listen(PORT_NO_SERVER, () => {
         logger.info("Server on.");
         logger.info(`Host: ${HOST_SERVER}`);
@@ -316,6 +142,8 @@ async function start(): Promise<void> {
 
 async function handleIntAndTermSignals(signal: NodeJS.Signals): Promise<void> {
     logger.info(`${NAME_SERVICE} - ${signal} received, cleaning up...`);
+    await messageProducer.destroy();
+    // TODO: close dependencies.
     process.exit();
 }
 

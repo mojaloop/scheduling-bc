@@ -2,7 +2,7 @@
 
 import {ISchedulingRepository} from "../../src/domain/ischeduling_repository";
 import {Reminder} from "../../src/domain/types";
-import {NoSuchReminderError} from "../../src/domain/errors";
+import {NoSuchReminderError} from "../../src/domain/domain_errors";
 
 export class MemorySchedulingRepository implements ISchedulingRepository {
     constructor(

@@ -38,25 +38,48 @@ import {Reminder, ReminderTaskType} from "./types";
 import {CronJob, CronTime} from "cron";
 import * as uuid from "uuid";
 import {
-    InvalidReminderTaskTypeError, InvalidReminderTimeError, ReminderAlreadyExistsError
-} from "./errors";
+    InvalidReminderIdTypeError, InvalidReminderTaskDetailsTypeError,
+    InvalidReminderTaskTypeError, InvalidReminderTaskTypeTypeError,
+    InvalidReminderTimeError, InvalidReminderTimeTypeError,
+    MissingReminderPropertiesOrTaskDetailsError,
+    ReminderAlreadyExistsError
+} from "./domain_errors";
 import {ISchedulingHTTPClient} from "./ischeduling_http_client";
 
 export class SchedulingAggregate {
+    // Properties received through the constructor.
+    private readonly logger: ILogger;
+    private readonly repository: ISchedulingRepository;
+    private readonly locks: ISchedulingLocks;
+    private readonly httpClient: ISchedulingHTTPClient;
+    private readonly messageProducer: IMessageProducer;
+    private readonly TIME_ZONE: string;
+    private readonly TIMEOUT_MS_LOCK_ACQUIRED: number;
+    private readonly MIN_DURATION_MS_TASK: number;
+    // Other properties.
+    private readonly cronJobs: Map<string, CronJob>;
+
     constructor(
-        private readonly logger: ILogger,
-        private readonly repository: ISchedulingRepository,
-        private readonly locks: ISchedulingLocks,
-        private readonly httpClient: ISchedulingHTTPClient,
-        private readonly messageProducer: IMessageProducer,
-        private readonly TIME_ZONE: string,
-        private readonly TIMEOUT_MS_LOCK_ACQUIRED: number,
-        private readonly MIN_DURATION_MS_TASK: number,
-    ) {}
+        logger: ILogger,
+        repository: ISchedulingRepository,
+        locks: ISchedulingLocks,
+        httpClient: ISchedulingHTTPClient,
+        messageProducer: IMessageProducer,
+        TIME_ZONE: string,
+        TIMEOUT_MS_LOCK_ACQUIRED: number,
+        MIN_DURATION_MS_TASK: number,
+    ) {
+        this.logger = logger;
+        this.repository = repository;
+        this.locks = locks;
+        this.httpClient = httpClient;
+        this.messageProducer = messageProducer;
+        this.TIME_ZONE = TIME_ZONE;
+        this.TIMEOUT_MS_LOCK_ACQUIRED = TIMEOUT_MS_LOCK_ACQUIRED;
+        this.MIN_DURATION_MS_TASK = MIN_DURATION_MS_TASK;
 
-    private readonly cronJobs: Map<string, CronJob> = new Map<string, CronJob>();
-
-    /* END PROPERTIES */
+        this.cronJobs = new Map<string, CronJob>();
+    }
 
     // TODO: order.
     async init(): Promise<void> {
@@ -72,7 +95,7 @@ export class SchedulingAggregate {
                 true,
                 this.TIME_ZONE,
                 this /* Context. */));
-        })
+        });
     }
 
     async createReminder(reminder: Reminder): Promise<string> {
@@ -101,16 +124,44 @@ export class SchedulingAggregate {
 
     // TODO.
     private validateReminder(reminder: Reminder): void {
-        // TODO: is this ok to do?
+        // Check if the essential properties are present.
+        if (reminder.time === undefined
+            || reminder.taskType === undefined
+            || (reminder.httpPostTaskDetails?.url === undefined
+                && reminder.eventTaskDetails?.topic === undefined)) {
+            throw new MissingReminderPropertiesOrTaskDetailsError();
+        }
+        // id.
+        if (reminder.id !== undefined
+            && reminder.id !== null
+            && typeof reminder.id != "string") {
+            throw new InvalidReminderIdTypeError();
+        }
+        // time.
+        if (typeof reminder.time != "string") {
+            throw new InvalidReminderTimeTypeError();
+        }
         try {
-            new CronTime(reminder.time);
-        } catch (e: unknown) { // TODO: specify a type.
+            new CronTime(reminder.time); // TODO: check Date.
+        } catch (e: unknown) {
             // this.logger.debug(typeof e); // object.
             throw new InvalidReminderTimeError();
         }
         // taskType.
+        if (typeof reminder.taskType != "number") { // TODO: number? ReminderTaskType?
+            throw new InvalidReminderTaskTypeTypeError();
+        }
         if (!Object.values(ReminderTaskType).includes(reminder.taskType)) {
             throw new InvalidReminderTaskTypeError();
+        }
+        // TaskDetails.
+        if (typeof reminder.httpPostTaskDetails?.url != "string"
+            && typeof reminder.eventTaskDetails?.topic != "string") {
+            throw new InvalidReminderTaskDetailsTypeError();
+        }
+        // If the id is undefined or null, change it to "". TODO.
+        if (typeof reminder.id != "string") {
+            reminder.id = "";
         }
     }
 
@@ -158,17 +209,25 @@ export class SchedulingAggregate {
     async deleteReminder(reminderId: string): Promise<void> {
         // TODO: order.
         this.cronJobs.get(reminderId)?.stop();
+        // TODO: 1st get the reminder, continue if exists
         await this.repository.deleteReminder(reminderId);
         this.cronJobs.delete(reminderId);
     }
 
     async deleteReminders(): Promise<void> {
         // TODO: order; deleteReminders in the repo? return ignored.
-        this.cronJobs.forEach(async (cronJob: CronJob, reminderId: string, map: Map<string, CronJob>) => {
+        for (const id of this.cronJobs.keys()) {
+            const job = this.cronJobs.get(id);
+            if (!job) continue;
+            job.stop();
+            // map.delete(reminderId);
+            await this.repository.deleteReminder(id);
+        }
+        /*this.cronJobs.forEach(async (cronJob: CronJob, reminderId: string, map: Map<string, CronJob>) => {
             cronJob.stop();
             // map.delete(reminderId);
             await this.repository.deleteReminder(reminderId);
-        });
+        });*/
         this.cronJobs.clear();
     }
 
