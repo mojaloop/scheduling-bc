@@ -14,7 +14,7 @@ const schedulingClient: SchedulingClient = new SchedulingClient(
     URL_REMINDERS
 );
 
-// TODO: are tests run sequentially? file structure; how many tests?
+// TODO: are the tests run sequentially? file structure; how many tests?
 describe("TestGroup", () => {
     beforeAll(async () => {
         await schedulingClient.deleteReminders();

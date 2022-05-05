@@ -2,12 +2,10 @@ import axios, {AxiosInstance, AxiosResponse} from "axios";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {Reminder} from "../../dist/domain/types";
 
-// TODO: axios?
+// TODO: Axios?
 export class SchedulingClient {
     // Properties received through the constructor.
     private readonly logger: ILogger;
-    private readonly TIMEOUT_MS_HTTP_REQUEST: number;
-    private readonly URL_REMINDERS: string;
     // Other properties.
     private readonly httpClient: AxiosInstance; // TODO: type?
 
@@ -17,17 +15,19 @@ export class SchedulingClient {
         URL_REMINDERS: string
     ) {
         this.logger = logger;
-        this.TIMEOUT_MS_HTTP_REQUEST = TIMEOUT_MS_HTTP_REQUEST;
-        this.URL_REMINDERS = URL_REMINDERS;
 
         this.httpClient = axios.create({
-            timeout: this.TIMEOUT_MS_HTTP_REQUEST,
+            baseURL: URL_REMINDERS,
+            timeout: TIMEOUT_MS_HTTP_REQUEST,
         });
     }
 
     async getReminders(): Promise<number> { // TODO.
         try {
-            const res: AxiosResponse<any> = await this.httpClient.get(this.URL_REMINDERS); // TODO: errors thrown.
+            // Axios throws if: TODO.
+            // - the server is unreachable;
+            // - the status code falls out of the 2xx range.
+            const res: AxiosResponse<any> = await this.httpClient.get("/");
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
@@ -37,7 +37,7 @@ export class SchedulingClient {
 
     async getReminder(reminderId: string): Promise<number> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.get(this.URL_REMINDERS + "/" + reminderId);
+            const res: AxiosResponse<any> = await this.httpClient.get(`/${reminderId}`);
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
@@ -48,7 +48,7 @@ export class SchedulingClient {
     async createReminder(reminder: Reminder): Promise<number> {
         try {
             const res: AxiosResponse<any> = await this.httpClient.post(
-                this.URL_REMINDERS,
+                "/",
                 reminder);
             return res.status;
         } catch (e: unknown) {
@@ -59,7 +59,7 @@ export class SchedulingClient {
 
     async deleteReminder(reminderId: string): Promise<number> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.delete(this.URL_REMINDERS + "/" + reminderId);
+            const res: AxiosResponse<any> = await this.httpClient.delete(`/${reminderId}`);
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
@@ -69,7 +69,7 @@ export class SchedulingClient {
 
     async deleteReminders(): Promise<number> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.delete(this.URL_REMINDERS);
+            const res: AxiosResponse<any> = await this.httpClient.delete("/");
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
