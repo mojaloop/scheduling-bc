@@ -19,12 +19,12 @@ describe("TestGroup", () => {
     beforeAll(async () => {
         await schedulingClient.deleteReminders();
     });
-    beforeEach(async () => {
+    /*beforeEach(async () => {
     });
     afterEach(async () => {
     });
     afterAll(async () => {
-    });
+    });*/
 
     test("get reminders", async () => {
         const statusCodeResponse: number = await schedulingClient.getReminders();
