@@ -2,14 +2,14 @@
 
 import {ISchedulingHTTPClient} from "../domain/ischeduling_http_client";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import axios, {AxiosResponse} from "axios";
+import axios, {AxiosInstance, AxiosResponse} from "axios";
 
 export class AxiosSchedulingHTTPClient implements ISchedulingHTTPClient {
     // Properties received through the constructor.
     private readonly logger: ILogger;
     private readonly TIMEOUT_MS_HTTP_REQUEST: number;
     // Other properties.
-    private readonly httpClient;
+    private readonly httpClient: AxiosInstance; // TODO: type.
 
     constructor(
         logger: ILogger,
