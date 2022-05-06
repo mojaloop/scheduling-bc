@@ -5,7 +5,7 @@ import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {Reminder} from "../../dist/domain/types";
 
 const TIMEOUT_MS_HTTP_REQUEST: number = 10_000;
-const URL_REMINDERS: string = "localhost:1234/reminders";
+const URL_REMINDERS: string = "http://localhost:1234/reminders";
 
 const logger: ILogger = new ConsoleLogger();
 const schedulingClient: SchedulingClient = new SchedulingClient(

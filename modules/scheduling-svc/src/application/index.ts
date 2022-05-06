@@ -40,7 +40,6 @@ import {ISchedulingLocks} from "../domain/ischeduling_locks";
 import {MLKafkaProducer} from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
 import {AxiosSchedulingHTTPClient} from "../infrastructure/axios_http_client";
 import {ExpressRoutes} from "./express_routes";
-import * as core from "express-serve-static-core";
 
 /* Constants. */
 const NAME_SERVICE = "scheduling";
@@ -111,7 +110,7 @@ const schedulingAggregate: SchedulingAggregate = new SchedulingAggregate(
     MIN_DURATION_MS_TASK
 );
 // Express.
-const app: core.Express = express(); // TODO: type.
+const app: express.Express = express(); // TODO: type.
 const routes: ExpressRoutes = new ExpressRoutes(
     logger,
     schedulingAggregate
@@ -120,12 +119,6 @@ const routes: ExpressRoutes = new ExpressRoutes(
 function setUpExpress() {
     app.use(express.json()); // For parsing application/json.
     app.use(express.urlencoded({extended: true})); // For parsing application/x-www-form-urlencoded.
-    setUpRoutes(); // TODO.
-}
-
-// TODO.
-function setUpRoutes() {
-    routes.setUpRoutes();
     app.use(URL_SERVER_PATH_REMINDERS, routes.router);
 }
 
@@ -142,8 +135,7 @@ async function start(): Promise<void> {
 
 async function handleIntAndTermSignals(signal: NodeJS.Signals): Promise<void> {
     logger.info(`${NAME_SERVICE} - ${signal} received, cleaning up...`);
-    await messageProducer.destroy();
-    // TODO: close dependencies.
+    await messageProducer.destroy(); // TODO: close dependencies.
     process.exit();
 }
 

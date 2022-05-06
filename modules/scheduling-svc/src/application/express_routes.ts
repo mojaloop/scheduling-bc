@@ -1,6 +1,6 @@
 "use strict";
 
-import express, {Router} from "express"; // TODO.
+import express from "express"; // TODO.
 import {
     InvalidReminderIdTypeError,
     InvalidReminderTaskDetailsTypeError, InvalidReminderTaskTypeError,
@@ -19,7 +19,7 @@ export class ExpressRoutes {
     private readonly logger: ILogger;
     private readonly schedulingAggregate: SchedulingAggregate;
     // Other properties.
-    private readonly _router: Router; // TODO: type.
+    private readonly _router: express.Router; // TODO: type.
 
     constructor(
         logger: ILogger,
@@ -29,6 +29,8 @@ export class ExpressRoutes {
         this.schedulingAggregate = schedulingAggregate;
 
         this._router = express.Router();
+
+        this.setUpRoutes();
     }
 
     // TODO: async? should this be called in the constructor?

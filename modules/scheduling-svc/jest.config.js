@@ -3,7 +3,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  collectCoverage: false,
+  collectCoverage: true,
   collectCoverageFrom: ['./src/**/*.ts'],
   coverageReporters: ['json', 'lcov'],
   clearMocks: true
