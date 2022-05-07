@@ -98,6 +98,12 @@ export class SchedulingAggregate {
         });
     }
 
+    // TODO: name.
+    async terminate(): Promise<void> {
+        await this.repository.terminate();
+        await this.messageProducer.destroy();
+    }
+
     async createReminder(reminder: Reminder): Promise<string> {
         this.validateReminder(reminder);
         if (reminder.id === "") {

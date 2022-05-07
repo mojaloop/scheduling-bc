@@ -187,34 +187,4 @@ export class ExpressRoutes {
             message: message
         });
     }
-
-    private validateBodyReminder(body: any): void { // TODO: ReqBody type.
-        // Check if the essential properties are present.
-        if (body.time === undefined
-            || body.taskType === undefined
-            || (body.httpPostTaskDetails?.url === undefined
-                && body.eventTaskDetails?.topic === undefined)) {
-            throw new MissingReminderPropertiesOrTaskDetailsError();
-        }
-        // id.
-        if (body.id !== undefined
-            && body.id !== null
-            && typeof body.id != "string") {
-            throw new InvalidReminderIdTypeError();
-        }
-        // time.
-        if (typeof body.time != "string"
-            && !(body.time instanceof Date)) { // TODO: does Date make sense?
-            throw new InvalidReminderTimeTypeError();
-        }
-        // taskType.
-        if (typeof body.taskType != "number") { // TODO: number? ReminderTaskType?
-            throw new InvalidReminderTaskTypeTypeError();
-        }
-        // TaskDetails.
-        if (typeof body.httpPostTaskDetails?.url != "string"
-            && typeof body.eventTaskDetails?.topic != "string") {
-            throw new InvalidReminderTaskDetailsTypeError();
-        }
-    }
 }

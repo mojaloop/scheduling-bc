@@ -30,6 +30,8 @@
 
 "use strict";
 
+/* eslint-disable @typescript-eslint/no-inferrable-types */
+
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import express from "express";
 import {SchedulingAggregate} from "../domain/scheduling_aggregate";
@@ -40,39 +42,41 @@ import {ISchedulingLocks} from "../domain/ischeduling_locks";
 import {MLKafkaProducer} from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
 import {AxiosSchedulingHTTPClient} from "../infrastructure/axios_http_client";
 import {ExpressRoutes} from "./express_routes";
+import {ISchedulingHTTPClient} from "../domain/ischeduling_http_client";
+import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
 
 /* Constants. */
-const NAME_SERVICE = "scheduling";
+const NAME_SERVICE: string = "scheduling";
 // Server.
-const HOST_SERVER = process.env.SCHEDULER_HOST_SERVER || "localhost";
-const PORT_NO_SERVER = process.env.SCHEDULER_PORT_NO_SERVER || 1234;
-const URL_SERVER_BASE = `http://${HOST_SERVER}:${PORT_NO_SERVER}`;
-const URL_SERVER_PATH_REMINDERS = "/reminders";
+const HOST_SERVER: string = process.env.SCHEDULER_HOST_SERVER || "localhost";
+const PORT_NO_SERVER = process.env.SCHEDULER_PORT_NO_SERVER || "1234"; // TODO: type.
+const URL_SERVER_BASE: string = `http://${HOST_SERVER}:${PORT_NO_SERVER}`;
+const URL_SERVER_PATH_REMINDERS: string = "/reminders";
 // Repository.
-const HOST_REPO = process.env.SCHEDULER_HOST_REPO || "localhost";
-const PORT_NO_REPO = process.env.SCHEDULER_PORT_NO_REPO || 27017;
-const URL_REPO = `mongodb://${HOST_REPO}:${PORT_NO_REPO}`;
-const NAME_DB = "scheduling";
-const NAME_COLLECTION = "reminders";
+const HOST_REPO: string = process.env.SCHEDULER_HOST_REPO || "localhost";
+const PORT_NO_REPO = process.env.SCHEDULER_PORT_NO_REPO || 27017; // TODO: type.
+const URL_REPO: string = `mongodb://${HOST_REPO}:${PORT_NO_REPO}`;
+const NAME_DB: string = "scheduling";
+const NAME_COLLECTION: string = "reminders";
 // Locks.
-const HOST_LOCKS = process.env.SCHEDULER_HOST_LOCKS || "localhost";
-const MAX_LOCK_SPINS = 10; // Max number of attempts to acquire a lock. TODO.
-const CLOCK_DRIFT_FACTOR = 0.01;
+const HOST_LOCKS: string = process.env.SCHEDULER_HOST_LOCKS || "localhost";
+const MAX_LOCK_SPINS: number = 10; // Max number of attempts to acquire a lock. TODO.
+const CLOCK_DRIFT_FACTOR: number = 0.01;
 // Message producer.
-const HOST_MESSAGE_BROKER = process.env.SCHEDULER_HOST_MESSAGE_BROKER || "localhost";
-const PORT_NO_MESSAGE_BROKER = process.env.SCHEDULER_PORT_NO_MESSAGE_BROKER || 9092;
-const URL_MESSAGE_BROKER = `${HOST_MESSAGE_BROKER}:${PORT_NO_MESSAGE_BROKER}`; // TODO: name.
-const ID_MESSAGE_PRODUCER = NAME_SERVICE; // TODO: name.
+const HOST_MESSAGE_BROKER: string = process.env.SCHEDULER_HOST_MESSAGE_BROKER || "localhost";
+const PORT_NO_MESSAGE_BROKER = process.env.SCHEDULER_PORT_NO_MESSAGE_BROKER || 9092; // TODO: type.
+const URL_MESSAGE_BROKER: string = `${HOST_MESSAGE_BROKER}:${PORT_NO_MESSAGE_BROKER}`; // TODO: name.
+const ID_MESSAGE_PRODUCER: string = NAME_SERVICE; // TODO: name.
 // Time.
-const TIME_ZONE = "UTC";
-const TIMEOUT_MS_REPO_OPERATIONS = 10_000; // TODO.
-const DELAY_MS_LOCK_SPINS = 200; // Time between acquire attempts. TODO.
-const DELAY_MS_LOCK_SPINS_JITTER = 200; // TODO.
-const THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION = 500; // TODO.
-const TIMEOUT_MS_LOCK_ACQUIRED = 30_000; // TODO.
-const MIN_DURATION_MS_TASK = 2_000; // TODO.
-const TIMEOUT_MS_HTTP_REQUEST = 10_000; // TODO.
-const TIMEOUT_MS_EVENT = 10_000; // TODO.
+const TIME_ZONE: string = "UTC";
+const TIMEOUT_MS_REPO_OPERATIONS: number = 10_000; // TODO.
+const DELAY_MS_LOCK_SPINS: number = 200; // Time between acquire attempts. TODO.
+const DELAY_MS_LOCK_SPINS_JITTER: number = 200; // TODO.
+const THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION: number = 500; // TODO.
+const TIMEOUT_MS_LOCK_ACQUIRED: number = 30_000; // TODO.
+const MIN_DURATION_MS_TASK: number = 2_000; // TODO.
+const TIMEOUT_MS_HTTP_REQUEST: number = 10_000; // TODO.
+const TIMEOUT_MS_EVENT: number = 10_000; // TODO.
 
 // Logger.
 const logger: ILogger = new ConsoleLogger();
@@ -94,12 +98,12 @@ const schedulingLocks: ISchedulingLocks = new RedisSchedulingLocks(
     THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION
 );
 // Domain.
-const httpClient = new AxiosSchedulingHTTPClient(logger, TIMEOUT_MS_HTTP_REQUEST);
-const messageProducer = new MLKafkaProducer({ // TODO: timeout.
+const httpClient: ISchedulingHTTPClient = new AxiosSchedulingHTTPClient(logger, TIMEOUT_MS_HTTP_REQUEST);
+const messageProducer: IMessageProducer = new MLKafkaProducer({ // TODO: type; timeout. AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
     kafkaBrokerList: URL_MESSAGE_BROKER,
     producerClientId: ID_MESSAGE_PRODUCER
 }, logger);
-const schedulingAggregate: SchedulingAggregate = new SchedulingAggregate(
+const schedulingAggregate: SchedulingAggregate = new SchedulingAggregate( // TODO: interface?
     logger,
     schedulingRepository,
     schedulingLocks,
@@ -111,7 +115,7 @@ const schedulingAggregate: SchedulingAggregate = new SchedulingAggregate(
 );
 // Express.
 const app: express.Express = express(); // TODO: type.
-const routes: ExpressRoutes = new ExpressRoutes(
+const routes: ExpressRoutes = new ExpressRoutes( // TODO: interface?
     logger,
     schedulingAggregate
 );
@@ -123,7 +127,7 @@ function setUpExpress() {
 }
 
 async function start(): Promise<void> {
-    await schedulingAggregate.init(); // The aggregate initializes all the dependencies. TODO.
+    await schedulingAggregate.init(); // The aggregate initializes all the dependencies.
     setUpExpress();
     app.listen(PORT_NO_SERVER, () => {
         logger.info("Server on.");
@@ -135,7 +139,7 @@ async function start(): Promise<void> {
 
 async function handleIntAndTermSignals(signal: NodeJS.Signals): Promise<void> {
     logger.info(`${NAME_SERVICE} - ${signal} received, cleaning up...`);
-    await messageProducer.destroy(); // TODO: close dependencies.
+    await schedulingAggregate.terminate(); // The aggregate terminates all the dependencies. TODO: just here?
     process.exit();
 }
 

@@ -3,9 +3,11 @@
 import {ISchedulingRepository} from "../domain/ischeduling_repository";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {Reminder} from "../domain/types";
-import {MongoClient, Collection, DeleteResult} from "mongodb";
-import {NoSuchReminderError} from "../domain/domain_errors";
+import {MongoClient, Collection, DeleteResult, InsertOneResult} from "mongodb";
 
+// TODO: verify the behavior of all mongo functions.
+// TODO: return booleans and throw errors in the aggregate? handle exceptions.
+// TODO: if domain errors can't be thrown in the infrastructure why can the domain types be used?
 export class MongoDBSchedulingRepository implements ISchedulingRepository {
     // Properties received through the constructor.
     private readonly logger: ILogger;
@@ -39,28 +41,38 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
         );
     }
 
-    async init(): Promise<void> {
-        await this.mongoClient.connect();
-        this.reminders = this.mongoClient.db(this.NAME_DB).collection(this.NAME_COLLECTION);
-        // await this.bootstrap();
+    async init(): Promise<boolean> {
+        try {
+            await this.mongoClient.connect(); // TODO: is there any way to check if this throws without testing?
+            this.reminders = this.mongoClient.db(this.NAME_DB).collection(this.NAME_COLLECTION);
+            // await this.bootstrap();
+            return true;
+        } catch (e: unknown) {
+            return false;
+        }
+    }
+
+    // TODO: name; necessary?
+    async terminate(): Promise<boolean> {
+        await this.mongoClient.close();
+        return true;
     }
 
     async reminderExists(reminderId: string): Promise<boolean> {
         return (await this.reminders.findOne({id: reminderId})) !== null;
     }
 
-    async storeReminder(reminder: Reminder): Promise<void> {
-        await this.reminders.insertOne(reminder);
+    async storeReminder(reminder: Reminder): Promise<boolean> {
+        const ret: InsertOneResult = await this.reminders.insertOne(reminder);
+        return ret.insertedId !== null;
     }
 
-    // TODO: verify.
-    async deleteReminder(reminderId: string): Promise<void> {
+    async deleteReminder(reminderId: string): Promise<boolean> {
         // deleteOne() doesn't throw if the item doesn't exist.
         const ret: DeleteResult = await this.reminders.deleteOne({id: reminderId});
         // ret.acknowledged is true whether the item exists or not.
-        if (ret.deletedCount === 0) {
-            throw new NoSuchReminderError();
-        }
+        return ret.deletedCount !== 0;
+
     }
 
     async getReminder(reminderId: string): Promise<Reminder> {
