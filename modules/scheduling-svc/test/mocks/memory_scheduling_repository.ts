@@ -2,42 +2,40 @@
 
 import {ISchedulingRepository} from "../../src/domain/interfaces_infrastructure/ischeduling_repository";
 import {Reminder} from "../../src/domain/types";
-import {NoSuchReminderError} from "../../src/domain/errors/errors_domain";
 
 export class MemorySchedulingRepository implements ISchedulingRepository {
-    constructor(
-        private readonly map: Map<string, Reminder>
-    ) {}
+    private readonly map: Map<string, Reminder>;
 
-    async init(): Promise<void> {
-        return;
+    constructor() {
+        this.map = new Map<string, Reminder>();
     }
 
-    async storeReminder(reminder: Reminder): Promise<void> {
-        this.map.set(reminder.id, reminder);
+    async init(): Promise<boolean> {
+        return true;
     }
 
-    async deleteReminder(reminderId: string): Promise<void> {
-        if (!this.map.delete(reminderId)) { // TODO: other ways to write this.
-            throw new NoSuchReminderError();
-        }
+    async destroy(): Promise<boolean> {
+        return true;
     }
 
     async reminderExists(reminderId: string): Promise<boolean> {
         return this.map.has(reminderId);
     }
 
-    async getReminder(reminderId:string): Promise<Reminder> {
-        // return this.map.get(reminderId) || null;
-        // TODO.
-        const reminder: Reminder | undefined = this.map.get(reminderId);
-        if (!reminder) {
-            throw new NoSuchReminderError();
-        }
-        return reminder;
+    async storeReminder(reminder: Reminder): Promise<boolean> {
+        this.map.set(reminder.id, reminder);
+        return true;
+    }
+
+    async deleteReminder(reminderId: string): Promise<boolean> {
+        return this.map.delete(reminderId);
     }
 
     async getReminders(): Promise<Reminder[]> {
-        return [...this.map.values()]; // TODO.
+        return [...this.map.values()];
+    }
+
+    async getReminder(reminderId: string): Promise<Reminder | null> {
+        return this.map.get(reminderId) || null; // TODO: Elvis operator.
     }
 }

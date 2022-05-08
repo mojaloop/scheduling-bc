@@ -92,6 +92,7 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
 
     /**
      * @returns true if the reminder was stored; false if the reminder wasn't stored.
+     * @note Allows for duplicates.
      */
     async storeReminder(reminder: Reminder): Promise<boolean> {
         // insertOne() throws if the repo is unreachable.

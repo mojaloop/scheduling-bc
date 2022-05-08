@@ -15,7 +15,7 @@ const schedulingClient: SchedulingClient = new SchedulingClient(
 );
 
 // TODO: are the tests run sequentially? file structure; how many tests?
-describe("TestGroup", () => {
+describe("integration tests", () => {
     beforeAll(async () => {
         await schedulingClient.deleteReminders();
     });
