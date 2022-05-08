@@ -8,6 +8,6 @@ export interface ISchedulingRepository {
     reminderExists(reminderId: string): Promise<boolean>;
     storeReminder(reminder: Reminder): Promise<boolean>;
     deleteReminder(reminderId: string): Promise<boolean>;
+    getReminders(): Promise<Reminder[]>;
     getReminder(reminderId: string): Promise<Reminder | null>;
-    getReminders(): Promise<Reminder[] | null>;
 }

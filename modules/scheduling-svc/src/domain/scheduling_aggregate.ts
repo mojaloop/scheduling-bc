@@ -41,8 +41,8 @@ import {
     InvalidReminderIdTypeError, InvalidReminderTaskDetailsTypeError,
     InvalidReminderTaskTypeError, InvalidReminderTaskTypeTypeError,
     InvalidReminderTimeError, InvalidReminderTimeTypeError,
-    MissingReminderPropertiesOrTaskDetailsError,
-    ReminderAlreadyExistsError, RepoUnreachableError
+    MissingReminderPropertiesOrTaskDetailsError, NoSuchReminderError,
+    ReminderAlreadyExistsError, UnableToDeleteReminderError, UnableToGetReminderError, UnableToGetRemindersError
 } from "./domain_errors";
 import {ISchedulingHTTPClient} from "./ischeduling_http_client";
 
@@ -85,10 +85,7 @@ export class SchedulingAggregate {
     async init(): Promise<boolean> {
         await this.messageProducer.connect();
         await this.repository.init();
-        const reminders: Reminder[] | null = await this.repository.getReminders();
-        if (reminders === null) {
-            return false;
-        }
+        const reminders: Reminder[] = await this.repository.getReminders();
         reminders.forEach((reminder: Reminder) => {
             this.cronJobs.set(reminder.id, new CronJob(
                 reminder.time,
@@ -176,7 +173,7 @@ export class SchedulingAggregate {
         }
     }
 
-    // TODO: timeout getReminder, comment.
+    // TODO: timeout getReminder.
     // This function takes at least MIN_DURATION_MS_TASK to execute.
     // Duration of getReminder() + duration of httpPost()/event() <= TIMEOUT_MS_LOCK_ACQUIRED.
     private async runReminderTask(reminderId: string): Promise<void> {
@@ -217,44 +214,52 @@ export class SchedulingAggregate {
         });
     }
 
+    async getReminders(): Promise<Reminder[]> {
+        try {
+            return await this.repository.getReminders();
+        } catch (e: unknown) {
+            throw new UnableToGetRemindersError();
+        }
+    }
+
+    async getReminder(reminderId: string): Promise<Reminder> {
+        try {
+            const reminder: Reminder | null = await this.repository.getReminder(reminderId);
+            if (reminder === null) {
+                throw new NoSuchReminderError(); // TODO.
+            }
+            return reminder;
+        } catch (e: unknown) {
+            if (e instanceof NoSuchReminderError) {
+                throw e;
+            } else {
+                throw new UnableToGetReminderError();
+            }
+        }
+    }
+
     async deleteReminder(reminderId: string): Promise<void> {
-        // TODO: order.
-        this.cronJobs.get(reminderId)?.stop();
-        // TODO: 1st get the reminder, continue if exists
-        await this.repository.deleteReminder(reminderId);
+        try {
+            const reminderDeleted: boolean = await this.repository.deleteReminder(reminderId);
+            if (!reminderDeleted) {
+                throw new NoSuchReminderError();
+            }
+        } catch (e: unknown) {
+            if (e instanceof NoSuchReminderError) {
+                throw e;
+            } else {
+                throw new UnableToDeleteReminderError();
+            }
+        }
+        const cronJob: CronJob | undefined = this.cronJobs.get(reminderId); // TODO: Elvis operator?
+        if (cronJob === undefined) {
+            return;
+        }
+        cronJob.stop();
         this.cronJobs.delete(reminderId);
     }
 
     async deleteReminders(): Promise<void> {
-        // TODO: order; deleteReminders in the repo? return ignored.
-        for (const id of this.cronJobs.keys()) {
-            const job = this.cronJobs.get(id);
-            if (!job) continue;
-            job.stop();
-            // map.delete(reminderId);
-            await this.repository.deleteReminder(id);
-        }
-        /*this.cronJobs.forEach(async (cronJob: CronJob, reminderId: string, map: Map<string, CronJob>) => {
-            cronJob.stop();
-            // map.delete(reminderId);
-            await this.repository.deleteReminder(reminderId);
-        });*/
-        this.cronJobs.clear();
-    }
-
-    async getReminder(reminderId: string): Promise<Reminder> {
-        const reminder: Reminder | null = await this.repository.getReminder(reminderId);
-        if (reminder === null) {
-            throw new RepoUnreachableError(); // TODO.
-        }
-        return reminder;
-    }
-
-    async getReminders(): Promise<Reminder[]> {
-        const reminders: Reminder[] | null = await this.repository.getReminders();
-        if (reminders === null) {
-            throw new RepoUnreachableError(); // TODO.
-        }
-        return reminders;
+        throw new Error("not implemented yet");
     }
 }

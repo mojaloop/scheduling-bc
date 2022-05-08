@@ -9,6 +9,8 @@ import {MongoClient, Collection, DeleteResult} from "mongodb";
 // TODO: return booleans and throw errors in the aggregate? handle exceptions.
 // TODO: if domain errors can't be thrown in the infrastructure why can the domain types be used?
 // TODO: type of the errors caught.
+// TODO: send errors?
+// TODO: is there any way to check if a function throws without testing?
 export class MongoDBSchedulingRepository implements ISchedulingRepository {
     // Properties received through the constructor.
     private readonly logger: ILogger;
@@ -42,78 +44,108 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
         );
     }
 
-    // ALMOST DONE.
+    /**
+     * @returns true if it was possible to connect to the repo; false if it wasn't possible to
+     * connect to the repo.
+     */
     async init(): Promise<boolean> {
+        // connect() throws if the repo is unreachable.
+        // connect() might throw for other reasons, not sure - the documentation is trash.
         try {
-            await this.mongoClient.connect(); // TODO: is there any way to check if this throws without testing?
-        } catch (e: unknown) { // The repo is unreachable.
+            await this.mongoClient.connect();
+        } catch (e: unknown) {
             return false;
         }
-        // The following doesn't throw if the repo is unreachable.
+        // The following doesn't throw if the repo is unreachable, nor if the db or collection don't exist.
         this.reminders = this.mongoClient.db(this.NAME_DB).collection(this.NAME_COLLECTION);
         return true;
     }
 
-    // ALMOST DONE.
-    // TODO: name.
-    async terminate(): Promise<boolean> {
+    /**
+     * @returns true.
+     */
+    async terminate(): Promise<boolean> { // TODO: name.
         await this.mongoClient.close(); // Doesn't throw if the repo is unreachable.
         return true;
     }
 
-    // ALMOST DONE.
+    /**
+     * @returns true if the reminder exists; false if the reminder doesn't exist.
+     * @throws an instance of Error if the operation failed - inconclusive.
+     */
     async reminderExists(reminderId: string): Promise<boolean> {
         // findOne() throws if the repo is unreachable.
         // findOne() doesn't throw if no item is found.
+        // findOne() might throw for other reasons, not sure - the documentation is trash.
         try {
             const reminder: any = await this.reminders.findOne({id: reminderId}); // TODO: type; findOne()?
             return reminder !== null;
-        } catch(e: unknown) { // The repo is unreachable.
-            return false;
+        } catch(e: unknown) {
+            throw new Error(); // TODO.
         }
     }
 
-    // ALMOST DONE.
+    /**
+     * @returns true if the reminder was stored; false if the reminder wasn't stored.
+     */
     async storeReminder(reminder: Reminder): Promise<boolean> {
         // insertOne() throws if the repo is unreachable.
         // insertOne() allows for duplicates.
+        // insertOne() might throw for other reasons, not sure - the documentation is trash.
         try {
-            const retInsertOne: any = await this.reminders.insertOne(reminder); // TODO: type.
-            return true; // TODO.
-        } catch (e: unknown) { // The repo is unreachable.
+            await this.reminders.insertOne(reminder); // TODO: type.
+            return true;
+        } catch (e: unknown) {
             return false;
         }
     }
 
-    // DONE.
+    /**
+     * @returns true if the reminder was deleted; false if the reminder wasn't deleted because it
+     * doesn't exist.
+     * @throws an instance of Error if the operation failed - the reminder wasn't deleted, but
+     * not because it doesn't exist.
+     */
     async deleteReminder(reminderId: string): Promise<boolean> {
         // deleteOne() throws if the repo is unreachable.
         // deleteOne() doesn't throw if the item doesn't exist.
+        // deleteOne() might throw for other reasons, not sure - the documentation is trash.
         try {
             const deleteResult: DeleteResult = await this.reminders.deleteOne({id: reminderId});
             // deleteResult.acknowledged is true whether the item exists or not.
             return deleteResult.deletedCount === 1;
-        } catch (e: unknown) { // The repo is unreachable.
-            return false;
+        } catch (e: unknown) {
+            throw new Error(); // TODO.
         }
     }
 
-    // ALMOST DONE.
+    /**
+     * @returns the reminder asked for, if it exists; null, if the reminder asked for doesn't
+     * exist.
+     * @throws an instance of Error if the operation failed - the reminder asked for might or
+     * might not exist.
+     */
     async getReminder(reminderId: string): Promise<Reminder | null> { // TODO: is this the way to specify null?
         // findOne() throws if the repo is unreachable.
         // findOne() doesn't throw if no item is found.
+        // findOne() might throw for other reasons, not sure - the documentation is trash.
         try {
             const reminder: any = await this.reminders.findOne({id: reminderId}); // TODO: type.
             return reminder as unknown as Reminder; // TODO.
-        } catch(e: unknown) { // The repo is unreachable.
-            return null;
+        } catch(e: unknown) {
+            throw new Error(); // TODO.
         }
     }
 
-    // ALMOST DONE.
-    async getReminders(): Promise<Reminder[] | null> {
+    /**
+     * @returns an array of Reminder, that can be empty.
+     * @throws an instance of Error if the operation failed - there might or might not exist
+     * reminders.
+     */
+    async getReminders(): Promise<Reminder[]> { // TODO: represent empty array.
         // find() throws if the repo is unreachable.
         // find() doesn't throw if no items are found.
+        // find() might throw for other reasons, not sure - the documentation is trash.
         try {
             const reminders: any = // TODO: type.
                 await this.reminders
@@ -122,8 +154,8 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
                         {projection: {_id: 0}}) // Don't return the _id field.
                     .toArray();
             return reminders as unknown as Reminder[]; // TODO.
-        } catch(e: unknown) { // The repo is unreachable.
-            return null;
+        } catch(e: unknown) {
+            throw new Error(); // TODO.
         }
     }
 }

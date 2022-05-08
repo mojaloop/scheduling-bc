@@ -3,11 +3,16 @@
 import express from "express"; // TODO.
 import {
     InvalidReminderIdTypeError,
-    InvalidReminderTaskDetailsTypeError, InvalidReminderTaskTypeError,
-    InvalidReminderTaskTypeTypeError, InvalidReminderTimeError,
+    InvalidReminderTaskDetailsTypeError,
+    InvalidReminderTaskTypeError,
+    InvalidReminderTaskTypeTypeError,
+    InvalidReminderTimeError,
     InvalidReminderTimeTypeError,
     MissingReminderPropertiesOrTaskDetailsError,
-    NoSuchReminderError, ReminderAlreadyExistsError, RepoUnreachableError
+    NoSuchReminderError,
+    ReminderAlreadyExistsError, UnableToDeleteReminderError,
+    UnableToGetReminderError,
+    UnableToGetRemindersError
 } from "../domain/domain_errors";
 import {Reminder} from "../domain/types";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
@@ -58,11 +63,11 @@ export class ExpressRoutes {
                 reminders: reminders
             });
         } catch (e: unknown) {
-            if (e instanceof RepoUnreachableError) {
+            if (e instanceof UnableToGetRemindersError) {
                 this.sendError(
                     res,
                     500,
-                    "repo unreachable");
+                    "unable to get reminders");
             } else {
                 this.sendError(
                     res,
@@ -85,11 +90,11 @@ export class ExpressRoutes {
                     res,
                     400,
                     "no such reminder");
-            } else if (e instanceof RepoUnreachableError) {
+            } else if (e instanceof UnableToGetReminderError) {
                 this.sendError(
                     res,
                     500,
-                    "repo unreachable");
+                    "unable to get reminder");
             } else {
                 this.sendError(
                     res,
@@ -169,6 +174,11 @@ export class ExpressRoutes {
                     res,
                     400,
                     "no such reminder");
+            } else if (e instanceof UnableToDeleteReminderError) {
+                this.sendError(
+                    res,
+                    500,
+                    "unable to delete reminder");
             } else {
                 this.sendError(
                     res,
