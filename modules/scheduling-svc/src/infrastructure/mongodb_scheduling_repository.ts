@@ -1,9 +1,14 @@
 "use strict";
 
-import {ISchedulingRepository} from "../domain/ischeduling_repository";
+import {ISchedulingRepository} from "../domain/interfaces_infrastructure/ischeduling_repository";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {Reminder} from "../domain/types";
 import {MongoClient, Collection, DeleteResult} from "mongodb";
+import {
+    UnableToDeleteReminderError,
+    UnableToGetReminderError,
+    UnableToGetRemindersError
+} from "../domain/errors/errors_scheduling_repository";
 
 // TODO: verify the behavior of all mongo functions.
 // TODO: return booleans and throw errors in the aggregate? handle exceptions.
@@ -64,7 +69,7 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
     /**
      * @returns true.
      */
-    async terminate(): Promise<boolean> { // TODO: name.
+    async destroy(): Promise<boolean> {
         await this.mongoClient.close(); // Doesn't throw if the repo is unreachable.
         return true;
     }
@@ -81,7 +86,7 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
             const reminder: any = await this.reminders.findOne({id: reminderId}); // TODO: type; findOne()?
             return reminder !== null;
         } catch(e: unknown) {
-            throw new Error(); // TODO.
+            throw new UnableToGetReminderError(); // TODO.
         }
     }
 
@@ -115,7 +120,7 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
             // deleteResult.acknowledged is true whether the item exists or not.
             return deleteResult.deletedCount === 1;
         } catch (e: unknown) {
-            throw new Error(); // TODO.
+            throw new UnableToDeleteReminderError(); // TODO.
         }
     }
 
@@ -133,7 +138,7 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
             const reminder: any = await this.reminders.findOne({id: reminderId}); // TODO: type.
             return reminder as unknown as Reminder; // TODO.
         } catch(e: unknown) {
-            throw new Error(); // TODO.
+            throw new UnableToGetReminderError(); // TODO.
         }
     }
 
@@ -155,7 +160,7 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
                     .toArray();
             return reminders as unknown as Reminder[]; // TODO.
         } catch(e: unknown) {
-            throw new Error(); // TODO.
+            throw new UnableToGetRemindersError(); // TODO.
         }
     }
 }

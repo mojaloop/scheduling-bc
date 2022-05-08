@@ -30,26 +30,26 @@
 
 "use strict";
 
-/* eslint-disable @typescript-eslint/no-inferrable-types */
+// TODO: prefix the file name with "scheduling"?
 
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import express from "express";
 import {SchedulingAggregate} from "../domain/scheduling_aggregate";
 import {MongoDBSchedulingRepository} from "../infrastructure/mongodb_scheduling_repository";
 import {RedisSchedulingLocks} from "../infrastructure/redis_scheduling_locks";
-import {ISchedulingRepository} from "../domain/ischeduling_repository";
-import {ISchedulingLocks} from "../domain/ischeduling_locks";
+import {ISchedulingRepository} from "../domain/interfaces_infrastructure/ischeduling_repository";
+import {ISchedulingLocks} from "../domain/interfaces_infrastructure/ischeduling_locks";
 import {MLKafkaProducer} from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
 import {AxiosSchedulingHTTPClient} from "../infrastructure/axios_http_client";
 import {ExpressRoutes} from "./express_routes";
-import {ISchedulingHTTPClient} from "../domain/ischeduling_http_client";
+import {ISchedulingHTTPClient} from "../domain/interfaces_infrastructure/ischeduling_http_client";
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
 
 /* Constants. */
 const NAME_SERVICE: string = "scheduling";
 // Server.
 const HOST_SERVER: string = process.env.SCHEDULER_HOST_SERVER || "localhost";
-const PORT_NO_SERVER = process.env.SCHEDULER_PORT_NO_SERVER || "1234"; // TODO: type.
+const PORT_NO_SERVER = process.env.SCHEDULER_PORT_NO_SERVER || 1234; // TODO: type.
 const URL_SERVER_BASE: string = `http://${HOST_SERVER}:${PORT_NO_SERVER}`;
 const URL_SERVER_PATH_REMINDERS: string = "/reminders";
 // Repository.
@@ -99,7 +99,7 @@ const schedulingLocks: ISchedulingLocks = new RedisSchedulingLocks(
 );
 // Domain.
 const httpClient: ISchedulingHTTPClient = new AxiosSchedulingHTTPClient(logger, TIMEOUT_MS_HTTP_REQUEST);
-const messageProducer: IMessageProducer = new MLKafkaProducer({ // TODO: type; timeout. AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+const messageProducer: IMessageProducer = new MLKafkaProducer({ // TODO: timeout.
     kafkaBrokerList: URL_MESSAGE_BROKER,
     producerClientId: ID_MESSAGE_PRODUCER
 }, logger);
@@ -114,8 +114,8 @@ const schedulingAggregate: SchedulingAggregate = new SchedulingAggregate( // TOD
     MIN_DURATION_MS_TASK
 );
 // Express.
-const app: express.Express = express(); // TODO: type.
-const routes: ExpressRoutes = new ExpressRoutes( // TODO: interface?
+const app: express.Express = express();
+const expressRoutes: ExpressRoutes = new ExpressRoutes(
     logger,
     schedulingAggregate
 );
@@ -123,7 +123,7 @@ const routes: ExpressRoutes = new ExpressRoutes( // TODO: interface?
 function setUpExpress() {
     app.use(express.json()); // For parsing application/json.
     app.use(express.urlencoded({extended: true})); // For parsing application/x-www-form-urlencoded.
-    app.use(URL_SERVER_PATH_REMINDERS, routes.router);
+    app.use(URL_SERVER_PATH_REMINDERS, expressRoutes.router);
 }
 
 async function start(): Promise<void> {
@@ -139,7 +139,7 @@ async function start(): Promise<void> {
 
 async function handleIntAndTermSignals(signal: NodeJS.Signals): Promise<void> {
     logger.info(`${NAME_SERVICE} - ${signal} received, cleaning up...`);
-    await schedulingAggregate.terminate(); // The aggregate terminates all the dependencies. TODO: just here?
+    await schedulingAggregate.destroy(); // The aggregate destroys all the dependencies.
     process.exit();
 }
 

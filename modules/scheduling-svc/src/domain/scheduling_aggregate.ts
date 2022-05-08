@@ -31,20 +31,14 @@
 "use strict";
 
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {ISchedulingRepository} from "./ischeduling_repository";
-import {ISchedulingLocks} from "./ischeduling_locks";
+import {ISchedulingRepository} from "./interfaces_infrastructure/ischeduling_repository";
+import {ISchedulingLocks} from "./interfaces_infrastructure/ischeduling_locks";
+import {ISchedulingHTTPClient} from "./interfaces_infrastructure/ischeduling_http_client";
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib"
 import {Reminder, ReminderTaskType} from "./types";
-import {CronJob, CronTime} from "cron";
+import {CronJob} from "cron";
 import * as uuid from "uuid";
-import {
-    InvalidReminderIdTypeError, InvalidReminderTaskDetailsTypeError,
-    InvalidReminderTaskTypeError, InvalidReminderTaskTypeTypeError,
-    InvalidReminderTimeError, InvalidReminderTimeTypeError,
-    MissingReminderPropertiesOrTaskDetailsError, NoSuchReminderError,
-    ReminderAlreadyExistsError, UnableToDeleteReminderError, UnableToGetReminderError, UnableToGetRemindersError
-} from "./domain_errors";
-import {ISchedulingHTTPClient} from "./ischeduling_http_client";
+import {ReminderAlreadyExistsError} from "./errors/errors_domain";
 
 export class SchedulingAggregate {
     // Properties received through the constructor.
@@ -82,7 +76,7 @@ export class SchedulingAggregate {
     }
 
     // TODO: order.
-    async init(): Promise<boolean> {
+    async init(): Promise<void> {
         await this.messageProducer.connect();
         await this.repository.init();
         const reminders: Reminder[] = await this.repository.getReminders();
@@ -97,17 +91,19 @@ export class SchedulingAggregate {
                 this.TIME_ZONE,
                 this /* Context. */));
         });
-        return true;
     }
 
-    // TODO: name.
-    async terminate(): Promise<void> {
-        await this.repository.terminate();
+    // TODO: order.
+    async destroy(): Promise<void> {
+        await this.repository.destroy();
         await this.messageProducer.destroy();
     }
 
     async createReminder(reminder: Reminder): Promise<string> {
-        this.validateReminder(reminder);
+        if (reminder.id === undefined || reminder.id === null) { // TODO.
+            reminder.id = "";
+        }
+        Reminder.validateReminder(reminder);
         if (reminder.id === "") {
             do {
                 reminder.id = uuid.v4();
@@ -128,49 +124,6 @@ export class SchedulingAggregate {
             this.TIME_ZONE,
             this /* Context. */));
         return reminder.id;
-    }
-
-    // TODO.
-    private validateReminder(reminder: Reminder): void {
-        // Check if the essential properties are present.
-        if (reminder.time === undefined
-            || reminder.taskType === undefined
-            || (reminder.httpPostTaskDetails?.url === undefined
-                && reminder.eventTaskDetails?.topic === undefined)) {
-            throw new MissingReminderPropertiesOrTaskDetailsError();
-        }
-        // id.
-        if (reminder.id !== undefined
-            && reminder.id !== null
-            && typeof reminder.id != "string") {
-            throw new InvalidReminderIdTypeError();
-        }
-        // time.
-        if (typeof reminder.time != "string") {
-            throw new InvalidReminderTimeTypeError();
-        }
-        try {
-            new CronTime(reminder.time); // TODO: check Date.
-        } catch (e: unknown) {
-            // this.logger.debug(typeof e); // object.
-            throw new InvalidReminderTimeError();
-        }
-        // taskType.
-        if (typeof reminder.taskType != "number") { // TODO: number? ReminderTaskType?
-            throw new InvalidReminderTaskTypeTypeError();
-        }
-        if (!Object.values(ReminderTaskType).includes(reminder.taskType)) {
-            throw new InvalidReminderTaskTypeError();
-        }
-        // TaskDetails.
-        if (typeof reminder.httpPostTaskDetails?.url != "string"
-            && typeof reminder.eventTaskDetails?.topic != "string") {
-            throw new InvalidReminderTaskDetailsTypeError();
-        }
-        // If the id is undefined or null, change it to "". TODO.
-        if (typeof reminder.id != "string") {
-            reminder.id = "";
-        }
     }
 
     // TODO: timeout getReminder.
@@ -204,7 +157,10 @@ export class SchedulingAggregate {
     }
 
     private async httpPost(reminder: Reminder): Promise<boolean> {
-        return await this.httpClient.post(reminder.httpPostTaskDetails?.url || "", reminder.payload); // TODO.
+        return await this.httpClient.post(
+            reminder.httpPostTaskDetails?.url || "", // TODO.
+            reminder.payload
+        );
     }
 
     private async event(reminder: Reminder): Promise<void> {
@@ -215,51 +171,38 @@ export class SchedulingAggregate {
     }
 
     async getReminders(): Promise<Reminder[]> {
-        try {
-            return await this.repository.getReminders();
-        } catch (e: unknown) {
-            throw new UnableToGetRemindersError();
-        }
+        return await this.repository.getReminders();
     }
 
-    async getReminder(reminderId: string): Promise<Reminder> {
-        try {
-            const reminder: Reminder | null = await this.repository.getReminder(reminderId);
-            if (reminder === null) {
-                throw new NoSuchReminderError(); // TODO.
-            }
-            return reminder;
-        } catch (e: unknown) {
-            if (e instanceof NoSuchReminderError) {
-                throw e;
-            } else {
-                throw new UnableToGetReminderError();
-            }
-        }
+    async getReminder(reminderId: string): Promise<Reminder | null> {
+        return await this.repository.getReminder(reminderId);
     }
 
-    async deleteReminder(reminderId: string): Promise<void> {
-        try {
-            const reminderDeleted: boolean = await this.repository.deleteReminder(reminderId);
-            if (!reminderDeleted) {
-                throw new NoSuchReminderError();
-            }
-        } catch (e: unknown) {
-            if (e instanceof NoSuchReminderError) {
-                throw e;
-            } else {
-                throw new UnableToDeleteReminderError();
-            }
+    async deleteReminder(reminderId: string): Promise<boolean> {
+        const reminderDeleted: boolean = await this.repository.deleteReminder(reminderId);
+        if (!reminderDeleted) {
+            return false;
         }
         const cronJob: CronJob | undefined = this.cronJobs.get(reminderId); // TODO: Elvis operator?
         if (cronJob === undefined) {
-            return;
+            return true;
         }
         cronJob.stop();
         this.cronJobs.delete(reminderId);
+        return true;
     }
 
     async deleteReminders(): Promise<void> {
-        throw new Error("not implemented yet");
+        for (const reminderId of this.cronJobs.keys()) { // TODO: of? this.cronJobs.keys()?
+            // The return value of deleteReminder() is ignored because the rest of the function is supposed to
+            // run even if the reminder wasn't deleted (because it doesn't exist in the repo).
+            await this.repository.deleteReminder(reminderId);
+            const cronJob: CronJob | undefined = this.cronJobs.get(reminderId); // TODO: Elvis operator?
+            if (cronJob === undefined) {
+                continue;
+            }
+            cronJob.stop();
+            this.cronJobs.delete(reminderId); // TODO: is this safe to do while iterating?
+        }
     }
 }

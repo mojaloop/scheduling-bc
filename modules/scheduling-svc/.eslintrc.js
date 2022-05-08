@@ -9,7 +9,7 @@ module.exports = {
   },
   ignorePatterns: ['**/*.d.ts', '**/*.js', '**/*.js.map'],
   rules: {
-
+    "@typescript-eslint/no-inferrable-types": ["off"]
   },
   overrides: [
     {

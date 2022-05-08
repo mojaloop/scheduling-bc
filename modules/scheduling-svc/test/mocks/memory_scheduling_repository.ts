@@ -1,8 +1,8 @@
 "use strict";
 
-import {ISchedulingRepository} from "../../src/domain/ischeduling_repository";
+import {ISchedulingRepository} from "../../src/domain/interfaces_infrastructure/ischeduling_repository";
 import {Reminder} from "../../src/domain/types";
-import {NoSuchReminderError} from "../../src/domain/domain_errors";
+import {NoSuchReminderError} from "../../src/domain/errors/errors_domain";
 
 export class MemorySchedulingRepository implements ISchedulingRepository {
     constructor(

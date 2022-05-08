@@ -1,10 +1,10 @@
 "use strict";
 
-import {Reminder} from "./types";
+import {Reminder} from "../types";
 
 export interface ISchedulingRepository {
     init(): Promise<boolean>;
-    terminate(): Promise<boolean>;
+    destroy(): Promise<boolean>;
     reminderExists(reminderId: string): Promise<boolean>;
     storeReminder(reminder: Reminder): Promise<boolean>;
     deleteReminder(reminderId: string): Promise<boolean>;

@@ -1,6 +1,6 @@
 "use strict";
 
-import {ISchedulingLocks} from "../domain/ischeduling_locks";
+import {ISchedulingLocks} from "../domain/interfaces_infrastructure/ischeduling_locks";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import Client from "ioredis";
 import Redlock, {Lock} from "redlock";
@@ -52,19 +52,22 @@ export class RedisSchedulingLocks implements ISchedulingLocks {
 
     async acquire(lockId: string, lockDurationMs: number): Promise<boolean> {
         try {
-            this.map.set(
-                lockId,
-                await this.redLock.acquire([lockId], lockDurationMs)
-            );
+            // acquire() throws if the lock can't be acquired.
+            const lock: Lock = await this.redLock.acquire([lockId], lockDurationMs);
+            this.map.set(lockId, lock);
             return true;
-        } catch (e: unknown) { // An exception is thrown if the lock can't be acquired.
-            this.logger.debug("unable to acquire the lock");
+        } catch (e: unknown) {
+            this.logger.debug(e);
             return false;
         }
     }
 
     async release(lockId: string): Promise<boolean> {
-        await this.map.get(lockId)?.release(); // TODO: ?.
+        const lock: Lock | undefined = this.map.get(lockId); // TODO: Elvis operator?
+        if (lock === undefined) {
+            return false;
+        }
+        await lock.release();
         return true;
     }
 }

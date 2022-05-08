@@ -1,3 +1,5 @@
+"use strict";
+
 import axios, {AxiosInstance, AxiosResponse} from "axios";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {Reminder} from "../../dist/domain/types";
@@ -21,13 +23,13 @@ export class SchedulingClient {
         });
     }
 
-    async getReminders(): Promise<number> { // TODO.
+    async getReminders(): Promise<number> {
         try {
             const res: AxiosResponse<any> = await this.httpClient.get("/");
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
-            return -1; // TODO.
+            return -1;
         }
     }
 

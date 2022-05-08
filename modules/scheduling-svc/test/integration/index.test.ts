@@ -28,7 +28,7 @@ describe("TestGroup", () => {
 
     test("get reminders", async () => {
         const statusCodeResponse: number = await schedulingClient.getReminders();
-        await expect(statusCodeResponse).toBe(200); // TODO.
+        await expect(statusCodeResponse).toBe(200);
     });
 
     test("get reminder", async () => {
