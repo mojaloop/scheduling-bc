@@ -7,7 +7,7 @@ import {
     InvalidReminderTaskTypeTypeError, InvalidReminderTimeError,
     InvalidReminderTimeTypeError,
     MissingReminderPropertiesOrTaskDetailsError,
-    NoSuchReminderError, ReminderAlreadyExistsError
+    NoSuchReminderError, ReminderAlreadyExistsError, RepoUnreachableError
 } from "../domain/domain_errors";
 import {Reminder} from "../domain/types";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
@@ -58,10 +58,17 @@ export class ExpressRoutes {
                 reminders: reminders
             });
         } catch (e: unknown) {
-            this.sendError(
-                res,
-                500,
-                "unknown error");
+            if (e instanceof RepoUnreachableError) {
+                this.sendError(
+                    res,
+                    500,
+                    "repo unreachable");
+            } else {
+                this.sendError(
+                    res,
+                    500,
+                    "unknown error");
+            }
         }
     }
 
@@ -78,6 +85,11 @@ export class ExpressRoutes {
                     res,
                     400,
                     "no such reminder");
+            } else if (e instanceof RepoUnreachableError) {
+                this.sendError(
+                    res,
+                    500,
+                    "repo unreachable");
             } else {
                 this.sendError(
                     res,

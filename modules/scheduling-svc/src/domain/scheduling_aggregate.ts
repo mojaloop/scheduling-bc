@@ -42,7 +42,7 @@ import {
     InvalidReminderTaskTypeError, InvalidReminderTaskTypeTypeError,
     InvalidReminderTimeError, InvalidReminderTimeTypeError,
     MissingReminderPropertiesOrTaskDetailsError,
-    ReminderAlreadyExistsError
+    ReminderAlreadyExistsError, RepoUnreachableError
 } from "./domain_errors";
 import {ISchedulingHTTPClient} from "./ischeduling_http_client";
 
@@ -82,10 +82,14 @@ export class SchedulingAggregate {
     }
 
     // TODO: order.
-    async init(): Promise<void> {
+    async init(): Promise<boolean> {
         await this.messageProducer.connect();
         await this.repository.init();
-        (await this.repository.getReminders()).forEach((reminder: Reminder) => {
+        const reminders: Reminder[] | null = await this.repository.getReminders();
+        if (reminders === null) {
+            return false;
+        }
+        reminders.forEach((reminder: Reminder) => {
             this.cronJobs.set(reminder.id, new CronJob(
                 reminder.time,
                 () => {
@@ -96,6 +100,7 @@ export class SchedulingAggregate {
                 this.TIME_ZONE,
                 this /* Context. */));
         });
+        return true;
     }
 
     // TODO: name.
@@ -237,11 +242,19 @@ export class SchedulingAggregate {
         this.cronJobs.clear();
     }
 
-    async getReminder(reminderId: string): Promise<Reminder> { // TODO: return type.
-        return await this.repository.getReminder(reminderId); // TODO: return await?
+    async getReminder(reminderId: string): Promise<Reminder> {
+        const reminder: Reminder | null = await this.repository.getReminder(reminderId);
+        if (reminder === null) {
+            throw new RepoUnreachableError(); // TODO.
+        }
+        return reminder;
     }
 
-    async getReminders(): Promise<Reminder[]> { // TODO: return type.
-        return await this.repository.getReminders(); // TODO: return await?
+    async getReminders(): Promise<Reminder[]> {
+        const reminders: Reminder[] | null = await this.repository.getReminders();
+        if (reminders === null) {
+            throw new RepoUnreachableError(); // TODO.
+        }
+        return reminders;
     }
 }

@@ -38,9 +38,9 @@ describe("TestGroup", () => {
 
     test("create reminder", async () => {
         // TODO.
-        /*const reminder: Reminder = new Reminder(
+        const reminder: Reminder = new Reminder(
             "a",
-            "*!/15 * * * * *",
+            "*/15 * * * * *",
             "",
             0,
             {
@@ -49,10 +49,10 @@ describe("TestGroup", () => {
             {
                 "topic": "test_topic"
             }
-        );*/
-        const reminder: Reminder = new Reminder();
+        );
+        /*const reminder: Reminder = new Reminder();
         reminder.id = "a";
-        reminder.time = "*/15 * * * * *";
+        reminder.time = "*!/15 * * * * *";
         reminder.payload = "";
         reminder.taskType = 0;
         reminder.httpPostTaskDetails = {
@@ -60,7 +60,7 @@ describe("TestGroup", () => {
         };
         reminder.eventTaskDetails = {
             "topic": "test_topic"
-        };
+        };*/
         const statusCodeResponse: number = await schedulingClient.createReminder(reminder);
         await expect(statusCodeResponse).toBe(200);
     });

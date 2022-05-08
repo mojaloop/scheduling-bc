@@ -4,6 +4,10 @@ import {ISchedulingHTTPClient} from "../domain/ischeduling_http_client";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import axios, {AxiosInstance, AxiosResponse} from "axios";
 
+// By default, Axios throws if:
+// - the server is unreachable;
+// - the status code falls out of the 2xx range. TODO: check 100.
+
 export class AxiosSchedulingHTTPClient implements ISchedulingHTTPClient {
     // Properties received through the constructor.
     private readonly logger: ILogger;

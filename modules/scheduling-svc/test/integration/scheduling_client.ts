@@ -2,7 +2,6 @@ import axios, {AxiosInstance, AxiosResponse} from "axios";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {Reminder} from "../../dist/domain/types";
 
-// TODO: Axios?
 export class SchedulingClient {
     // Properties received through the constructor.
     private readonly logger: ILogger;
@@ -24,9 +23,6 @@ export class SchedulingClient {
 
     async getReminders(): Promise<number> { // TODO.
         try {
-            // Axios throws if: TODO.
-            // - the server is unreachable;
-            // - the status code falls out of the 2xx range.
             const res: AxiosResponse<any> = await this.httpClient.get("/");
             return res.status;
         } catch (e: unknown) {
