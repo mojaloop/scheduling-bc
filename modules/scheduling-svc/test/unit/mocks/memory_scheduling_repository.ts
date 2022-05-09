@@ -40,12 +40,10 @@ export class MemorySchedulingRepository implements ISchedulingRepository {
         this.map = new Map<string, Reminder>();
     }
 
-    async init(): Promise<boolean> {
-        return true;
+    async init(): Promise<void> {
     }
 
-    async destroy(): Promise<boolean> {
-        return true;
+    async destroy(): Promise<void> {
     }
 
     async reminderExists(reminderId: string): Promise<boolean> {

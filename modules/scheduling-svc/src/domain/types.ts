@@ -72,7 +72,7 @@ export class Reminder {
         this.eventTaskDetails = eventTaskDetails;
     }
 
-    // TODO: check verifications.
+    // TODO.
     static validateReminder(reminder: Reminder): void {
         // Check if the essential properties are present.
         if (reminder.time === undefined

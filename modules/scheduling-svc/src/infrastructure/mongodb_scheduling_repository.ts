@@ -37,7 +37,7 @@ import {MongoClient, Collection, DeleteResult, InsertOneResult} from "mongodb";
 import {
     UnableToDeleteReminderError,
     UnableToGetReminderError,
-    UnableToGetRemindersError, UnableToInitRepoError
+    UnableToGetRemindersError, UnableToInitRepoError, UnableToStoreReminderError
 } from "../domain/errors/scheduling_repository_errors";
 
 // TODO:
@@ -110,15 +110,16 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
 
     /**
      * @returns true, if the reminder was stored; false, if the reminder wasn't stored.
+     * @throws an instance of UnableToStoreReminderError, if the operation failed.
      * @note Allows for duplicates.
      */
     async storeReminder(reminder: Reminder): Promise<boolean> {
         try {
             // insertOne() allows for duplicates.
-            const retInsertOne: InsertOneResult<any> = await this.reminders.insertOne(reminder); // TODO: type.
+            const retInsertOne: InsertOneResult<any> = await this.reminders.insertOne(reminder); // TODO: type; return value.
             return true;
         } catch (e: unknown) {
-            return false;
+            throw new UnableToStoreReminderError();
         }
     }
 
