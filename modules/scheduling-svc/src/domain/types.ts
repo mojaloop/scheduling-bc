@@ -42,7 +42,7 @@ import {CronTime} from "cron";
 
 export class Reminder {
     id: string;
-    time: string | Date;
+    time: string; // TODO: Date.
     payload: any;
     taskType: ReminderTaskType;
     httpPostTaskDetails: null | {
@@ -54,7 +54,7 @@ export class Reminder {
 
     constructor(
         id: string = "",
-        time: string | Date,
+        time: string,
         payload: any = null,
         taskType: ReminderTaskType,
         httpPostTaskDetails: null | {
@@ -72,7 +72,7 @@ export class Reminder {
         this.eventTaskDetails = eventTaskDetails;
     }
 
-    // TODO.
+    // TODO: check verifications.
     static validateReminder(reminder: Reminder): void {
         // Check if the essential properties are present.
         if (reminder.time === undefined
@@ -86,20 +86,19 @@ export class Reminder {
             throw new InvalidReminderIdTypeError();
         }
         // time.
-        if (typeof reminder.time != "string") { // TODO: Date.
+        if (typeof reminder.time != "string") {
             throw new InvalidReminderTimeTypeError();
         }
         try {
-            new CronTime(reminder.time); // TODO: check Date.
+            new CronTime(reminder.time);
         } catch (e: unknown) {
-            // this.logger.debug(typeof e); // object.
             throw new InvalidReminderTimeError();
         }
         // taskType.
-        if (typeof reminder.taskType != "number") { // TODO: number? ReminderTaskType?
+        if (typeof reminder.taskType != "string") {
             throw new InvalidReminderTaskTypeTypeError();
         }
-        if (!Object.values(ReminderTaskType).includes(reminder.taskType)) {
+        if (!(reminder.taskType in ReminderTaskType)) {
             throw new InvalidReminderTaskTypeError();
         }
         // TaskDetails.
@@ -111,6 +110,6 @@ export class Reminder {
 }
 
 export enum ReminderTaskType {
-    HTTP_POST,
-    EVENT // Kafka.
+    HTTP_POST = "HTTP_POST",
+    EVENT = "EVENT"
 }

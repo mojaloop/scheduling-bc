@@ -30,9 +30,6 @@
 
 "use strict";
 
-// TODO: rename to errors_aggregate?
-// TODO: license headers.
-
 export class MissingEssentialReminderPropertiesOrTaskDetailsError extends Error{}
 export class InvalidReminderIdTypeError extends Error{}
 export class InvalidReminderTimeTypeError extends Error{}

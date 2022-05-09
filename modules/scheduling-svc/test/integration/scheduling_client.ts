@@ -38,7 +38,7 @@ export class SchedulingClient {
     // Properties received through the constructor.
     private readonly logger: ILogger;
     // Other properties.
-    private readonly httpClient: AxiosInstance; // TODO: type?
+    private readonly httpClient: AxiosInstance;
 
     constructor(
         logger: ILogger,

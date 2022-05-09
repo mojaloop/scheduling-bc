@@ -38,7 +38,10 @@ import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-li
 import {Reminder, ReminderTaskType} from "./types";
 import {CronJob} from "cron";
 import * as uuid from "uuid";
-import {InvalidReminderIdTypeError, ReminderAlreadyExistsError} from "./errors/domain_errors";
+import {
+    InvalidReminderIdTypeError,
+    ReminderAlreadyExistsError
+} from "./errors/domain_errors";
 
 // TODO: check error handling.
 export class SchedulingAggregate {
@@ -76,11 +79,17 @@ export class SchedulingAggregate {
         this.cronJobs = new Map<string, CronJob>();
     }
 
-    // TODO: order.
     async init(): Promise<void> {
         await this.messageProducer.connect();
         await this.repository.init();
-        const reminders: Reminder[] = await this.repository.getReminders();
+        let reminders: Reminder[];
+        // TODO.
+        try {
+            reminders = await this.repository.getReminders();
+        } catch (e: unknown) {
+            this.logger.error(e);
+            throw e;
+        }
         reminders.forEach((reminder: Reminder) => {
             this.cronJobs.set(reminder.id, new CronJob(
                 reminder.time,
@@ -94,13 +103,14 @@ export class SchedulingAggregate {
         });
     }
 
-    // TODO: order.
     async destroy(): Promise<void> {
-        await this.repository.destroy();
         await this.messageProducer.destroy();
+        await this.repository.destroy();
     }
 
     async createReminder(reminder: Reminder): Promise<string> {
+        // To facilitate the creation of reminders, undefined/null ids are accepted and converted to empty strings
+        // (so that random UUIds are generated).
         if (reminder.id === undefined || reminder.id === null) { // TODO.
             reminder.id = "";
         }
@@ -168,7 +178,7 @@ export class SchedulingAggregate {
     private async sendHttpPost(reminder: Reminder): Promise<boolean> {
         try {
             return await this.httpClient.post(
-                reminder.httpPostTaskDetails?.url || "", // TODO.
+                reminder.httpPostTaskDetails?.url || "",
                 reminder.payload
             );
         } catch (e: unknown) {
@@ -186,8 +196,7 @@ export class SchedulingAggregate {
 
     async getReminders(): Promise<Reminder[]> {
         try {
-            const reminders: Reminder[] = await this.repository.getReminders();
-            return reminders;
+            return await this.repository.getReminders();
         } catch (e: unknown) {
             this.logger.error(e);
             throw new Error();
@@ -199,8 +208,7 @@ export class SchedulingAggregate {
             throw new InvalidReminderIdTypeError();
         }
         try {
-            const reminder: Reminder | null = await this.repository.getReminder(reminderId);
-            return reminder;
+            return  await this.repository.getReminder(reminderId);
         } catch (e: unknown) {
             this.logger.error(e);
             throw new Error();
@@ -222,7 +230,7 @@ export class SchedulingAggregate {
         if (!reminderDeleted) {
             return false;
         }
-        const cronJob: CronJob | undefined = this.cronJobs.get(reminderId); // TODO: Elvis operator?
+        const cronJob: CronJob | undefined = this.cronJobs.get(reminderId);
         if (cronJob === undefined) {
             return true;
         }
@@ -232,7 +240,7 @@ export class SchedulingAggregate {
     }
 
     async deleteReminders(): Promise<void> {
-        for (const reminderId of this.cronJobs.keys()) { // TODO: const? of? this.cronJobs.keys()?
+        for (const reminderId of this.cronJobs.keys()) { // TODO: const? of?
             try {
                 // TODO: place everything here or just the deleteReminder() call.
                 // The return value of deleteReminder() is ignored because the rest of the function is supposed to
@@ -242,12 +250,12 @@ export class SchedulingAggregate {
                 this.logger.error(e);
                 throw new Error();
             }
-            const cronJob: CronJob | undefined = this.cronJobs.get(reminderId); // TODO: Elvis operator?
+            const cronJob: CronJob | undefined = this.cronJobs.get(reminderId);
             if (cronJob === undefined) {
                 continue;
             }
             cronJob.stop();
-            this.cronJobs.delete(reminderId); // TODO: is this safe to do while iterating?
+            this.cronJobs.delete(reminderId);
         }
     }
 }

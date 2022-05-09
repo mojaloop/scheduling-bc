@@ -64,7 +64,6 @@ export class ExpressRoutes {
         this.setUpRoutes();
     }
 
-    // TODO: async? should this be called in the constructor?
     setUpRoutes(): void {
         // Gets.
         this._router.get("/", this.getReminders.bind(this));

@@ -30,8 +30,6 @@
 
 "use strict";
 
-// TODO: prefix the file name with "scheduling"?
-
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import express from "express";
 import {SchedulingAggregate} from "../domain/scheduling_aggregate";
@@ -48,24 +46,23 @@ import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-li
 /* Constants. */
 const NAME_SERVICE: string = "scheduling";
 // Server.
-const HOST_SERVER: string = process.env.SCHEDULER_HOST_SERVER || "localhost";
-const PORT_NO_SERVER_ENV = process.env.SCHEDULER_PORT_NO_SERVER; // TODO: type; name.
-const PORT_NO_SERVER = parseInt(PORT_NO_SERVER_ENV || "") || 1234;
+const HOST_SERVER: string = process.env.SCHEDULING_HOST_SERVER || "localhost";
+const PORT_NO_SERVER: number = parseInt(process.env.SCHEDULING_PORT_NO_SERVER || "") || 1234;
 const URL_SERVER_BASE: string = `http://${HOST_SERVER}:${PORT_NO_SERVER}`;
 const URL_SERVER_PATH_REMINDERS: string = "/reminders";
 // Repository.
-const HOST_REPO: string = process.env.SCHEDULER_HOST_REPO || "localhost";
-const PORT_NO_REPO = process.env.SCHEDULER_PORT_NO_REPO || 27017; // TODO: type.
+const HOST_REPO: string = process.env.SCHEDULING_HOST_REPO || "localhost";
+const PORT_NO_REPO: number = parseInt(process.env.SCHEDULING_PORT_NO_REPO || "") || 27017;
 const URL_REPO: string = `mongodb://${HOST_REPO}:${PORT_NO_REPO}`;
 const NAME_DB: string = "scheduling";
 const NAME_COLLECTION: string = "reminders";
 // Locks.
-const HOST_LOCKS: string = process.env.SCHEDULER_HOST_LOCKS || "localhost";
+const HOST_LOCKS: string = process.env.SCHEDULING_HOST_LOCKS || "localhost";
 const MAX_LOCK_SPINS: number = 10; // Max number of attempts to acquire a lock. TODO.
 const CLOCK_DRIFT_FACTOR: number = 0.01;
 // Message producer.
-const HOST_MESSAGE_BROKER: string = process.env.SCHEDULER_HOST_MESSAGE_BROKER || "localhost";
-const PORT_NO_MESSAGE_BROKER = process.env.SCHEDULER_PORT_NO_MESSAGE_BROKER || 9092; // TODO: type.
+const HOST_MESSAGE_BROKER: string = process.env.SCHEDULING_HOST_MESSAGE_BROKER || "localhost";
+const PORT_NO_MESSAGE_BROKER: number = parseInt(process.env.SCHEDULING_PORT_NO_MESSAGE_BROKER || "") || 9092;
 const URL_MESSAGE_BROKER: string = `${HOST_MESSAGE_BROKER}:${PORT_NO_MESSAGE_BROKER}`; // TODO: name.
 const ID_MESSAGE_PRODUCER: string = NAME_SERVICE; // TODO: name.
 // Time.
@@ -104,7 +101,7 @@ const messageProducer: IMessageProducer = new MLKafkaProducer({ // TODO: timeout
     kafkaBrokerList: URL_MESSAGE_BROKER,
     producerClientId: ID_MESSAGE_PRODUCER
 }, logger);
-const schedulingAggregate: SchedulingAggregate = new SchedulingAggregate( // TODO: interface? no
+const schedulingAggregate: SchedulingAggregate = new SchedulingAggregate(
     logger,
     schedulingRepository,
     schedulingLocks,
@@ -128,7 +125,7 @@ function setUpExpress() {
 }
 
 async function start(): Promise<void> {
-    await schedulingAggregate.init(); // The aggregate initializes all the dependencies.
+    await schedulingAggregate.init(); // The aggregate initializes all the dependencies. TODO: handle exception?
     setUpExpress();
     app.listen(PORT_NO_SERVER, () => {
         logger.info("Server on.");

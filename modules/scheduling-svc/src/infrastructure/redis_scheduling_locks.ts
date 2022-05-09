@@ -93,7 +93,7 @@ export class RedisSchedulingLocks implements ISchedulingLocks {
     }
 
     async release(lockId: string): Promise<boolean> {
-        const lock: Lock | undefined = this.map.get(lockId); // TODO: Elvis operator?
+        const lock: Lock | undefined = this.map.get(lockId);
         if (lock === undefined) {
             return false;
         }

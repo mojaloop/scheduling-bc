@@ -43,7 +43,7 @@ export class AxiosSchedulingHTTPClient implements ISchedulingHTTPClient {
     private readonly logger: ILogger;
     private readonly TIMEOUT_MS_HTTP_REQUEST: number;
     // Other properties.
-    private readonly httpClient: AxiosInstance; // TODO: type.
+    private readonly httpClient: AxiosInstance;
 
     constructor(
         logger: ILogger,

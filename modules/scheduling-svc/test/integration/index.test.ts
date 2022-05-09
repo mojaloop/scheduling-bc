@@ -32,7 +32,7 @@
 
 import {SchedulingClient} from "./scheduling_client";
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {Reminder} from "../../dist/domain/types";
+import {Reminder, ReminderTaskType} from "../../dist/domain/types";
 
 const TIMEOUT_MS_HTTP_REQUEST: number = 10_000;
 const URL_REMINDERS: string = "http://localhost:1234/reminders";
@@ -44,7 +44,7 @@ const schedulingClient: SchedulingClient = new SchedulingClient(
     URL_REMINDERS
 );
 
-// TODO: are the tests run sequentially? file structure; how many tests?
+// TODO: are the tests run sequentially? how many tests?
 describe("integration tests", () => {
     beforeAll(async () => {
         await schedulingClient.deleteReminders();
@@ -67,12 +67,11 @@ describe("integration tests", () => {
     });
 
     test("create reminder", async () => {
-        // TODO.
         const reminder: Reminder = new Reminder(
             "a",
             "*/15 * * * * *",
             "",
-            0,
+            ReminderTaskType.HTTP_POST,
             {
                 "url": "http://localhost:1111/"
             },
@@ -80,17 +79,6 @@ describe("integration tests", () => {
                 "topic": "test_topic"
             }
         );
-        /*const reminder: Reminder = new Reminder();
-        reminder.id = "a";
-        reminder.time = "*!/15 * * * * *";
-        reminder.payload = "";
-        reminder.taskType = 0;
-        reminder.httpPostTaskDetails = {
-            "url": "http://localhost:1111/"
-        };
-        reminder.eventTaskDetails = {
-            "topic": "test_topic"
-        };*/
         const statusCodeResponse: number = await schedulingClient.createReminder(reminder);
         await expect(statusCodeResponse).toBe(200);
     });
