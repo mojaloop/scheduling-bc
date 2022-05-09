@@ -32,7 +32,7 @@ export class MemorySchedulingRepository implements ISchedulingRepository {
     }
 
     async getReminders(): Promise<Reminder[]> {
-        return [...this.map.values()];
+        return [...this.map.values()]; // TODO.
     }
 
     async getReminder(reminderId: string): Promise<Reminder | null> {
