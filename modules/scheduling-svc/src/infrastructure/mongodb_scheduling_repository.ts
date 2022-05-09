@@ -37,15 +37,12 @@ import {MongoClient, Collection, DeleteResult, InsertOneResult} from "mongodb";
 import {
     UnableToDeleteReminderError,
     UnableToGetReminderError,
-    UnableToGetRemindersError
+    UnableToGetRemindersError, UnableToInitRepoError
 } from "../domain/errors/scheduling_repository_errors";
 
-// TODO: verify the behavior of all mongo functions.
-// TODO: return booleans and throw errors in the aggregate? handle exceptions.
-// TODO: if domain errors can't be thrown in the infrastructure why can the domain types be used?
-// TODO: type of the errors caught.
-// TODO: send errors?
-// TODO: is there any way to check if a function throws without testing?
+// TODO:
+//  - if domain errors can't be thrown in the infrastructure, why can domain types be used?
+//  - is there any way to know if a function throws without testing it?
 export class MongoDBSchedulingRepository implements ISchedulingRepository {
     // Properties received through the constructor.
     private readonly logger: ILogger;
@@ -80,33 +77,26 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
     }
 
     /**
-     * @returns true if it was possible to connect to the repo; false if it wasn't possible to
-     * connect to the repo.
+     * @throws an instance of UnableToInitRepoError, if the connection failed.
      */
-    async init(): Promise<boolean> {
-        // connect() throws if the repo is unreachable.
-        // connect() might throw for other reasons, not sure - the documentation is trash.
+    async init(): Promise<void> {
         try {
+            // connect() throws if the repo is unreachable.
             await this.mongoClient.connect();
         } catch (e: unknown) {
-            return false;
+            throw new UnableToInitRepoError(); // TODO.
         }
         // The following doesn't throw if the repo is unreachable, nor if the db or collection don't exist.
         this.reminders = this.mongoClient.db(this.NAME_DB).collection(this.NAME_COLLECTION);
-        return true;
     }
 
-    /**
-     * @returns true.
-     */
-    async destroy(): Promise<boolean> {
+    async destroy(): Promise<void> {
         await this.mongoClient.close(); // Doesn't throw if the repo is unreachable.
-        return true;
     }
 
     /**
-     * @returns true if the reminder exists; false if the reminder doesn't exist.
-     * @throws an instance of Error if the operation failed - inconclusive.
+     * @returns true, if the reminder exists; false, if the reminder doesn't exist.
+     * @throws an instance of UnableToGetReminderError, if the operation failed - inconclusive.
      */
     async reminderExists(reminderId: string): Promise<boolean> {
         try {
@@ -114,12 +104,12 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
             const reminder: any = await this.reminders.findOne({id: reminderId}); // TODO: type; findOne()?
             return reminder !== null;
         } catch(e: unknown) {
-            throw new UnableToGetReminderError(); // TODO.
+            throw new UnableToGetReminderError();
         }
     }
 
     /**
-     * @returns true if the reminder was stored; false if the reminder wasn't stored.
+     * @returns true, if the reminder was stored; false, if the reminder wasn't stored.
      * @note Allows for duplicates.
      */
     async storeReminder(reminder: Reminder): Promise<boolean> {
@@ -133,9 +123,8 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
     }
 
     /**
-     * @returns true if the reminder was deleted; false if the reminder wasn't deleted because it
-     * doesn't exist.
-     * @throws an instance of Error if the operation failed - the reminder wasn't deleted, but
+     * @returns true, if the reminder was deleted; false, if the reminder wasn't deleted, because it doesn't exist.
+     * @throws an instance of UnableToDeleteReminderError, if the operation failed - the reminder wasn't deleted, but
      * not because it doesn't exist.
      */
     async deleteReminder(reminderId: string): Promise<boolean> {
@@ -145,32 +134,31 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
             // deleteResult.acknowledged is true whether the item exists or not.
             return deleteResult.deletedCount === 1;
         } catch (e: unknown) {
-            throw new UnableToDeleteReminderError(); // TODO.
+            throw new UnableToDeleteReminderError();
         }
     }
 
     /**
-     * @returns the reminder asked for, if it exists; null, if the reminder asked for doesn't
-     * exist.
-     * @throws an instance of Error if the operation failed - the reminder asked for might or
-     * might not exist.
+     * @returns the reminder asked for, if it exists; null, if the reminder asked for doesn't exist.
+     * @throws an instance of UnableToGetReminderError, if the operation failed - the reminder asked for might or might
+     * not exist.
      */
-    async getReminder(reminderId: string): Promise<Reminder | null> { // TODO: is this the way to specify null?
+    async getReminder(reminderId: string): Promise<Reminder | null> {
         try {
             // findOne() doesn't throw if no item is found.
             const reminder: any = await this.reminders.findOne({id: reminderId}); // TODO: type.
             return reminder as unknown as Reminder; // TODO.
         } catch(e: unknown) {
-            throw new UnableToGetReminderError(); // TODO.
+            throw new UnableToGetReminderError();
         }
     }
 
     /**
      * @returns an array of Reminder, that can be empty.
-     * @throws an instance of Error if the operation failed - there might or might not exist
+     * @throws an instance of UnableToGetRemindersError, if the operation failed - there might or might not exist
      * reminders.
      */
-    async getReminders(): Promise<Reminder[]> { // TODO: represent empty array.
+    async getReminders(): Promise<Reminder[]> {
         try {
             // find() doesn't throw if no items are found.
             const reminders: any = // TODO: type.
@@ -181,7 +169,7 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
                     .toArray();
             return reminders as unknown as Reminder[]; // TODO.
         } catch(e: unknown) {
-            throw new UnableToGetRemindersError(); // TODO.
+            throw new UnableToGetRemindersError();
         }
     }
 }

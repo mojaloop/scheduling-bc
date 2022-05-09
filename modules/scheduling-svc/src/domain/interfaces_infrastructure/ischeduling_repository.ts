@@ -33,8 +33,8 @@
 import {Reminder} from "../types";
 
 export interface ISchedulingRepository {
-    init(): Promise<boolean>;
-    destroy(): Promise<boolean>;
+    init(): Promise<void>;
+    destroy(): Promise<void>;
     reminderExists(reminderId: string): Promise<boolean>;
     storeReminder(reminder: Reminder): Promise<boolean>;
     deleteReminder(reminderId: string): Promise<boolean>;

@@ -57,13 +57,14 @@ export class AxiosSchedulingHTTPClient implements ISchedulingHTTPClient {
         });
     }
 
+    // TODO: error handling here or on the aggregate?
     async post(url: string, payload: any): Promise<boolean> {
         // return Promise.resolve(false); // TODO.
         try {
             await this.httpClient.post(url, payload); // Return type: AxiosResponse<any>.
             return true;
         } catch (e: unknown) {
-            this.logger.debug(e);
+            this.logger.error(e);
             return false;
         }
     }

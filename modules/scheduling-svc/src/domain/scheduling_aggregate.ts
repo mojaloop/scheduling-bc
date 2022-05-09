@@ -80,11 +80,11 @@ export class SchedulingAggregate {
     }
 
     async init(): Promise<void> {
-        await this.messageProducer.connect();
-        await this.repository.init();
+        await this.messageProducer.connect(); // TODO: check errors.
         let reminders: Reminder[];
         // TODO.
         try {
+            await this.repository.init();
             reminders = await this.repository.getReminders();
         } catch (e: unknown) {
             this.logger.error(e);
@@ -145,7 +145,6 @@ export class SchedulingAggregate {
         return reminder.id;
     }
 
-    // TODO: timeout getReminder.
     // This function takes at least MIN_DURATION_MS_TASK to execute.
     // Duration of getReminder() + duration of httpPost()/event() <= TIMEOUT_MS_LOCK_ACQUIRED.
     private async runReminderTask(reminderId: string): Promise<void> {
@@ -154,7 +153,7 @@ export class SchedulingAggregate {
             return;
         }
         try {
-            const reminder = await this.repository.getReminder(reminderId);
+            const reminder: Reminder | null = await this.repository.getReminder(reminderId);
             if (reminder == null) {
                 return;
             }
@@ -166,28 +165,27 @@ export class SchedulingAggregate {
                     await this.sendEvent(reminder);
                     break;
             }
-            const elapsedTimeMs = Date.now() - startTime;
-            if (elapsedTimeMs < this.MIN_DURATION_MS_TASK) {
-                await new Promise(resolve => setTimeout(resolve, this.MIN_DURATION_MS_TASK - elapsedTimeMs));
+            const elapsedTime = Date.now() - startTime;
+            if (elapsedTime < this.MIN_DURATION_MS_TASK) {
+                await new Promise(resolve => setTimeout(resolve, this.MIN_DURATION_MS_TASK - elapsedTime));
             }
+        } catch (e: unknown) {
+            this.logger.error(e);
+            return; // TODO: throw?
         } finally {
             await this.locks.release(reminderId);
         }
     }
 
     private async sendHttpPost(reminder: Reminder): Promise<boolean> {
-        try {
-            return await this.httpClient.post(
-                reminder.httpPostTaskDetails?.url || "",
-                reminder.payload
-            );
-        } catch (e: unknown) {
-            this.logger.error(e);
-            return false;
-        }
+        return await this.httpClient.post(
+            reminder.httpPostTaskDetails?.url || "",
+            reminder.payload
+        );
     }
 
     private async sendEvent(reminder: Reminder): Promise<void> {
+        // TODO: check errors.
         await this.messageProducer.send({
             topic: reminder.eventTaskDetails?.topic,
             value: reminder.payload
@@ -208,7 +206,7 @@ export class SchedulingAggregate {
             throw new InvalidReminderIdTypeError();
         }
         try {
-            return  await this.repository.getReminder(reminderId);
+            return await this.repository.getReminder(reminderId);
         } catch (e: unknown) {
             this.logger.error(e);
             throw new Error();
@@ -227,12 +225,9 @@ export class SchedulingAggregate {
             this.logger.error(e);
             throw new Error();
         }
-        if (!reminderDeleted) {
-            return false;
-        }
         const cronJob: CronJob | undefined = this.cronJobs.get(reminderId);
         if (cronJob === undefined) {
-            return true;
+            return reminderDeleted;
         }
         cronJob.stop();
         this.cronJobs.delete(reminderId);
@@ -244,7 +239,7 @@ export class SchedulingAggregate {
             try {
                 // TODO: place everything here or just the deleteReminder() call.
                 // The return value of deleteReminder() is ignored because the rest of the function is supposed to
-                // run even if the reminder wasn't deleted (because it doesn't exist in the repo).
+                // run even if the reminder wasn't deleted.
                 await this.repository.deleteReminder(reminderId);
             } catch (e: unknown) {
                 this.logger.error(e);
