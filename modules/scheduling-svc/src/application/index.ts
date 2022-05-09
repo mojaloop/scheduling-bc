@@ -19,11 +19,11 @@
  their names indented and be marked with a '-'. Email address can be added
  optionally within square brackets <email>.
 
- * Gates Foundation
- - Name Surname <name.surname@gatesfoundation.com>
-
  * Crosslake
  - Pedro Sousa Barreto <pedrob@crosslaketech.com>
+
+ * Community
+ - Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
  ******/
@@ -49,7 +49,8 @@ import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-li
 const NAME_SERVICE: string = "scheduling";
 // Server.
 const HOST_SERVER: string = process.env.SCHEDULER_HOST_SERVER || "localhost";
-const PORT_NO_SERVER = process.env.SCHEDULER_PORT_NO_SERVER || 1234; // TODO: type.
+const PORT_NO_SERVER_ENV = process.env.SCHEDULER_PORT_NO_SERVER; // TODO: type; name.
+const PORT_NO_SERVER = parseInt(PORT_NO_SERVER_ENV || "") || 1234;
 const URL_SERVER_BASE: string = `http://${HOST_SERVER}:${PORT_NO_SERVER}`;
 const URL_SERVER_PATH_REMINDERS: string = "/reminders";
 // Repository.
@@ -103,7 +104,7 @@ const messageProducer: IMessageProducer = new MLKafkaProducer({ // TODO: timeout
     kafkaBrokerList: URL_MESSAGE_BROKER,
     producerClientId: ID_MESSAGE_PRODUCER
 }, logger);
-const schedulingAggregate: SchedulingAggregate = new SchedulingAggregate( // TODO: interface?
+const schedulingAggregate: SchedulingAggregate = new SchedulingAggregate( // TODO: interface? no
     logger,
     schedulingRepository,
     schedulingLocks,

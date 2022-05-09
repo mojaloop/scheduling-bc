@@ -9,17 +9,12 @@ import {
     InvalidReminderTimeError,
     InvalidReminderTimeTypeError, MissingEssentialReminderPropertiesOrTaskDetailsError,
     ReminderAlreadyExistsError
-} from "../domain/errors/errors_domain";
-import {
-    UnableToDeleteReminderError,
-    UnableToGetReminderError,
-    UnableToGetRemindersError
-} from "../domain/errors/errors_scheduling_repository";
+} from "../domain/errors/domain_errors";
 import {Reminder} from "../domain/types";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {SchedulingAggregate} from "../domain/scheduling_aggregate";
 
-// TODO: status codes.
+// TODO: check status codes.
 export class ExpressRoutes {
     // Properties received through the constructor.
     private readonly logger: ILogger;
@@ -64,40 +59,33 @@ export class ExpressRoutes {
                 reminders: reminders
             });
         } catch (e: unknown) {
-            if (e instanceof UnableToGetRemindersError) {
-                this.sendError(
-                    res,
-                    500,
-                    "unable to get reminders");
-            } else {
-                this.sendError(
-                    res,
-                    500,
-                    "unknown error");
-            }
+            this.sendError(
+                res,
+                500,
+                "unknown error");
         }
     }
 
     private async getReminder(req: express.Request, res: express.Response): Promise<void> {
         try {
             const reminder: Reminder | null = await this.schedulingAggregate.getReminder(req.params.reminderId);
-            if (reminder !== null) {
-                res.status(200).json({
-                    status: "ok",
-                    reminder: reminder
-                });
-            } else {
+            if (reminder === null) {
+                this.sendError(
+                    res,
+                    404,
+                    "no such reminder");
+                return;
+            }
+            res.status(200).json({
+                status: "ok",
+                reminder: reminder
+            });
+        } catch (e: unknown) {
+            if (e instanceof InvalidReminderIdTypeError) {
                 this.sendError(
                     res,
                     400,
-                    "no such reminder");
-            }
-        } catch (e: unknown) {
-            if (e instanceof UnableToGetReminderError) {
-                this.sendError(
-                    res,
-                    500,
-                    "unable to get reminder");
+                    "invalid reminder id type");
             } else {
                 this.sendError(
                     res,
@@ -167,23 +155,23 @@ export class ExpressRoutes {
     private async deleteReminder(req: express.Request, res: express.Response): Promise<void> {
         try {
             const reminderDeleted: boolean = await this.schedulingAggregate.deleteReminder(req.params.reminderId);
-             if (reminderDeleted) {
-                 res.status(200).json({
-                     status: "ok",
-                     message: "reminder deleted"
-                 });
-             } else {
+             if (!reminderDeleted) {
                  this.sendError(
                      res,
-                     400,
+                     404,
                      "no such reminder");
+                 return;
              }
+            res.status(200).json({
+                status: "ok",
+                message: "reminder deleted"
+            });
         } catch (e: unknown) {
-            if (e instanceof UnableToDeleteReminderError) {
+            if (e instanceof InvalidReminderIdTypeError) {
                 this.sendError(
                     res,
-                    500,
-                    "unable to delete reminder");
+                    400,
+                    "invalid reminder id type");
             } else {
                 this.sendError(
                     res,
@@ -201,17 +189,10 @@ export class ExpressRoutes {
                 message: "reminders deleted"
             });
         } catch (e: unknown) {
-            if (e instanceof UnableToDeleteReminderError) {
-                this.sendError(
-                    res,
-                    500,
-                    "unable to delete all reminders - some might have been deleted");
-            } else {
-                this.sendError(
-                    res,
-                    500,
-                    "unknown error");
-            }
+            this.sendError(
+                res,
+                500,
+                "unknown error");
         }
     }
 

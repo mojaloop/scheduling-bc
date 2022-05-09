@@ -3,12 +3,12 @@
 import {ISchedulingRepository} from "../domain/interfaces_infrastructure/ischeduling_repository";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {Reminder} from "../domain/types";
-import {MongoClient, Collection, DeleteResult} from "mongodb";
+import {MongoClient, Collection, DeleteResult, InsertOneResult} from "mongodb";
 import {
     UnableToDeleteReminderError,
     UnableToGetReminderError,
     UnableToGetRemindersError
-} from "../domain/errors/errors_scheduling_repository";
+} from "../domain/errors/scheduling_repository_errors";
 
 // TODO: verify the behavior of all mongo functions.
 // TODO: return booleans and throw errors in the aggregate? handle exceptions.
@@ -79,10 +79,8 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
      * @throws an instance of Error if the operation failed - inconclusive.
      */
     async reminderExists(reminderId: string): Promise<boolean> {
-        // findOne() throws if the repo is unreachable.
-        // findOne() doesn't throw if no item is found.
-        // findOne() might throw for other reasons, not sure - the documentation is trash.
         try {
+            // findOne() doesn't throw if no item is found.
             const reminder: any = await this.reminders.findOne({id: reminderId}); // TODO: type; findOne()?
             return reminder !== null;
         } catch(e: unknown) {
@@ -95,11 +93,9 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
      * @note Allows for duplicates.
      */
     async storeReminder(reminder: Reminder): Promise<boolean> {
-        // insertOne() throws if the repo is unreachable.
-        // insertOne() allows for duplicates.
-        // insertOne() might throw for other reasons, not sure - the documentation is trash.
         try {
-            await this.reminders.insertOne(reminder); // TODO: type.
+            // insertOne() allows for duplicates.
+            const retInsertOne: InsertOneResult<any> = await this.reminders.insertOne(reminder); // TODO: type.
             return true;
         } catch (e: unknown) {
             return false;
@@ -113,10 +109,8 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
      * not because it doesn't exist.
      */
     async deleteReminder(reminderId: string): Promise<boolean> {
-        // deleteOne() throws if the repo is unreachable.
-        // deleteOne() doesn't throw if the item doesn't exist.
-        // deleteOne() might throw for other reasons, not sure - the documentation is trash.
         try {
+            // deleteOne() doesn't throw if the item doesn't exist.
             const deleteResult: DeleteResult = await this.reminders.deleteOne({id: reminderId});
             // deleteResult.acknowledged is true whether the item exists or not.
             return deleteResult.deletedCount === 1;
@@ -132,10 +126,8 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
      * might not exist.
      */
     async getReminder(reminderId: string): Promise<Reminder | null> { // TODO: is this the way to specify null?
-        // findOne() throws if the repo is unreachable.
-        // findOne() doesn't throw if no item is found.
-        // findOne() might throw for other reasons, not sure - the documentation is trash.
         try {
+            // findOne() doesn't throw if no item is found.
             const reminder: any = await this.reminders.findOne({id: reminderId}); // TODO: type.
             return reminder as unknown as Reminder; // TODO.
         } catch(e: unknown) {
@@ -149,10 +141,8 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
      * reminders.
      */
     async getReminders(): Promise<Reminder[]> { // TODO: represent empty array.
-        // find() throws if the repo is unreachable.
-        // find() doesn't throw if no items are found.
-        // find() might throw for other reasons, not sure - the documentation is trash.
         try {
+            // find() doesn't throw if no items are found.
             const reminders: any = // TODO: type.
                 await this.reminders
                     .find(

@@ -38,8 +38,9 @@ import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-li
 import {Reminder, ReminderTaskType} from "./types";
 import {CronJob} from "cron";
 import * as uuid from "uuid";
-import {ReminderAlreadyExistsError} from "./errors/errors_domain";
+import {InvalidReminderIdTypeError, ReminderAlreadyExistsError} from "./errors/domain_errors";
 
+// TODO: check error handling.
 export class SchedulingAggregate {
     // Properties received through the constructor.
     private readonly logger: ILogger;
@@ -104,16 +105,24 @@ export class SchedulingAggregate {
             reminder.id = "";
         }
         Reminder.validateReminder(reminder);
-        if (reminder.id === "") {
-            do {
-                reminder.id = uuid.v4();
-            } while (await this.repository.reminderExists(reminder.id));
-        } else {
-            if (await this.repository.reminderExists(reminder.id)) {
-                throw new ReminderAlreadyExistsError();
+        try {
+            if (reminder.id === "") {
+                do {
+                    reminder.id = uuid.v4();
+                } while (await this.repository.reminderExists(reminder.id));
+            } else {
+                if (await this.repository.reminderExists(reminder.id)) {
+                    throw new ReminderAlreadyExistsError();
+                }
             }
+            await this.repository.storeReminder(reminder);
+        } catch (e: unknown) {
+            if (e instanceof ReminderAlreadyExistsError) {
+                throw e;
+            }
+            this.logger.error(e);
+            throw new Error();
         }
-        await this.repository.storeReminder(reminder);
         this.cronJobs.set(reminder.id, new CronJob(
             reminder.time,
             () => {
@@ -141,10 +150,10 @@ export class SchedulingAggregate {
             }
             switch (reminder.taskType) {
                 case ReminderTaskType.HTTP_POST:
-                    await this.httpPost(reminder);
+                    await this.sendHttpPost(reminder);
                     break;
                 case ReminderTaskType.EVENT:
-                    await this.event(reminder);
+                    await this.sendEvent(reminder);
                     break;
             }
             const elapsedTimeMs = Date.now() - startTime;
@@ -156,14 +165,19 @@ export class SchedulingAggregate {
         }
     }
 
-    private async httpPost(reminder: Reminder): Promise<boolean> {
-        return await this.httpClient.post(
-            reminder.httpPostTaskDetails?.url || "", // TODO.
-            reminder.payload
-        );
+    private async sendHttpPost(reminder: Reminder): Promise<boolean> {
+        try {
+            return await this.httpClient.post(
+                reminder.httpPostTaskDetails?.url || "", // TODO.
+                reminder.payload
+            );
+        } catch (e: unknown) {
+            this.logger.error(e);
+            return false;
+        }
     }
 
-    private async event(reminder: Reminder): Promise<void> {
+    private async sendEvent(reminder: Reminder): Promise<void> {
         await this.messageProducer.send({
             topic: reminder.eventTaskDetails?.topic,
             value: reminder.payload
@@ -171,15 +185,40 @@ export class SchedulingAggregate {
     }
 
     async getReminders(): Promise<Reminder[]> {
-        return await this.repository.getReminders();
+        try {
+            const reminders: Reminder[] = await this.repository.getReminders();
+            return reminders;
+        } catch (e: unknown) {
+            this.logger.error(e);
+            throw new Error();
+        }
     }
 
     async getReminder(reminderId: string): Promise<Reminder | null> {
-        return await this.repository.getReminder(reminderId);
+        if (typeof reminderId != "string") { // TODO.
+            throw new InvalidReminderIdTypeError();
+        }
+        try {
+            const reminder: Reminder | null = await this.repository.getReminder(reminderId);
+            return reminder;
+        } catch (e: unknown) {
+            this.logger.error(e);
+            throw new Error();
+        }
     }
 
     async deleteReminder(reminderId: string): Promise<boolean> {
-        const reminderDeleted: boolean = await this.repository.deleteReminder(reminderId);
+        if (typeof reminderId != "string") { // TODO.
+            throw new InvalidReminderIdTypeError();
+        }
+        let reminderDeleted: boolean = false;
+        try {
+            // TODO: place everything here or just the deleteReminder() call.
+            reminderDeleted = await this.repository.deleteReminder(reminderId);
+        } catch (e: unknown) {
+            this.logger.error(e);
+            throw new Error();
+        }
         if (!reminderDeleted) {
             return false;
         }
@@ -193,10 +232,16 @@ export class SchedulingAggregate {
     }
 
     async deleteReminders(): Promise<void> {
-        for (const reminderId of this.cronJobs.keys()) { // TODO: of? this.cronJobs.keys()?
-            // The return value of deleteReminder() is ignored because the rest of the function is supposed to
-            // run even if the reminder wasn't deleted (because it doesn't exist in the repo).
-            await this.repository.deleteReminder(reminderId);
+        for (const reminderId of this.cronJobs.keys()) { // TODO: const? of? this.cronJobs.keys()?
+            try {
+                // TODO: place everything here or just the deleteReminder() call.
+                // The return value of deleteReminder() is ignored because the rest of the function is supposed to
+                // run even if the reminder wasn't deleted (because it doesn't exist in the repo).
+                await this.repository.deleteReminder(reminderId);
+            } catch (e: unknown) {
+                this.logger.error(e);
+                throw new Error();
+            }
             const cronJob: CronJob | undefined = this.cronJobs.get(reminderId); // TODO: Elvis operator?
             if (cronJob === undefined) {
                 continue;

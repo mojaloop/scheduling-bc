@@ -1,7 +1,9 @@
 "use strict";
 
 // TODO: implements anything? functions IMessageProducer interface.
-export class MemorySchedulingMessageProducer {
+import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
+
+export class MemorySchedulingMessageProducer implements IMessageProducer{
     constructor() {
     }
 
@@ -12,5 +14,8 @@ export class MemorySchedulingMessageProducer {
     }
 
     async send(message: any): Promise<void> {
+    }
+
+    async disconnect(): Promise<void> {
     }
 }

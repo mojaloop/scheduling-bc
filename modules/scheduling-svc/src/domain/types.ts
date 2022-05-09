@@ -7,7 +7,7 @@ import {
     InvalidReminderTimeError,
     InvalidReminderTimeTypeError,
     MissingEssentialReminderPropertiesOrTaskDetailsError
-} from "./errors/errors_domain";
+} from "./errors/domain_errors";
 import {CronTime} from "cron";
 
 export class Reminder {
