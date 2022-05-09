@@ -30,6 +30,8 @@
 
 "use strict";
 
+// TODO: ESLint warning on the top of the editor window.
+
 import {ISchedulingRepository} from "../../../src/domain/interfaces_infrastructure/ischeduling_repository";
 import {Reminder} from "../../../src/domain/types";
 
