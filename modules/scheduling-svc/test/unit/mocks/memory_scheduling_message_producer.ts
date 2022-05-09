@@ -30,7 +30,6 @@
 
 "use strict";
 
-// TODO: implements anything? functions IMessageProducer interface.
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
 
 export class MemorySchedulingMessageProducer implements IMessageProducer{

@@ -81,8 +81,7 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
      */
     async init(): Promise<void> {
         try {
-            // connect() throws if the repo is unreachable.
-            await this.mongoClient.connect();
+            await this.mongoClient.connect(); // Throws if the repo is unreachable.
         } catch (e: unknown) {
             throw new UnableToInitRepoError(); // TODO.
         }

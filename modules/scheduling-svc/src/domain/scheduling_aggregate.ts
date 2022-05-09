@@ -80,10 +80,10 @@ export class SchedulingAggregate {
     }
 
     async init(): Promise<void> {
-        await this.messageProducer.connect(); // TODO: check errors.
         let reminders: Reminder[];
         // TODO.
         try {
+            await this.messageProducer.connect(); // Throws if the producer is unreachable.
             await this.repository.init();
             reminders = await this.repository.getReminders();
         } catch (e: unknown) {
@@ -185,7 +185,7 @@ export class SchedulingAggregate {
     }
 
     private async sendEvent(reminder: Reminder): Promise<void> {
-        // TODO: check errors.
+        // TODO: check if throws.
         await this.messageProducer.send({
             topic: reminder.eventTaskDetails?.topic,
             value: reminder.payload

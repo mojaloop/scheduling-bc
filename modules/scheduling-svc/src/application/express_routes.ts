@@ -75,7 +75,7 @@ export class ExpressRoutes {
         this._router.delete("/", this.deleteReminders.bind(this));
     }
 
-    // TODO: what is this? return type.
+    // TODO.
     get router(): express.Router {
         return this._router;
     }

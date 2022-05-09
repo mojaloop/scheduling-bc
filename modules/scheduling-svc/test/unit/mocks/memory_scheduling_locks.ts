@@ -32,7 +32,6 @@
 
 import {ISchedulingLocks} from "../../../src/domain/interfaces_infrastructure/ischeduling_locks";
 
-// TODO: do these functions need to do anything?
 export class MemorySchedulingLocks implements ISchedulingLocks {
     constructor() {
     }
