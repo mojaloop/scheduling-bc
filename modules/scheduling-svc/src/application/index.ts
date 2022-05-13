@@ -31,7 +31,6 @@
 "use strict";
 
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import express from "express";
 import {SchedulingAggregate} from "../domain/scheduling_aggregate";
 import {MongoDBSchedulingRepository} from "../infrastructure/mongodb_scheduling_repository";
 import {RedisSchedulingLocks} from "../infrastructure/redis_scheduling_locks";
@@ -39,17 +38,16 @@ import {ISchedulingRepository} from "../domain/interfaces_infrastructure/ischedu
 import {ISchedulingLocks} from "../domain/interfaces_infrastructure/ischeduling_locks";
 import {MLKafkaProducer} from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
 import {AxiosSchedulingHTTPClient} from "../infrastructure/axios_http_client";
-import {ExpressRoutes} from "./express_routes";
 import {ISchedulingHTTPClient} from "../domain/interfaces_infrastructure/ischeduling_http_client";
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import {ExpressWebServer} from "./web-server/express_web_server";
 
 /* Constants. */
 const NAME_SERVICE: string = "scheduling";
 // Server.
-const HOST_SERVER: string = process.env.SCHEDULING_HOST_SERVER || "localhost";
-const PORT_NO_SERVER: number = parseInt(process.env.SCHEDULING_PORT_NO_SERVER || "") || 1234;
-const URL_SERVER_BASE: string = `http://${HOST_SERVER}:${PORT_NO_SERVER}`;
-const URL_SERVER_PATH_REMINDERS: string = "/reminders";
+const HOST_WEB_SERVER: string = process.env.SCHEDULING_HOST_SERVER || "localhost";
+const PORT_NO_WEB_SERVER: number = parseInt(process.env.SCHEDULING_PORT_NO_SERVER || "") || 1234;
+const URL_WEB_SERVER_PATH_ROUTER: string = "/reminders";
 // Repository.
 const HOST_REPO: string = process.env.SCHEDULING_HOST_REPO || "localhost";
 const PORT_NO_REPO: number = parseInt(process.env.SCHEDULING_PORT_NO_REPO || "") || 27017;
@@ -79,14 +77,14 @@ const TIMEOUT_MS_EVENT: number = 10_000; // TODO.
 // Logger.
 const logger: ILogger = new ConsoleLogger();
 // Infrastructure.
-const schedulingRepository: ISchedulingRepository = new MongoDBSchedulingRepository(
+const repository: ISchedulingRepository = new MongoDBSchedulingRepository(
     logger,
     URL_REPO,
     NAME_DB,
     NAME_COLLECTION,
     TIMEOUT_MS_REPO_OPERATIONS
 );
-const schedulingLocks: ISchedulingLocks = new RedisSchedulingLocks(
+const locks: ISchedulingLocks = new RedisSchedulingLocks(
     logger,
     HOST_LOCKS,
     CLOCK_DRIFT_FACTOR,
@@ -101,43 +99,33 @@ const messageProducer: IMessageProducer = new MLKafkaProducer({ // TODO: timeout
     kafkaBrokerList: URL_MESSAGE_BROKER,
     producerClientId: ID_MESSAGE_PRODUCER
 }, logger);
-const schedulingAggregate: SchedulingAggregate = new SchedulingAggregate(
+const aggregate: SchedulingAggregate = new SchedulingAggregate(
     logger,
-    schedulingRepository,
-    schedulingLocks,
+    repository,
+    locks,
     httpClient,
     messageProducer,
     TIME_ZONE,
     TIMEOUT_MS_LOCK_ACQUIRED,
     MIN_DURATION_MS_TASK
 );
-// Express.
-const app: express.Express = express();
-const expressRoutes: ExpressRoutes = new ExpressRoutes(
+// Application.
+const webServer: ExpressWebServer = new ExpressWebServer(
     logger,
-    schedulingAggregate
+    HOST_WEB_SERVER,
+    PORT_NO_WEB_SERVER,
+    URL_WEB_SERVER_PATH_ROUTER,
+    aggregate
 );
 
-function setUpExpress() {
-    app.use(express.json()); // For parsing application/json.
-    app.use(express.urlencoded({extended: true})); // For parsing application/x-www-form-urlencoded.
-    app.use(URL_SERVER_PATH_REMINDERS, expressRoutes.router);
-}
-
 async function start(): Promise<void> {
-    await schedulingAggregate.init(); // The aggregate initializes all the dependencies. TODO: handle exception?
-    setUpExpress();
-    app.listen(PORT_NO_SERVER, () => {
-        logger.info("Server on.");
-        logger.info(`Host: ${HOST_SERVER}`);
-        logger.info(`Port: ${PORT_NO_SERVER}`);
-        logger.info(`Base URL: ${URL_SERVER_BASE}`);
-    });
+    await aggregate.init(); // The aggregate initializes all the dependencies. TODO: handle exception?
+    webServer.start();
 }
 
 async function handleIntAndTermSignals(signal: NodeJS.Signals): Promise<void> {
     logger.info(`${NAME_SERVICE} - ${signal} received, cleaning up...`);
-    await schedulingAggregate.destroy(); // The aggregate destroys all the dependencies.
+    await aggregate.destroy(); // The aggregate destroys all the dependencies.
     process.exit();
 }
 

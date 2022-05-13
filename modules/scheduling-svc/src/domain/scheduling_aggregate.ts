@@ -36,8 +36,8 @@ import {ISchedulingLocks} from "./interfaces_infrastructure/ischeduling_locks";
 import {ISchedulingHTTPClient} from "./interfaces_infrastructure/ischeduling_http_client";
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib"
 import {Reminder, ReminderTaskType} from "./types";
-import {CronJob} from "cron";
-import * as uuid from "uuid";
+import {CronJob} from "cron"; // TODO: infrastructure?
+import * as uuid from "uuid"; // TODO: infrastructure?
 import {
     InvalidReminderIdTypeError,
     ReminderAlreadyExistsError
@@ -192,21 +192,21 @@ export class SchedulingAggregate {
         });
     }
 
-    async getReminders(): Promise<Reminder[]> {
-        try {
-            return await this.repository.getReminders();
-        } catch (e: unknown) {
-            this.logger.error(e);
-            throw new Error();
-        }
-    }
-
     async getReminder(reminderId: string): Promise<Reminder | null> {
         if (typeof reminderId != "string") { // TODO.
             throw new InvalidReminderIdTypeError();
         }
         try {
             return await this.repository.getReminder(reminderId);
+        } catch (e: unknown) {
+            this.logger.error(e);
+            throw new Error();
+        }
+    }
+
+    async getReminders(): Promise<Reminder[]> {
+        try {
+            return await this.repository.getReminders();
         } catch (e: unknown) {
             this.logger.error(e);
             throw new Error();

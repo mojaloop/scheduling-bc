@@ -123,22 +123,6 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
     }
 
     /**
-     * @returns true, if the reminder was deleted; false, if the reminder wasn't deleted, because it doesn't exist.
-     * @throws an instance of UnableToDeleteReminderError, if the operation failed - the reminder wasn't deleted, but
-     * not because it doesn't exist.
-     */
-    async deleteReminder(reminderId: string): Promise<boolean> {
-        try {
-            // deleteOne() doesn't throw if the item doesn't exist.
-            const deleteResult: DeleteResult = await this.reminders.deleteOne({id: reminderId});
-            // deleteResult.acknowledged is true whether the item exists or not.
-            return deleteResult.deletedCount === 1;
-        } catch (e: unknown) {
-            throw new UnableToDeleteReminderError();
-        }
-    }
-
-    /**
      * @returns the reminder asked for, if it exists; null, if the reminder asked for doesn't exist.
      * @throws an instance of UnableToGetReminderError, if the operation failed - the reminder asked for might or might
      * not exist.
@@ -170,6 +154,22 @@ export class MongoDBSchedulingRepository implements ISchedulingRepository {
             return reminders as unknown as Reminder[]; // TODO.
         } catch(e: unknown) {
             throw new UnableToGetRemindersError();
+        }
+    }
+
+    /**
+     * @returns true, if the reminder was deleted; false, if the reminder wasn't deleted, because it doesn't exist.
+     * @throws an instance of UnableToDeleteReminderError, if the operation failed - the reminder wasn't deleted, but
+     * not because it doesn't exist.
+     */
+    async deleteReminder(reminderId: string): Promise<boolean> {
+        try {
+            // deleteOne() doesn't throw if the item doesn't exist.
+            const deleteResult: DeleteResult = await this.reminders.deleteOne({id: reminderId});
+            // deleteResult.acknowledged is true whether the item exists or not.
+            return deleteResult.deletedCount === 1;
+        } catch (e: unknown) {
+            throw new UnableToDeleteReminderError();
         }
     }
 }

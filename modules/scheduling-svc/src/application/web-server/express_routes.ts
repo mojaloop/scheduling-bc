@@ -39,37 +39,37 @@ import {
     InvalidReminderTimeError,
     InvalidReminderTimeTypeError, MissingEssentialReminderPropertiesOrTaskDetailsError,
     ReminderAlreadyExistsError
-} from "../domain/errors/domain_errors";
-import {Reminder} from "../domain/types";
+} from "../../domain/errors/domain_errors";
+import {Reminder} from "../../domain/types";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {SchedulingAggregate} from "../domain/scheduling_aggregate";
+import {SchedulingAggregate} from "../../domain/scheduling_aggregate";
 
 // TODO: check status codes.
 export class ExpressRoutes {
     // Properties received through the constructor.
     private readonly logger: ILogger;
-    private readonly schedulingAggregate: SchedulingAggregate;
+    private readonly aggregate: SchedulingAggregate;
     // Other properties.
     private readonly _router: express.Router;
 
     constructor(
         logger: ILogger,
-        schedulingAggregate: SchedulingAggregate
+        aggregate: SchedulingAggregate
     ) {
         this.logger = logger;
-        this.schedulingAggregate = schedulingAggregate;
+        this.aggregate = aggregate;
 
         this._router = express.Router();
 
-        this.setUpRoutes();
+        this.setUp();
     }
 
-    setUpRoutes(): void {
-        // Gets.
-        this._router.get("/", this.getReminders.bind(this));
-        this._router.get("/:reminderId", this.getReminder.bind(this));
+    private setUp(): void {
         // Posts.
         this._router.post("/", this.postReminder.bind(this));
+        // Gets.
+        this._router.get("/:reminderId", this.getReminder.bind(this));
+        this._router.get("/", this.getReminders.bind(this));
         // Deletes.
         this._router.delete("/:reminderId", this.deleteReminder.bind(this));
         this._router.delete("/", this.deleteReminders.bind(this));
@@ -80,53 +80,9 @@ export class ExpressRoutes {
         return this._router;
     }
 
-    private async getReminders(req: express.Request, res: express.Response): Promise<void> {
-        try {
-            const reminders: Reminder[] = await this.schedulingAggregate.getReminders();
-            res.status(200).json({
-                status: "ok",
-                reminders: reminders
-            });
-        } catch (e: unknown) {
-            this.sendError(
-                res,
-                500,
-                "unknown error");
-        }
-    }
-
-    private async getReminder(req: express.Request, res: express.Response): Promise<void> {
-        try {
-            const reminder: Reminder | null = await this.schedulingAggregate.getReminder(req.params.reminderId);
-            if (reminder === null) {
-                this.sendError(
-                    res,
-                    404,
-                    "no such reminder");
-                return;
-            }
-            res.status(200).json({
-                status: "ok",
-                reminder: reminder
-            });
-        } catch (e: unknown) {
-            if (e instanceof InvalidReminderIdTypeError) {
-                this.sendError(
-                    res,
-                    400,
-                    "invalid reminder id type");
-            } else {
-                this.sendError(
-                    res,
-                    500,
-                    "unknown error");
-            }
-        }
-    }
-
     private async postReminder(req: express.Request, res: express.Response): Promise<void> {
         try {
-            const reminderId: string = await this.schedulingAggregate.createReminder(req.body);
+            const reminderId: string = await this.aggregate.createReminder(req.body);
             res.status(200).json({
                 status: "ok",
                 reminderId: reminderId
@@ -181,9 +137,53 @@ export class ExpressRoutes {
         }
     }
 
+    private async getReminder(req: express.Request, res: express.Response): Promise<void> {
+        try {
+            const reminder: Reminder | null = await this.aggregate.getReminder(req.params.reminderId);
+            if (reminder === null) {
+                this.sendError(
+                    res,
+                    404,
+                    "no such reminder");
+                return;
+            }
+            res.status(200).json({
+                status: "ok",
+                reminder: reminder
+            });
+        } catch (e: unknown) {
+            if (e instanceof InvalidReminderIdTypeError) {
+                this.sendError(
+                    res,
+                    400,
+                    "invalid reminder id type");
+            } else {
+                this.sendError(
+                    res,
+                    500,
+                    "unknown error");
+            }
+        }
+    }
+
+    private async getReminders(req: express.Request, res: express.Response): Promise<void> {
+        try {
+            const reminders: Reminder[] = await this.aggregate.getReminders();
+            res.status(200).json({
+                status: "ok",
+                reminders: reminders
+            });
+        } catch (e: unknown) {
+            this.sendError(
+                res,
+                500,
+                "unknown error");
+        }
+    }
+
     private async deleteReminder(req: express.Request, res: express.Response): Promise<void> {
         try {
-            const reminderDeleted: boolean = await this.schedulingAggregate.deleteReminder(req.params.reminderId);
+            const reminderDeleted: boolean = await this.aggregate.deleteReminder(req.params.reminderId);
              if (!reminderDeleted) {
                  this.sendError(
                      res,
@@ -212,7 +212,7 @@ export class ExpressRoutes {
 
     private async deleteReminders(req: express.Request, res: express.Response): Promise<void> {
         try {
-            await this.schedulingAggregate.deleteReminders();
+            await this.aggregate.deleteReminders();
             res.status(200).json({
                 status: "ok",
                 message: "reminders deleted"
@@ -225,6 +225,7 @@ export class ExpressRoutes {
         }
     }
 
+    // TODO: method can be static?
     private sendError(res: express.Response, statusCode: number, message: string) {
         res.status(statusCode).json({
             status: "error",

@@ -31,7 +31,7 @@
 "use strict";
 
 export class UnableToInitRepoError extends Error{}
+export class UnableToStoreReminderError extends Error{}
 export class UnableToGetRemindersError extends Error{}
 export class UnableToGetReminderError extends Error{}
-export class UnableToStoreReminderError extends Error{}
 export class UnableToDeleteReminderError extends Error{}
