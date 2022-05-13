@@ -44,7 +44,8 @@ const schedulingClient: SchedulingClient = new SchedulingClient(
     URL_REMINDERS
 );
 
-// TODO: are the tests run sequentially? how many tests?
+// TODO: how many tests? Jest?
+// The tests are run sequentially. TODO.
 describe("integration tests", () => {
     beforeAll(async () => {
         await schedulingClient.deleteReminders();
