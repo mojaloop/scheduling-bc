@@ -30,12 +30,12 @@
 
 "use strict";
 
-import {ISchedulingLocks} from "../domain/interfaces_infrastructure/ischeduling_locks";
+import {ILocks} from "../domain/infrastructure-interfaces/ilocks";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import Client from "ioredis";
 import Redlock, {Lock} from "redlock";
 
-export class RedisSchedulingLocks implements ISchedulingLocks {
+export class RedisLocks implements ILocks {
     // Properties received through the constructor.
     private readonly logger: ILogger;
     private readonly HOST_LOCKS: string;

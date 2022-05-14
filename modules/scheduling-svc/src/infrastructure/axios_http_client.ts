@@ -30,7 +30,7 @@
 
 "use strict";
 
-import {ISchedulingHTTPClient} from "../domain/interfaces_infrastructure/ischeduling_http_client";
+import {IHTTPClient} from "../domain/infrastructure-interfaces/ihttp_client";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import axios, {AxiosInstance} from "axios";
 
@@ -38,7 +38,7 @@ import axios, {AxiosInstance} from "axios";
 // - the server is unreachable;
 // - the status code falls out of the 2xx range.
 
-export class AxiosSchedulingHTTPClient implements ISchedulingHTTPClient {
+export class AxiosHTTPClient implements IHTTPClient {
     // Properties received through the constructor.
     private readonly logger: ILogger;
     private readonly TIMEOUT_MS_HTTP_REQUEST: number;
@@ -59,7 +59,6 @@ export class AxiosSchedulingHTTPClient implements ISchedulingHTTPClient {
 
     // TODO: error handling here or on the aggregate?
     async post(url: string, payload: any): Promise<boolean> {
-        // return Promise.resolve(false); // TODO.
         try {
             await this.httpClient.post(url, payload); // Return type: AxiosResponse<any>.
             return true;

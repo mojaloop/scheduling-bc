@@ -30,6 +30,21 @@
 
 "use strict";
 
-export interface ISchedulingHTTPClient {
-    post(url: string, payload: any): Promise<boolean>;
+import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
+
+export class MemoryMessageProducer implements IMessageProducer{
+    constructor() {
+    }
+
+    async connect(): Promise<void> {
+    }
+
+    async destroy(): Promise<void> {
+    }
+
+    async send(message: any): Promise<void> {
+    }
+
+    async disconnect(): Promise<void> {
+    }
 }

@@ -30,21 +30,14 @@
 
 "use strict";
 
-import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import {Reminder} from "../types";
 
-export class MemorySchedulingMessageProducer implements IMessageProducer{
-    constructor() {
-    }
-
-    async connect(): Promise<void> {
-    }
-
-    async destroy(): Promise<void> {
-    }
-
-    async send(message: any): Promise<void> {
-    }
-
-    async disconnect(): Promise<void> {
-    }
+export interface IRepo {
+    init(): Promise<void>;
+    destroy(): Promise<void>;
+    reminderExists(reminderId: string): Promise<boolean>;
+    storeReminder(reminder: Reminder): Promise<boolean>;
+    getReminder(reminderId: string): Promise<Reminder | null>;
+    getReminders(): Promise<Reminder[]>;
+    deleteReminder(reminderId: string): Promise<boolean>;
 }

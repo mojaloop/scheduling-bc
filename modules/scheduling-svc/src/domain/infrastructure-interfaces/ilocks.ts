@@ -30,7 +30,7 @@
 
 "use strict";
 
-export interface ISchedulingLocks {
+export interface ILocks {
     acquire(lockId: string, durationMs: number): Promise<boolean>;
     release(lockId: string): Promise<boolean>;
 }

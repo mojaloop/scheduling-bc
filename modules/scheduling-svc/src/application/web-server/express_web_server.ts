@@ -33,7 +33,7 @@
 import express from "express";
 import {ExpressRoutes} from "./express_routes";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {SchedulingAggregate} from "../../domain/scheduling_aggregate";
+import {Aggregate} from "../../domain/aggregate";
 
 export class ExpressWebServer {
     // Properties received through the constructor.
@@ -51,7 +51,7 @@ export class ExpressWebServer {
         HOST_WEB_SERVER: string,
         PORT_NO_WEB_SERVER: number,
         URL_WEB_SERVER_PATH_ROUTER: string,
-        aggregate: SchedulingAggregate
+        aggregate: Aggregate
     ) {
         this.logger = logger;
         this.HOST_WEB_SERVER = HOST_WEB_SERVER;

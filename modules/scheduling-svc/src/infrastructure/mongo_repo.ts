@@ -30,7 +30,7 @@
 
 "use strict";
 
-import {ISchedulingRepository} from "../domain/interfaces_infrastructure/ischeduling_repository";
+import {IRepo} from "../domain/infrastructure-interfaces/irepo";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {Reminder} from "../domain/types";
 import {MongoClient, Collection, DeleteResult, InsertOneResult} from "mongodb";
@@ -38,12 +38,12 @@ import {
     UnableToDeleteReminderError,
     UnableToGetReminderError,
     UnableToGetRemindersError, UnableToInitRepoError, UnableToStoreReminderError
-} from "../domain/errors/scheduling_repository_errors";
+} from "../domain/errors/repo_errors";
 
 // TODO:
 //  - if domain errors can't be thrown in the infrastructure, why can domain types be used?
 //  - is there any way to know if a function throws without testing it?
-export class MongoDBSchedulingRepository implements ISchedulingRepository {
+export class MongoRepo implements IRepo {
     // Properties received through the constructor.
     private readonly logger: ILogger;
     private readonly URL_REPO: string;

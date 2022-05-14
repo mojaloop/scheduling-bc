@@ -31,14 +31,14 @@
 "use strict";
 
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {SchedulingAggregate} from "../domain/scheduling_aggregate";
-import {MongoDBSchedulingRepository} from "../infrastructure/mongodb_scheduling_repository";
-import {RedisSchedulingLocks} from "../infrastructure/redis_scheduling_locks";
-import {ISchedulingRepository} from "../domain/interfaces_infrastructure/ischeduling_repository";
-import {ISchedulingLocks} from "../domain/interfaces_infrastructure/ischeduling_locks";
+import {Aggregate} from "../domain/aggregate";
+import {MongoRepo} from "../infrastructure/mongo_repo";
+import {RedisLocks} from "../infrastructure/redis_locks";
+import {IRepo} from "../domain/infrastructure-interfaces/irepo";
+import {ILocks} from "../domain/infrastructure-interfaces/ilocks";
 import {MLKafkaProducer} from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
-import {AxiosSchedulingHTTPClient} from "../infrastructure/axios_http_client";
-import {ISchedulingHTTPClient} from "../domain/interfaces_infrastructure/ischeduling_http_client";
+import {AxiosHTTPClient} from "../infrastructure/axios_http_client";
+import {IHTTPClient} from "../domain/infrastructure-interfaces/ihttp_client";
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import {ExpressWebServer} from "./web-server/express_web_server";
 
@@ -77,14 +77,14 @@ const TIMEOUT_MS_EVENT: number = 10_000; // TODO.
 // Logger.
 const logger: ILogger = new ConsoleLogger();
 // Infrastructure.
-const repository: ISchedulingRepository = new MongoDBSchedulingRepository(
+const repository: IRepo = new MongoRepo(
     logger,
     URL_REPO,
     NAME_DB,
     NAME_COLLECTION,
     TIMEOUT_MS_REPO_OPERATIONS
 );
-const locks: ISchedulingLocks = new RedisSchedulingLocks(
+const locks: ILocks = new RedisLocks(
     logger,
     HOST_LOCKS,
     CLOCK_DRIFT_FACTOR,
@@ -94,12 +94,12 @@ const locks: ISchedulingLocks = new RedisSchedulingLocks(
     THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION
 );
 // Domain.
-const httpClient: ISchedulingHTTPClient = new AxiosSchedulingHTTPClient(logger, TIMEOUT_MS_HTTP_REQUEST);
+const httpClient: IHTTPClient = new AxiosHTTPClient(logger, TIMEOUT_MS_HTTP_REQUEST);
 const messageProducer: IMessageProducer = new MLKafkaProducer({ // TODO: timeout.
     kafkaBrokerList: URL_MESSAGE_BROKER,
     producerClientId: ID_MESSAGE_PRODUCER
 }, logger);
-const aggregate: SchedulingAggregate = new SchedulingAggregate(
+const aggregate: Aggregate = new Aggregate(
     logger,
     repository,
     locks,

@@ -30,14 +30,17 @@
 
 "use strict";
 
-import {Reminder} from "../types";
+import {ILocks} from "../../../src/domain/infrastructure-interfaces/ilocks";
 
-export interface ISchedulingRepository {
-    init(): Promise<void>;
-    destroy(): Promise<void>;
-    reminderExists(reminderId: string): Promise<boolean>;
-    storeReminder(reminder: Reminder): Promise<boolean>;
-    getReminder(reminderId: string): Promise<Reminder | null>;
-    getReminders(): Promise<Reminder[]>;
-    deleteReminder(reminderId: string): Promise<boolean>;
+export class MemoryLocks implements ILocks {
+    constructor() {
+    }
+
+    async acquire(lockId: string, durationMs: number): Promise<boolean> {
+        return true;
+    }
+
+    async release(lockId: string): Promise<boolean> {
+        return true;
+    }
 }

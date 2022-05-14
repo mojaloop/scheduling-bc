@@ -31,9 +31,9 @@
 "use strict";
 
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {ISchedulingRepository} from "./interfaces_infrastructure/ischeduling_repository";
-import {ISchedulingLocks} from "./interfaces_infrastructure/ischeduling_locks";
-import {ISchedulingHTTPClient} from "./interfaces_infrastructure/ischeduling_http_client";
+import {IRepo} from "./infrastructure-interfaces/irepo";
+import {ILocks} from "./infrastructure-interfaces/ilocks";
+import {IHTTPClient} from "./infrastructure-interfaces/ihttp_client";
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib"
 import {Reminder, ReminderTaskType} from "./types";
 import {CronJob} from "cron"; // TODO: infrastructure?
@@ -44,12 +44,12 @@ import {
 } from "./errors/domain_errors";
 
 // TODO: check error handling.
-export class SchedulingAggregate {
+export class Aggregate {
     // Properties received through the constructor.
     private readonly logger: ILogger;
-    private readonly repository: ISchedulingRepository;
-    private readonly locks: ISchedulingLocks;
-    private readonly httpClient: ISchedulingHTTPClient;
+    private readonly repository: IRepo;
+    private readonly locks: ILocks;
+    private readonly httpClient: IHTTPClient;
     private readonly messageProducer: IMessageProducer;
     private readonly TIME_ZONE: string;
     private readonly TIMEOUT_MS_LOCK_ACQUIRED: number;
@@ -59,9 +59,9 @@ export class SchedulingAggregate {
 
     constructor(
         logger: ILogger,
-        repository: ISchedulingRepository,
-        locks: ISchedulingLocks,
-        httpClient: ISchedulingHTTPClient,
+        repository: IRepo,
+        locks: ILocks,
+        httpClient: IHTTPClient,
         messageProducer: IMessageProducer,
         TIME_ZONE: string,
         TIMEOUT_MS_LOCK_ACQUIRED: number,

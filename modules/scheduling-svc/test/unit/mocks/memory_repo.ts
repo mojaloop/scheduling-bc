@@ -30,17 +30,42 @@
 
 "use strict";
 
-import {ISchedulingLocks} from "../../../src/domain/interfaces_infrastructure/ischeduling_locks";
+// TODO: ESLint warning on the top of the editor window.
 
-export class MemorySchedulingLocks implements ISchedulingLocks {
+import {IRepo} from "../../../src/domain/infrastructure-interfaces/irepo";
+import {Reminder} from "../../../src/domain/types";
+
+export class MemoryRepo implements IRepo {
+    private readonly map: Map<string, Reminder>;
+
     constructor() {
+        this.map = new Map<string, Reminder>();
     }
 
-    async acquire(lockId: string, durationMs: number): Promise<boolean> {
+    async init(): Promise<void> {
+    }
+
+    async destroy(): Promise<void> {
+    }
+
+    async reminderExists(reminderId: string): Promise<boolean> {
+        return this.map.has(reminderId);
+    }
+
+    async storeReminder(reminder: Reminder): Promise<boolean> {
+        this.map.set(reminder.id, reminder);
         return true;
     }
 
-    async release(lockId: string): Promise<boolean> {
-        return true;
+    async deleteReminder(reminderId: string): Promise<boolean> {
+        return this.map.delete(reminderId);
+    }
+
+    async getReminders(): Promise<Reminder[]> {
+        return [...this.map.values()];
+    }
+
+    async getReminder(reminderId: string): Promise<Reminder | null> {
+        return this.map.get(reminderId) || null;
     }
 }

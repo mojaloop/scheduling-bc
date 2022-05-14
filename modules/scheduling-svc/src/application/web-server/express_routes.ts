@@ -42,19 +42,19 @@ import {
 } from "../../domain/errors/domain_errors";
 import {Reminder} from "../../domain/types";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {SchedulingAggregate} from "../../domain/scheduling_aggregate";
+import {Aggregate} from "../../domain/aggregate";
 
 // TODO: check status codes.
 export class ExpressRoutes {
     // Properties received through the constructor.
     private readonly logger: ILogger;
-    private readonly aggregate: SchedulingAggregate;
+    private readonly aggregate: Aggregate;
     // Other properties.
     private readonly _router: express.Router;
 
     constructor(
         logger: ILogger,
-        aggregate: SchedulingAggregate
+        aggregate: Aggregate
     ) {
         this.logger = logger;
         this.aggregate = aggregate;
