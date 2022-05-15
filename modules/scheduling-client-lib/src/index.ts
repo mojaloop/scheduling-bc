@@ -30,35 +30,73 @@
 
 "use strict";
 
-import {IHTTPClient} from "../domain/infrastructure-interfaces/ihttp_client";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import axios, {AxiosInstance} from "axios";
+import axios, {AxiosInstance, AxiosResponse} from "axios";
+// TODO: Reminder type.
 
-// By default, Axios throws if:
-// - the server is unreachable;
-// - the status code falls out of the 2xx range.
-
-export class AxiosHTTPClient implements IHTTPClient {
+// TODO: basically, the same functions as the aggregate?
+export class SchedulingClient {
     // Properties received through the constructor.
-    private readonly logger: ILogger;
+    private readonly logger: ILogger; // TODO: why is the type ILogger?
     // Other properties.
-    private readonly httpClient: AxiosInstance;
+    private readonly httpClient: AxiosInstance; // TODO: use Axios directly?
 
     constructor(
         logger: ILogger,
-        TIMEOUT_MS_HTTP_CLIENT: number // TODO: change name.
+        URL_REMINDERS: string,
+        TIMEOUT_MS_HTTP_CLIENT: number
     ) {
         this.logger = logger;
 
         this.httpClient = axios.create({
+            baseURL: URL_REMINDERS,
             timeout: TIMEOUT_MS_HTTP_CLIENT
         });
     }
 
-    // TODO: error handling here or on the aggregate?
-    async post(url: string, payload: any): Promise<boolean> {
+    async createReminder(reminder: Reminder): Promise<string | null> { // TODO: return null?
         try {
-            await this.httpClient.post(url, payload); // Return type: AxiosResponse<any>.
+            const res: AxiosResponse<any> = await this.httpClient.post("/", reminder);
+            return res.data; // TODO: do any validation?
+        } catch(e: unknown) {
+            this.logger.error(e);
+            return null;
+        }
+    }
+
+    async getReminder(reminderId: string): Promise<Reminder | null> {
+        try {
+            const res: AxiosResponse<any> = await this.httpClient.get(`/${reminderId}`);
+            return res.data;
+        } catch(e: unknown) {
+            this.logger.error(e);
+            return null;
+        }
+    }
+
+    async getReminders(): Promise<Reminder[] | null> {
+        try {
+            const res: AxiosResponse<any> = await this.httpClient.get("/");
+            return res.data;
+        } catch (e: unknown) {
+            this.logger.error(e);
+            return null;
+        }
+    }
+
+    async deleteReminder(reminderId: string): Promise<boolean> {
+        try {
+            await this.httpClient.delete(`/${reminderId}`);
+            return true;
+        } catch (e: unknown) {
+            this.logger.error(e);
+            return false;
+        }
+    }
+
+    async deleteReminders(): Promise<boolean> {
+        try {
+            await this.httpClient.delete("/");
             return true;
         } catch (e: unknown) {
             this.logger.error(e);

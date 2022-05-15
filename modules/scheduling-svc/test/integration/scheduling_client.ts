@@ -32,7 +32,7 @@
 
 import axios, {AxiosInstance, AxiosResponse} from "axios";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {Reminder} from "../../dist/domain/types";
+import {Reminder} from "../../dist/domain/types"; // TODO: dist?
 
 export class SchedulingClient {
     // Properties received through the constructor.
@@ -42,20 +42,20 @@ export class SchedulingClient {
 
     constructor(
         logger: ILogger,
-        TIMEOUT_MS_HTTP_REQUEST: number,
-        URL_REMINDERS: string
+        URL_REMINDERS: string,
+        TIMEOUT_MS_HTTP_CLIENT: number
     ) {
         this.logger = logger;
 
         this.httpClient = axios.create({
             baseURL: URL_REMINDERS,
-            timeout: TIMEOUT_MS_HTTP_REQUEST,
+            timeout: TIMEOUT_MS_HTTP_CLIENT
         });
     }
 
-    async getReminders(): Promise<number> {
+    async createReminder(reminder: Reminder): Promise<number> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.get("/");
+            const res: AxiosResponse<any> = await this.httpClient.post("/", reminder);
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
@@ -73,11 +73,9 @@ export class SchedulingClient {
         }
     }
 
-    async createReminder(reminder: Reminder): Promise<number> {
+    async getReminders(): Promise<number> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.post(
-                "/",
-                reminder);
+            const res: AxiosResponse<any> = await this.httpClient.get("/");
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);

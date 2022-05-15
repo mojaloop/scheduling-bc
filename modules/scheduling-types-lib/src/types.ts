@@ -30,39 +30,22 @@
 
 "use strict";
 
-import {IHTTPClient} from "../domain/infrastructure-interfaces/ihttp_client";
-import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import axios, {AxiosInstance} from "axios";
+// TODO: tests?
 
-// By default, Axios throws if:
-// - the server is unreachable;
-// - the status code falls out of the 2xx range.
+export interface Reminder {
+    id: string;
+    time: string; // TODO: Date.
+    payload: any;
+    taskType: ReminderTaskType;
+    httpPostTaskDetails: null | {
+        url: string
+    };
+    eventTaskDetails: null | {
+        topic: string
+    };
+}
 
-export class AxiosHTTPClient implements IHTTPClient {
-    // Properties received through the constructor.
-    private readonly logger: ILogger;
-    // Other properties.
-    private readonly httpClient: AxiosInstance;
-
-    constructor(
-        logger: ILogger,
-        TIMEOUT_MS_HTTP_CLIENT: number // TODO: change name.
-    ) {
-        this.logger = logger;
-
-        this.httpClient = axios.create({
-            timeout: TIMEOUT_MS_HTTP_CLIENT
-        });
-    }
-
-    // TODO: error handling here or on the aggregate?
-    async post(url: string, payload: any): Promise<boolean> {
-        try {
-            await this.httpClient.post(url, payload); // Return type: AxiosResponse<any>.
-            return true;
-        } catch (e: unknown) {
-            this.logger.error(e);
-            return false;
-        }
-    }
+export enum ReminderTaskType {
+    HTTP_POST = "HTTP_POST",
+    EVENT = "EVENT"
 }

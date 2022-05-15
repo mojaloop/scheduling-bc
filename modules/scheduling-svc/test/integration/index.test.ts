@@ -32,16 +32,16 @@
 
 import {SchedulingClient} from "./scheduling_client";
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {Reminder, ReminderTaskType} from "../../dist/domain/types";
+import {Reminder, ReminderTaskType} from "../../dist/domain/types"; // TODO: dist?
 
-const TIMEOUT_MS_HTTP_REQUEST: number = 10_000;
+const TIMEOUT_MS_HTTP_CLIENT: number = 10_000;
 const URL_REMINDERS: string = "http://localhost:1234/reminders";
 
 const logger: ILogger = new ConsoleLogger();
 const schedulingClient: SchedulingClient = new SchedulingClient(
     logger,
-    TIMEOUT_MS_HTTP_REQUEST,
-    URL_REMINDERS
+    URL_REMINDERS,
+    TIMEOUT_MS_HTTP_CLIENT
 );
 
 // TODO: how many tests? Jest?
