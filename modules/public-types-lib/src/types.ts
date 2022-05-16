@@ -29,3 +29,21 @@
  ******/
 
 "use strict";
+
+export interface IReminder {
+    id: string;
+    time: string; // TODO: Date.
+    payload: any;
+    taskType: ReminderTaskType;
+    httpPostTaskDetails: null | {
+        url: string
+    };
+    eventTaskDetails: null | {
+        topic: string
+    };
+}
+
+export enum ReminderTaskType {
+    HTTP_POST = "HTTP_POST",
+    EVENT = "EVENT"
+}

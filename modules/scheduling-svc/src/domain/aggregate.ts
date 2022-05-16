@@ -35,7 +35,8 @@ import {IRepo} from "./infrastructure-interfaces/irepo";
 import {ILocks} from "./infrastructure-interfaces/ilocks";
 import {IHTTPClient} from "./infrastructure-interfaces/ihttp_client";
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib"
-import {Reminder, ReminderTaskType} from "./types";
+import {Reminder} from "./types";
+import {ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
 import {CronJob} from "cron"; // TODO: infrastructure?
 import * as uuid from "uuid"; // TODO: infrastructure?
 import {

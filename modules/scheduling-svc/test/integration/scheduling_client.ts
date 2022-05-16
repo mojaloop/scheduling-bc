@@ -32,8 +32,10 @@
 
 import axios, {AxiosInstance, AxiosResponse} from "axios";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {Reminder} from "../../dist/domain/types"; // TODO: dist?
+import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
 
+
+// TODO: change name - might be confused with the actual scheduling client.
 export class SchedulingClient {
     // Properties received through the constructor.
     private readonly logger: ILogger;
@@ -53,7 +55,7 @@ export class SchedulingClient {
         });
     }
 
-    async createReminder(reminder: Reminder): Promise<number> {
+    async createReminder(reminder: IReminder): Promise<number> {
         try {
             const res: AxiosResponse<any> = await this.httpClient.post("/", reminder);
             return res.status;

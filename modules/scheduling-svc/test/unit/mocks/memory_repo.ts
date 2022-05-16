@@ -33,13 +33,13 @@
 // TODO: ESLint warning on the top of the editor window.
 
 import {IRepo} from "../../../src/domain/infrastructure-interfaces/irepo";
-import {Reminder} from "../../../src/domain/types";
+import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
 
 export class MemoryRepo implements IRepo {
-    private readonly map: Map<string, Reminder>;
+    private readonly map: Map<string, IReminder>;
 
     constructor() {
-        this.map = new Map<string, Reminder>();
+        this.map = new Map<string, IReminder>();
     }
 
     async init(): Promise<void> {
@@ -52,7 +52,7 @@ export class MemoryRepo implements IRepo {
         return this.map.has(reminderId);
     }
 
-    async storeReminder(reminder: Reminder): Promise<boolean> {
+    async storeReminder(reminder: IReminder): Promise<boolean> {
         this.map.set(reminder.id, reminder);
         return true;
     }
@@ -61,11 +61,11 @@ export class MemoryRepo implements IRepo {
         return this.map.delete(reminderId);
     }
 
-    async getReminders(): Promise<Reminder[]> {
+    async getReminders(): Promise<IReminder[]> {
         return [...this.map.values()];
     }
 
-    async getReminder(reminderId: string): Promise<Reminder | null> {
+    async getReminder(reminderId: string): Promise<IReminder | null> {
         return this.map.get(reminderId) || null;
     }
 }

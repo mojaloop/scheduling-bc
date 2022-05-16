@@ -30,14 +30,14 @@
 
 "use strict";
 
-import {Reminder} from "../types";
+import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
 
 export interface IRepo {
     init(): Promise<void>;
     destroy(): Promise<void>;
     reminderExists(reminderId: string): Promise<boolean>;
-    storeReminder(reminder: Reminder): Promise<boolean>;
-    getReminder(reminderId: string): Promise<Reminder | null>;
-    getReminders(): Promise<Reminder[]>;
+    storeReminder(reminder: IReminder): Promise<boolean>;
+    getReminder(reminderId: string): Promise<IReminder | null>;
+    getReminders(): Promise<IReminder[]>;
     deleteReminder(reminderId: string): Promise<boolean>;
 }

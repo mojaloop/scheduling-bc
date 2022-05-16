@@ -71,7 +71,7 @@ const DELAY_MS_LOCK_SPINS_JITTER: number = 200; // TODO.
 const THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION: number = 500; // TODO.
 const TIMEOUT_MS_LOCK_ACQUIRED: number = 30_000; // TODO.
 const MIN_DURATION_MS_TASK: number = 2_000; // TODO.
-const TIMEOUT_MS_HTTP_REQUEST: number = 10_000; // TODO.
+const TIMEOUT_MS_HTTP_CLIENT: number = 10_000; // TODO.
 const TIMEOUT_MS_EVENT: number = 10_000; // TODO.
 
 // Logger.
@@ -94,7 +94,7 @@ const locks: ILocks = new RedisLocks(
     THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION
 );
 // Domain.
-const httpClient: IHTTPClient = new AxiosHTTPClient(logger, TIMEOUT_MS_HTTP_REQUEST);
+const httpClient: IHTTPClient = new AxiosHTTPClient(logger, TIMEOUT_MS_HTTP_CLIENT);
 const messageProducer: IMessageProducer = new MLKafkaProducer({ // TODO: timeout.
     kafkaBrokerList: URL_MESSAGE_BROKER,
     producerClientId: ID_MESSAGE_PRODUCER

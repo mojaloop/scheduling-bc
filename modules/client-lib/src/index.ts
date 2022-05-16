@@ -30,4 +30,4 @@
 
 "use strict";
 
-export * from "./types"; // TODO.
+export * from "./scheduling_client";

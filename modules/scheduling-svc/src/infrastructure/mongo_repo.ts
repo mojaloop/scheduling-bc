@@ -32,7 +32,7 @@
 
 import {IRepo} from "../domain/infrastructure-interfaces/irepo";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {Reminder} from "../domain/types";
+import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
 import {MongoClient, Collection, DeleteResult, InsertOneResult} from "mongodb";
 import {
     UnableToDeleteReminderError,
@@ -112,7 +112,7 @@ export class MongoRepo implements IRepo {
      * @throws an instance of UnableToStoreReminderError, if the operation failed.
      * @note Allows for duplicates.
      */
-    async storeReminder(reminder: Reminder): Promise<boolean> {
+    async storeReminder(reminder: IReminder): Promise<boolean> {
         try {
             // insertOne() allows for duplicates.
             const retInsertOne: InsertOneResult<any> = await this.reminders.insertOne(reminder); // TODO: type; return value.
@@ -127,11 +127,11 @@ export class MongoRepo implements IRepo {
      * @throws an instance of UnableToGetReminderError, if the operation failed - the reminder asked for might or might
      * not exist.
      */
-    async getReminder(reminderId: string): Promise<Reminder | null> {
+    async getReminder(reminderId: string): Promise<IReminder | null> {
         try {
             // findOne() doesn't throw if no item is found.
             const reminder: any = await this.reminders.findOne({id: reminderId}); // TODO: type.
-            return reminder as unknown as Reminder; // TODO.
+            return reminder as unknown as IReminder; // TODO.
         } catch(e: unknown) {
             throw new UnableToGetReminderError();
         }
@@ -142,7 +142,7 @@ export class MongoRepo implements IRepo {
      * @throws an instance of UnableToGetRemindersError, if the operation failed - there might or might not exist
      * reminders.
      */
-    async getReminders(): Promise<Reminder[]> {
+    async getReminders(): Promise<IReminder[]> {
         try {
             // find() doesn't throw if no items are found.
             const reminders: any = // TODO: type.
@@ -151,7 +151,7 @@ export class MongoRepo implements IRepo {
                         {}, // All documents.
                         {projection: {_id: 0}}) // Don't return the _id field.
                     .toArray();
-            return reminders as unknown as Reminder[]; // TODO.
+            return reminders as unknown as IReminder[]; // TODO.
         } catch(e: unknown) {
             throw new UnableToGetRemindersError();
         }

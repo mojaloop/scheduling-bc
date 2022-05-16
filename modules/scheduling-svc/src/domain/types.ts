@@ -39,8 +39,9 @@ import {
     MissingEssentialReminderPropertiesOrTaskDetailsError
 } from "./errors/domain_errors";
 import {CronTime} from "cron";
+import {IReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
 
-export class Reminder {
+export class Reminder implements IReminder {
     id: string;
     time: string; // TODO: Date.
     payload: any;
@@ -107,9 +108,4 @@ export class Reminder {
             throw new InvalidReminderTaskDetailsTypeError();
         }
     }
-}
-
-export enum ReminderTaskType {
-    HTTP_POST = "HTTP_POST",
-    EVENT = "EVENT"
 }

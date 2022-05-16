@@ -32,14 +32,13 @@
 
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import axios, {AxiosInstance, AxiosResponse} from "axios";
-// TODO: Reminder type.
+import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
 
-// TODO: basically, the same functions as the aggregate?
 export class SchedulingClient {
     // Properties received through the constructor.
-    private readonly logger: ILogger; // TODO: why is the type ILogger?
+    private readonly logger: ILogger;
     // Other properties.
-    private readonly httpClient: AxiosInstance; // TODO: use Axios directly?
+    private readonly httpClient: AxiosInstance;
 
     constructor(
         logger: ILogger,
@@ -54,17 +53,17 @@ export class SchedulingClient {
         });
     }
 
-    async createReminder(reminder: Reminder): Promise<string | null> { // TODO: return null?
+    async createReminder(reminder: IReminder): Promise<string | null> { // TODO: return null?
         try {
             const res: AxiosResponse<any> = await this.httpClient.post("/", reminder);
-            return res.data; // TODO: do any validation?
+            return res.data;
         } catch(e: unknown) {
             this.logger.error(e);
             return null;
         }
     }
 
-    async getReminder(reminderId: string): Promise<Reminder | null> {
+    async getReminder(reminderId: string): Promise<IReminder | null> {
         try {
             const res: AxiosResponse<any> = await this.httpClient.get(`/${reminderId}`);
             return res.data;
@@ -74,29 +73,9 @@ export class SchedulingClient {
         }
     }
 
-    async getReminders(): Promise<Reminder[] | null> {
-        try {
-            const res: AxiosResponse<any> = await this.httpClient.get("/");
-            return res.data;
-        } catch (e: unknown) {
-            this.logger.error(e);
-            return null;
-        }
-    }
-
     async deleteReminder(reminderId: string): Promise<boolean> {
         try {
             await this.httpClient.delete(`/${reminderId}`);
-            return true;
-        } catch (e: unknown) {
-            this.logger.error(e);
-            return false;
-        }
-    }
-
-    async deleteReminders(): Promise<boolean> {
-        try {
-            await this.httpClient.delete("/");
             return true;
         } catch (e: unknown) {
             this.logger.error(e);

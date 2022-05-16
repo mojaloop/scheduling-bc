@@ -9,7 +9,8 @@
     "url": "https://github.com/mojaloop/scheduling-bc/issues#readme"
   },
   "contributors": [
-    "Pedro Sousa Barreto <pedrosousabarreto@gmail.com>"
+    "Gonçalo Garcia <goncalogarcia99@gmail.com>",
+    "Pedro Sousa Barreto <pedrob@crosslaketech.com>"
   ],
   "scripts": {
     "prepare": "husky install",

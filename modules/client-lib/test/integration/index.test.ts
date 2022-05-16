@@ -30,11 +30,9 @@
 
 "use strict";
 
-import {SchedulingClient} from "./scheduling_client";
+import {SchedulingClient} from "../../src";
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-
-import {ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
-import {Reminder} from "../../src/domain/types";
+import {Reminder, ReminderTaskType} from "@mojaloop/scheduling-bc-scheduling-svc/dist/domain/types";
 
 // TODO: here or inside the describe function?
 const URL_REMINDERS: string = "http://localhost:1234/reminders";
@@ -48,23 +46,11 @@ const schedulingClient: SchedulingClient = new SchedulingClient(
 );
 
 describe("integration tests", () => {
-    beforeAll(async () => {
-        // await schedulingClient.deleteReminders(); // TODO: should this be done?
-    });
-
-    test("get reminders", async () => {
-        const statusCodeResponse: number = await schedulingClient.getReminders();
-        await expect(statusCodeResponse).toBe(200);
-    });
-
-    test("get reminder", async () => {
-        const statusCodeResponse: number = await schedulingClient.getReminder("a");
-        await expect(statusCodeResponse).toBe(200);
-    });
-
     test("create reminder", async () => {
+        // TODO: delete the reminder first?
+        const expectedReminderId: string = "a";
         const reminder: Reminder = new Reminder(
-            "a",
+            expectedReminderId,
             "*/15 * * * * *",
             "",
             ReminderTaskType.HTTP_POST,
@@ -75,17 +61,19 @@ describe("integration tests", () => {
                 "topic": "test_topic"
             }
         );
-        const statusCodeResponse: number = await schedulingClient.createReminder(reminder);
-        await expect(statusCodeResponse).toBe(200);
+        const reminderId: string | null = await schedulingClient.createReminder(reminder);
+        expect(reminderId).toBe(expectedReminderId);
+    });
+
+    test("get reminder", async () => {
+        // TODO: create the reminder before?
+        const reminder: Reminder | null = await schedulingClient.getReminder("a");
+        // TODO.
     });
 
     test("delete reminder", async () => {
-        const statusCodeResponse: number = await schedulingClient.deleteReminder("a");
-        await expect(statusCodeResponse).toBe(200);
-    });
-
-    test("delete reminders", async () => {
-        const statusCodeResponse: number = await schedulingClient.deleteReminders();
-        await expect(statusCodeResponse).toBe(200);
+        // TODO: create the reminder before?
+        const retDelete: boolean = await schedulingClient.deleteReminder("a");
+        expect(retDelete).toBeTruthy();
     });
 });

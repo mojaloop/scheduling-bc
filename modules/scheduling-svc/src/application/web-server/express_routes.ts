@@ -40,7 +40,7 @@ import {
     InvalidReminderTimeTypeError, MissingEssentialReminderPropertiesOrTaskDetailsError,
     ReminderAlreadyExistsError
 } from "../../domain/errors/domain_errors";
-import {Reminder} from "../../domain/types";
+import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {Aggregate} from "../../domain/aggregate";
 
@@ -139,7 +139,7 @@ export class ExpressRoutes {
 
     private async getReminder(req: express.Request, res: express.Response): Promise<void> {
         try {
-            const reminder: Reminder | null = await this.aggregate.getReminder(req.params.reminderId);
+            const reminder: IReminder | null = await this.aggregate.getReminder(req.params.reminderId);
             if (reminder === null) {
                 this.sendError(
                     res,
@@ -168,7 +168,7 @@ export class ExpressRoutes {
 
     private async getReminders(req: express.Request, res: express.Response): Promise<void> {
         try {
-            const reminders: Reminder[] = await this.aggregate.getReminders();
+            const reminders: IReminder[] = await this.aggregate.getReminders();
             res.status(200).json({
                 status: "ok",
                 reminders: reminders
