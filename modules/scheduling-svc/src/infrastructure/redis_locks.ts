@@ -22,8 +22,7 @@
  * Crosslake
  - Pedro Sousa Barreto <pedrob@crosslaketech.com>
 
- * Community
- - Gonçalo Garcia <goncalogarcia99@gmail.com>
+ * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
  ******/
@@ -47,7 +46,7 @@ export class RedisLocks implements ILocks {
     // Other properties.
     private readonly redisClient: Client;
     private readonly redLock: Redlock;
-    private readonly map: Map<string, Lock>;
+    private readonly locks: Map<string, Lock>;
 
     constructor(
         logger: ILogger,
@@ -77,14 +76,14 @@ export class RedisLocks implements ILocks {
                 automaticExtensionThreshold: this.THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION
             }
         );
-        this.map = new Map<string, Lock>();
+        this.locks = new Map<string, Lock>();
     }
 
     async acquire(lockId: string, lockDurationMs: number): Promise<boolean> {
         try {
             // acquire() throws if the lock can't be acquired.
             const lock: Lock = await this.redLock.acquire([lockId], lockDurationMs);
-            this.map.set(lockId, lock);
+            this.locks.set(lockId, lock); // TODO.
             return true;
         } catch (e: unknown) {
             this.logger.debug(e);
@@ -93,7 +92,7 @@ export class RedisLocks implements ILocks {
     }
 
     async release(lockId: string): Promise<boolean> {
-        const lock: Lock | undefined = this.map.get(lockId);
+        const lock: Lock | undefined = this.locks.get(lockId);
         if (lock === undefined) {
             return false;
         }

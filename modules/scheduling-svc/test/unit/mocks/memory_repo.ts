@@ -22,8 +22,7 @@
  * Crosslake
  - Pedro Sousa Barreto <pedrob@crosslaketech.com>
 
- * Community
- - Gonçalo Garcia <goncalogarcia99@gmail.com>
+ * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
  ******/
@@ -34,18 +33,40 @@
 
 import {IRepo} from "../../../src/domain/infrastructure-interfaces/irepo";
 import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
+import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 
 export class MemoryRepo implements IRepo {
+    // Properties received through the constructor.
+    private readonly logger: ILogger;
+    private readonly URL_REPO: string;
+    private readonly NAME_DB: string;
+    private readonly NAME_COLLECTION: string;
+    private readonly TIMEOUT_MS_REPO_OPERATIONS: number;
+    // Other properties.
     private readonly map: Map<string, IReminder>;
 
-    constructor() {
+    constructor(
+        logger: ILogger,
+        URL_REPO: string,
+        NAME_DB: string,
+        NAME_COLLECTION: string,
+        TIMEOUT_MS_REPO_OPERATIONS: number
+    ) {
+        this.logger = logger;
+        this.URL_REPO = URL_REPO;
+        this.NAME_DB = NAME_DB;
+        this.NAME_COLLECTION = NAME_COLLECTION;
+        this.TIMEOUT_MS_REPO_OPERATIONS = TIMEOUT_MS_REPO_OPERATIONS;
+
         this.map = new Map<string, IReminder>();
     }
 
     async init(): Promise<void> {
+        return;
     }
 
     async destroy(): Promise<void> {
+        return;
     }
 
     async reminderExists(reminderId: string): Promise<boolean> {

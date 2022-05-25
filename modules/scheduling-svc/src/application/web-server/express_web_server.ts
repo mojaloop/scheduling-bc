@@ -22,8 +22,7 @@
  * Crosslake
  - Pedro Sousa Barreto <pedrob@crosslaketech.com>
 
- * Community
- - Gonçalo Garcia <goncalogarcia99@gmail.com>
+ * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
  ******/
@@ -65,10 +64,10 @@ export class ExpressWebServer {
             aggregate
         );
 
-        this.setUp();
+        this.configure();
     }
 
-    private setUp(): void {
+    private configure() {
         this.app.use(express.json()); // For parsing application/json.
         this.app.use(express.urlencoded({extended: true})); // For parsing application/x-www-form-urlencoded.
         this.app.use(this.URL_WEB_SERVER_PATH_ROUTER, this.routes.router);

@@ -22,14 +22,12 @@
  * Crosslake
  - Pedro Sousa Barreto <pedrob@crosslaketech.com>
 
- * Community
- - Gonçalo Garcia <goncalogarcia99@gmail.com>
+ * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
  ******/
 
 "use strict";
 
-export interface IHTTPClient {
-    post(url: string, payload: any): Promise<boolean>;
+export class SchedulingServiceMock { // TODO: name.
 }

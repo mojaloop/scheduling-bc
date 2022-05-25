@@ -22,8 +22,7 @@
  * Crosslake
  - Pedro Sousa Barreto <pedrob@crosslaketech.com>
 
- * Community
- - Gonçalo Garcia <goncalogarcia99@gmail.com>
+ * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
  ******/
@@ -37,8 +36,6 @@ import {RedisLocks} from "../infrastructure/redis_locks";
 import {IRepo} from "../domain/infrastructure-interfaces/irepo";
 import {ILocks} from "../domain/infrastructure-interfaces/ilocks";
 import {MLKafkaProducer} from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
-import {AxiosHTTPClient} from "../infrastructure/axios_http_client";
-import {IHTTPClient} from "../domain/infrastructure-interfaces/ihttp_client";
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import {ExpressWebServer} from "./web-server/express_web_server";
 
@@ -77,7 +74,7 @@ const TIMEOUT_MS_EVENT: number = 10_000; // TODO.
 // Logger.
 const logger: ILogger = new ConsoleLogger();
 // Infrastructure.
-const repository: IRepo = new MongoRepo(
+const repo: IRepo = new MongoRepo(
     logger,
     URL_REPO,
     NAME_DB,
@@ -93,21 +90,23 @@ const locks: ILocks = new RedisLocks(
     DELAY_MS_LOCK_SPINS_JITTER,
     THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION
 );
+const messageProducer: IMessageProducer = new MLKafkaProducer( // TODO: timeout.
+    {
+        kafkaBrokerList: URL_MESSAGE_BROKER,
+        producerClientId: ID_MESSAGE_PRODUCER
+    },
+    logger
+);
 // Domain.
-const httpClient: IHTTPClient = new AxiosHTTPClient(logger, TIMEOUT_MS_HTTP_CLIENT);
-const messageProducer: IMessageProducer = new MLKafkaProducer({ // TODO: timeout.
-    kafkaBrokerList: URL_MESSAGE_BROKER,
-    producerClientId: ID_MESSAGE_PRODUCER
-}, logger);
 const aggregate: Aggregate = new Aggregate(
     logger,
-    repository,
+    repo,
     locks,
-    httpClient,
     messageProducer,
     TIME_ZONE,
     TIMEOUT_MS_LOCK_ACQUIRED,
-    MIN_DURATION_MS_TASK
+    MIN_DURATION_MS_TASK,
+    TIMEOUT_MS_HTTP_CLIENT
 );
 // Application.
 const webServer: ExpressWebServer = new ExpressWebServer(

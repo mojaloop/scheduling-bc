@@ -22,10 +22,20 @@
  * Crosslake
  - Pedro Sousa Barreto <pedrob@crosslaketech.com>
 
- * Community
- - Gonçalo Garcia <goncalogarcia99@gmail.com>
+ * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
  ******/
 
 "use strict";
+
+describe("scheduling client - unit tests", () => {
+    test("create reminder", async () => {
+    });
+
+    test("get reminder", async () => {
+    });
+
+    test("delete reminder", async () => {
+    });
+});

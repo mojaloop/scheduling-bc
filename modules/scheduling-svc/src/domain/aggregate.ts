@@ -22,8 +22,7 @@
  * Crosslake
  - Pedro Sousa Barreto <pedrob@crosslaketech.com>
 
- * Community
- - Gonçalo Garcia <goncalogarcia99@gmail.com>
+ * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
  ******/
@@ -33,50 +32,52 @@
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {IRepo} from "./infrastructure-interfaces/irepo";
 import {ILocks} from "./infrastructure-interfaces/ilocks";
-import {IHTTPClient} from "./infrastructure-interfaces/ihttp_client";
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib"
 import {Reminder} from "./types";
 import {ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
-import {CronJob} from "cron"; // TODO: infrastructure?
-import * as uuid from "uuid"; // TODO: infrastructure?
+import {CronJob} from "cron";
+import * as uuid from "uuid";
 import {
     InvalidReminderIdTypeError,
     ReminderAlreadyExistsError
 } from "./errors/domain_errors";
+import axios, {AxiosInstance} from "axios";
 
 // TODO: check error handling.
 export class Aggregate {
     // Properties received through the constructor.
     private readonly logger: ILogger;
-    private readonly repository: IRepo;
+    private readonly repo: IRepo;
     private readonly locks: ILocks;
-    private readonly httpClient: IHTTPClient;
     private readonly messageProducer: IMessageProducer;
     private readonly TIME_ZONE: string;
     private readonly TIMEOUT_MS_LOCK_ACQUIRED: number;
     private readonly MIN_DURATION_MS_TASK: number;
     // Other properties.
+    private readonly httpClient: AxiosInstance;
     private readonly cronJobs: Map<string, CronJob>;
 
     constructor(
         logger: ILogger,
-        repository: IRepo,
+        repo: IRepo,
         locks: ILocks,
-        httpClient: IHTTPClient,
         messageProducer: IMessageProducer,
         TIME_ZONE: string,
         TIMEOUT_MS_LOCK_ACQUIRED: number,
         MIN_DURATION_MS_TASK: number,
+        timeoutMsHttpClient: number
     ) {
         this.logger = logger;
-        this.repository = repository;
+        this.repo = repo;
         this.locks = locks;
-        this.httpClient = httpClient;
         this.messageProducer = messageProducer;
         this.TIME_ZONE = TIME_ZONE;
         this.TIMEOUT_MS_LOCK_ACQUIRED = TIMEOUT_MS_LOCK_ACQUIRED;
         this.MIN_DURATION_MS_TASK = MIN_DURATION_MS_TASK;
 
+        this.httpClient = axios.create({
+            timeout: timeoutMsHttpClient
+        });
         this.cronJobs = new Map<string, CronJob>();
     }
 
@@ -85,8 +86,8 @@ export class Aggregate {
         // TODO.
         try {
             await this.messageProducer.connect(); // Throws if the producer is unreachable.
-            await this.repository.init();
-            reminders = await this.repository.getReminders();
+            await this.repo.init();
+            reminders = await this.repo.getReminders();
         } catch (e: unknown) {
             this.logger.error(e);
             throw e;
@@ -106,7 +107,7 @@ export class Aggregate {
 
     async destroy(): Promise<void> {
         await this.messageProducer.destroy();
-        await this.repository.destroy();
+        await this.repo.destroy();
     }
 
     async createReminder(reminder: Reminder): Promise<string> {
@@ -120,13 +121,13 @@ export class Aggregate {
             if (reminder.id === "") {
                 do {
                     reminder.id = uuid.v4();
-                } while (await this.repository.reminderExists(reminder.id));
+                } while (await this.repo.reminderExists(reminder.id));
             } else {
-                if (await this.repository.reminderExists(reminder.id)) {
+                if (await this.repo.reminderExists(reminder.id)) {
                     throw new ReminderAlreadyExistsError();
                 }
             }
-            await this.repository.storeReminder(reminder);
+            await this.repo.storeReminder(reminder);
         } catch (e: unknown) {
             if (e instanceof ReminderAlreadyExistsError) {
                 throw e;
@@ -154,7 +155,7 @@ export class Aggregate {
             return;
         }
         try {
-            const reminder: Reminder | null = await this.repository.getReminder(reminderId);
+            const reminder: Reminder | null = await this.repo.getReminder(reminderId);
             if (reminder == null) {
                 return;
             }
@@ -178,11 +179,21 @@ export class Aggregate {
         }
     }
 
-    private async sendHttpPost(reminder: Reminder): Promise<boolean> {
-        return await this.httpClient.post(
-            reminder.httpPostTaskDetails?.url || "",
-            reminder.payload
-        );
+    private async sendHttpPost(reminder: Reminder): Promise<void> {
+        /**
+         * By default, Axios throws if:
+         * - the server is unreachable;
+         * - the status code falls out of the 2xx range.
+         */
+        try {
+            await this.httpClient.post(
+                reminder.httpPostTaskDetails?.url || "",
+                reminder.payload
+            );
+        } catch (e: unknown) {
+            this.logger.error(e); // TODO: necessary?
+            // TODO: throw?
+        }
     }
 
     private async sendEvent(reminder: Reminder): Promise<void> {
@@ -198,7 +209,7 @@ export class Aggregate {
             throw new InvalidReminderIdTypeError();
         }
         try {
-            return await this.repository.getReminder(reminderId);
+            return await this.repo.getReminder(reminderId);
         } catch (e: unknown) {
             this.logger.error(e);
             throw new Error();
@@ -207,7 +218,7 @@ export class Aggregate {
 
     async getReminders(): Promise<Reminder[]> {
         try {
-            return await this.repository.getReminders();
+            return await this.repo.getReminders();
         } catch (e: unknown) {
             this.logger.error(e);
             throw new Error();
@@ -220,8 +231,8 @@ export class Aggregate {
         }
         let reminderDeleted: boolean = false;
         try {
-            // TODO: place everything here or just the deleteReminder() call.
-            reminderDeleted = await this.repository.deleteReminder(reminderId);
+            // TODO: place everything here or just the deleteReminder() call?
+            reminderDeleted = await this.repo.deleteReminder(reminderId);
         } catch (e: unknown) {
             this.logger.error(e);
             throw new Error();
@@ -238,10 +249,10 @@ export class Aggregate {
     async deleteReminders(): Promise<void> {
         for (const reminderId of this.cronJobs.keys()) { // TODO: const? of?
             try {
-                // TODO: place everything here or just the deleteReminder() call.
+                // TODO: place everything here or just the deleteReminder() call?
                 // The return value of deleteReminder() is ignored because the rest of the function is supposed to
                 // run even if the reminder wasn't deleted.
-                await this.repository.deleteReminder(reminderId);
+                await this.repo.deleteReminder(reminderId);
             } catch (e: unknown) {
                 this.logger.error(e);
                 throw new Error();

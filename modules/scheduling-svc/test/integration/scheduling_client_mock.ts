@@ -22,23 +22,20 @@
  * Crosslake
  - Pedro Sousa Barreto <pedrob@crosslaketech.com>
 
- * Community
- - Gonçalo Garcia <goncalogarcia99@gmail.com>
+ * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
  ******/
 
 "use strict";
 
-import {IHTTPClient} from "../domain/infrastructure-interfaces/ihttp_client";
+import axios, {AxiosInstance, AxiosResponse} from "axios";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import axios, {AxiosInstance} from "axios";
+import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
 
-// By default, Axios throws if:
-// - the server is unreachable;
-// - the status code falls out of the 2xx range.
 
-export class AxiosHTTPClient implements IHTTPClient {
+// TODO: change name - might be confused with the actual scheduling client.
+export class SchedulingClientMock { // TODO: name.
     // Properties received through the constructor.
     private readonly logger: ILogger;
     // Other properties.
@@ -46,23 +43,64 @@ export class AxiosHTTPClient implements IHTTPClient {
 
     constructor(
         logger: ILogger,
-        TIMEOUT_MS_HTTP_CLIENT: number // TODO: change name.
+        URL_REMINDERS: string,
+        TIMEOUT_MS_HTTP_CLIENT: number
     ) {
         this.logger = logger;
 
         this.httpClient = axios.create({
+            baseURL: URL_REMINDERS,
             timeout: TIMEOUT_MS_HTTP_CLIENT
         });
     }
 
-    // TODO: error handling here or on the aggregate?
-    async post(url: string, payload: any): Promise<boolean> {
+    async createReminder(reminder: IReminder): Promise<number> {
         try {
-            await this.httpClient.post(url, payload); // Return type: AxiosResponse<any>.
-            return true;
+            const res: AxiosResponse<any> = await this.httpClient.post("/", reminder);
+            return res.status;
         } catch (e: unknown) {
-            this.logger.error(e);
-            return false;
+            this.logger.debug(e);
+            return -1;
+        }
+    }
+
+    async getReminder(reminderId: string): Promise<number> {
+        try {
+            const res: AxiosResponse<any> = await this.httpClient.get(`/${reminderId}`);
+            return res.status;
+        } catch (e: unknown) {
+            this.logger.debug(e);
+            return -1;
+        }
+    }
+
+    async getReminders(): Promise<number> {
+        try {
+            const res: AxiosResponse<any> = await this.httpClient.get("/");
+            return res.status;
+        } catch (e: unknown) {
+            this.logger.debug(e);
+            return -1;
+        }
+    }
+
+    async deleteReminder(reminderId: string): Promise<number> {
+        try {
+            const res: AxiosResponse<any> = await this.httpClient.delete(`/${reminderId}`);
+            return res.status;
+        } catch (e: unknown) {
+            this.logger.debug(e);
+            return -1;
+        }
+    }
+
+    async deleteReminders(): Promise<number> {
+        try {
+            const res: AxiosResponse<any> = await this.httpClient.delete("/");
+            return res.status;
+        } catch (e: unknown) {
+            this.logger.debug(e);
+            return -1;
         }
     }
 }

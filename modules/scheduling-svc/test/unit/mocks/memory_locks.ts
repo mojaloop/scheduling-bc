@@ -22,8 +22,7 @@
  * Crosslake
  - Pedro Sousa Barreto <pedrob@crosslaketech.com>
 
- * Community
- - Gonçalo Garcia <goncalogarcia99@gmail.com>
+ * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
  ******/
@@ -31,9 +30,35 @@
 "use strict";
 
 import {ILocks} from "../../../src/domain/infrastructure-interfaces/ilocks";
+import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 
+// TODO: test with multiple instances?
 export class MemoryLocks implements ILocks {
-    constructor() {
+    // Properties received through the constructor.
+    private readonly logger: ILogger;
+    private readonly HOST_LOCKS: string;
+    private readonly CLOCK_DRIFT_FACTOR: number;
+    private readonly MAX_LOCK_SPINS: number;
+    private readonly DELAY_MS_LOCK_SPINS: number;
+    private readonly DELAY_MS_LOCK_SPINS_JITTER: number;
+    private readonly THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION: number;
+
+    constructor(
+        logger: ILogger,
+        HOST_LOCKS: string,
+        CLOCK_DRIFT_FACTOR: number,
+        MAX_LOCK_SPINS: number,
+        DELAY_MS_LOCK_SPINS: number,
+        DELAY_MS_LOCK_SPINS_JITTER: number,
+        THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION: number
+    ) {
+        this.logger = logger;
+        this.HOST_LOCKS = HOST_LOCKS;
+        this.CLOCK_DRIFT_FACTOR = CLOCK_DRIFT_FACTOR;
+        this.MAX_LOCK_SPINS = MAX_LOCK_SPINS;
+        this.DELAY_MS_LOCK_SPINS = DELAY_MS_LOCK_SPINS;
+        this.DELAY_MS_LOCK_SPINS_JITTER = DELAY_MS_LOCK_SPINS_JITTER;
+        this.THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION = THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION;
     }
 
     async acquire(lockId: string, durationMs: number): Promise<boolean> {
