@@ -118,7 +118,12 @@ const webServer: ExpressWebServer = new ExpressWebServer(
 );
 
 async function start(): Promise<void> {
-    await aggregate.init(); // The aggregate initializes all the dependencies. TODO: handle exception?
+    try {
+        await aggregate.init(); // The aggregate initializes all the dependencies. TODO: handle exception?
+    } catch (e: unknown) {
+        logger.fatal(e);
+        throw e;
+    }
     webServer.start();
 }
 

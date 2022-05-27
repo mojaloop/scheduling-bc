@@ -46,8 +46,10 @@ const schedulingClient: SchedulingClient = new SchedulingClient(
 
 // TODO: throw errors instead of return null.
 describe("scheduling client - integration tests", () => { // TODO: async?
-    test("create non-existent reminder", async () => {
-        const reminderIdExpected: string = "a";
+    // TODO: create existent reminder.
+
+    test("create non-existent reminder", async () => { // TODO: non-existent?
+        const reminderIdExpected: string = Date.now().toString(); // TODO.
         const reminder: Reminder = new Reminder(
             reminderIdExpected,
             "*/15 * * * * *",
@@ -60,17 +62,16 @@ describe("scheduling client - integration tests", () => { // TODO: async?
                 "topic": "test_topic"
             }
         );
-        await schedulingClient.deleteReminder(reminderIdExpected);
         const reminderIdReceived: string | null = await schedulingClient.createReminder(reminder);
         expect(reminderIdReceived).toBe(reminderIdExpected);
     });
 
-    // TODO.
-    test("get existent reminder", async () => { // TODO: existent?
+    /*
+    test("get existent reminder", async () => {
         const reminderId: string = "a";
         const reminderSent: Reminder = new Reminder(
             reminderId,
-            "*/15 * * * * *",
+            "*!/15 * * * * *",
             {},
             ReminderTaskType.HTTP_POST,
             {
@@ -85,22 +86,19 @@ describe("scheduling client - integration tests", () => { // TODO: async?
         }
         const reminderReceived: Reminder | null = await schedulingClient.getReminder(reminderId);
         expect(reminderReceived); // TODO: not null or the whole reminder?
-    });
+    });*/
 
-    // TODO.
-    test("get non-existent reminder", async () => { // TODO: non-existent?
-        const reminderId: string = "a";
-        await schedulingClient.deleteReminder(reminderId);
+    test("get non-existent reminder", async () => {
+        const reminderId: string = Date.now().toString();
         const reminder: Reminder | null = await schedulingClient.getReminder(reminderId);
         expect(reminder).toBeNull(); // TODO.
     });
 
-    // TODO: use the own function inside its test as a helper?
-    test("delete existent reminder", async () => {
+    /*test("delete existent reminder", async () => {
         const reminderId: string = "a";
         const reminder: Reminder = new Reminder(
             reminderId,
-            "*/15 * * * * *",
+            "*!/15 * * * * *",
             {},
             ReminderTaskType.HTTP_POST,
             {
@@ -113,5 +111,11 @@ describe("scheduling client - integration tests", () => { // TODO: async?
         await schedulingClient.createReminder(reminder);
         const retDelete: boolean = await schedulingClient.deleteReminder(reminderId);
         expect(retDelete).toBeTruthy(); // TODO: toBe(true)?
+    });*/
+
+    test("delete non-existent reminder", async () => {
+        const reminderId: string = Date.now().toString();
+        const retDelete: boolean = await schedulingClient.deleteReminder(reminderId);
+        expect(retDelete).toBe(false); // TODO.
     });
 });

@@ -30,12 +30,12 @@
 "use strict";
 
 describe("scheduling client - unit tests", () => {
-    test("create reminder", async () => {
+    test("create non-existent reminder", async () => {
     });
 
-    test("get reminder", async () => {
+    test("get non-existent reminder", async () => {
     });
 
-    test("delete reminder", async () => {
+    test("delete non-existent reminder", async () => {
     });
 });

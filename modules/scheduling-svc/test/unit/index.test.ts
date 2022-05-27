@@ -114,11 +114,9 @@ describe("scheduling client - unit tests", () => {
     });
 
     test("get reminders", async () => {
-        // TODO: delete and create reminders first?
     });
 
     test("get reminder", async () => {
-        // TODO: delete and create reminder first?
     });
 
     test("create reminder", async () => {

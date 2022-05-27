@@ -29,5 +29,18 @@
 
 "use strict";
 
+import {Reminder} from "@mojaloop/scheduling-bc-scheduling-svc/dist/domain/types";
+
 export class SchedulingServiceMock { // TODO: name.
+    async createReminder(): Promise<string> {
+        throw new Error("not implemented yet");
+    }
+
+    async getReminder(): Promise<Reminder | null> {
+        throw new Error("not implemented yet");
+    }
+
+    async deleteReminder(): Promise<boolean> {
+        throw new Error("not implemented yet");
+    }
 }

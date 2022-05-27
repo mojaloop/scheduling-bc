@@ -31,7 +31,6 @@
 
 import {SchedulingClientMock} from "./scheduling_client_mock";
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-
 import {ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
 import {Reminder} from "../../src/domain/types";
 
@@ -49,25 +48,19 @@ const schedulingClientMock: SchedulingClientMock = new SchedulingClientMock(
 describe("scheduling service - integration tests", () => {
     test("get reminders", async () => {
         const statusCodeResponse: number = await schedulingClientMock.getReminders();
-        await expect(statusCodeResponse).toBe(200);
+        expect(statusCodeResponse).toBe(200);
     });
 
-    test("get existent reminder", async () => { // TODO: existent?
-        // TODO: create reminder.
-        const statusCodeResponse: number = await schedulingClientMock.getReminder("a");
-        await expect(statusCodeResponse).toBe(200);
-    });
-
-    test("get non-existent reminder", async () => { // TODO: non-existent?
-        // TODO: delete reminder.
-        const statusCodeResponse: number = await schedulingClientMock.getReminder("a");
-        await expect(statusCodeResponse).toBe(200);
+    test("get non-existent reminder", async () => {
+        const reminderId: string = Date.now().toString();
+        const statusCodeResponse: number = await schedulingClientMock.getReminder(reminderId);
+        expect(statusCodeResponse).not.toBe(200); // TODO.
     });
 
     test("create non-existent reminder", async () => {
-        // TODO: delete reminder.
+        const reminderId: string = Date.now().toString();
         const reminder: Reminder = new Reminder(
-            "a",
+            reminderId,
             "*/15 * * * * *",
             {},
             ReminderTaskType.HTTP_POST,
@@ -79,17 +72,17 @@ describe("scheduling service - integration tests", () => {
             }
         );
         const statusCodeResponse: number = await schedulingClientMock.createReminder(reminder);
-        await expect(statusCodeResponse).toBe(200);
+        expect(statusCodeResponse).toBe(200);
     });
 
-    test("delete existent reminder", async () => {
-        // TODO: create reminder.
-        const statusCodeResponse: number = await schedulingClientMock.deleteReminder("a");
-        await expect(statusCodeResponse).toBe(200);
+    test("delete non-existent reminder", async () => {
+        const reminderId: string = Date.now().toString();
+        const statusCodeResponse: number = await schedulingClientMock.deleteReminder(reminderId);
+        expect(statusCodeResponse).not.toBe(200); // TODO.
     });
 
     test("delete reminders", async () => {
         const statusCodeResponse: number = await schedulingClientMock.deleteReminders();
-        await expect(statusCodeResponse).toBe(200);
+        expect(statusCodeResponse).toBe(200);
     });
 });
