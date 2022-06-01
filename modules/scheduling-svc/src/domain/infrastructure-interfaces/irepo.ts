@@ -29,14 +29,40 @@
 
 "use strict";
 
-import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
+import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
 
 export interface IRepo {
+    /**
+     * @throws an instance of UnableToInitRepoError, if the connection fails.
+     */
     init(): Promise<void>;
     destroy(): Promise<void>;
+    /**
+     * @returns true, if the reminder exists; false, if the reminder doesn't exist.
+     * @throws an instance of UnableToGetReminderError, if the operation fails - inconclusive.
+     */
     reminderExists(reminderId: string): Promise<boolean>;
-    storeReminder(reminder: IReminder): Promise<boolean>;
+    /**
+     * @throws an instance of ReminderAlreadyExistsError, if the reminder already exists; an instance of
+     * UnableToStoreReminderError, if the operation fails.
+     */
+    storeReminder(reminder: IReminder): Promise<void>;
+    /**
+     * @returns the reminder asked for, if it exists; null, if the reminder asked for doesn't exist.
+     * @throws an instance of UnableToGetReminderError, if the operation fails - the reminder asked for might or might
+     * not exist.
+     */
     getReminder(reminderId: string): Promise<IReminder | null>;
+    /**
+     * @returns an array of reminders, that can be empty.
+     * @throws an instance of UnableToGetRemindersError, if the operation fails - there might or might not exist
+     * reminders.
+     */
     getReminders(): Promise<IReminder[]>;
-    deleteReminder(reminderId: string): Promise<boolean>;
+    /**
+     * @throws an instance of NoSuchReminderError, if the reminder doesn't exist; an instance of
+     * UnableToDeleteReminderError, if the operation fails - the reminder wasn't deleted, but not because it doesn't
+     * exist.
+     */
+    deleteReminder(reminderId: string): Promise<void>;
 }

@@ -29,13 +29,13 @@
 
 "use strict";
 
-export class MissingEssentialReminderPropertiesOrTaskDetailsError extends Error{}
-export class InvalidReminderIdTypeError extends Error{}
-export class InvalidReminderTimeTypeError extends Error{}
-export class InvalidReminderTimeError extends Error{}
-export class InvalidReminderTaskTypeTypeError extends Error{}
-export class InvalidReminderTaskTypeError extends Error{}
-export class InvalidReminderTaskDetailsTypeError extends Error{}
+export class MissingEssentialReminderPropertiesOrTaskDetailsErrorDomain extends Error{}
+export class InvalidReminderIdTypeErrorDomain extends Error{}
+export class InvalidReminderTimeTypeErrorDomain extends Error{}
+export class InvalidReminderTimeErrorDomain extends Error{}
+export class InvalidReminderTaskTypeTypeErrorDomain extends Error{}
+export class InvalidReminderTaskTypeErrorDomain extends Error{}
+export class InvalidReminderTaskDetailsTypeErrorDomain extends Error{}
 
-export class ReminderAlreadyExistsError extends Error{}
-export class NoSuchReminderError extends Error{}
+export class ReminderAlreadyExistsErrorDomain extends Error{}
+export class NoSuchReminderErrorDomain extends Error{}

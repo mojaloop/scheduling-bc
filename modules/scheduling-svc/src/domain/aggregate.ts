@@ -34,14 +34,15 @@ import {IRepo} from "./infrastructure-interfaces/irepo";
 import {ILocks} from "./infrastructure-interfaces/ilocks";
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib"
 import {Reminder} from "./types";
-import {ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
+import {ReminderTaskType} from "@mojaloop/scheduling-bc-private-types-lib";
 import {CronJob} from "cron";
 import * as uuid from "uuid";
 import {
-    InvalidReminderIdTypeError,
-    ReminderAlreadyExistsError
+    InvalidReminderIdTypeErrorDomain, NoSuchReminderErrorDomain,
+    ReminderAlreadyExistsErrorDomain
 } from "./errors/domain_errors";
 import axios, {AxiosInstance} from "axios";
+import {NoSuchReminderErrorRepo, ReminderAlreadyExistsErrorRepo} from "./errors/repo_errors";
 
 // TODO: check error handling.
 export class Aggregate {
@@ -110,7 +111,7 @@ export class Aggregate {
         await this.repo.destroy();
     }
 
-    async createReminder(reminder: Reminder): Promise<string> {
+    async createReminder(reminder: Reminder): Promise<string> { // TODO: Reminder or IReminder?
         // To facilitate the creation of reminders, undefined/null ids are accepted and converted to empty strings
         // (so that random UUIds are generated).
         if (reminder.id === undefined || reminder.id === null) { // TODO.
@@ -122,15 +123,11 @@ export class Aggregate {
                 do {
                     reminder.id = uuid.v4();
                 } while (await this.repo.reminderExists(reminder.id));
-            } else {
-                if (await this.repo.reminderExists(reminder.id)) {
-                    throw new ReminderAlreadyExistsError();
-                }
             }
             await this.repo.storeReminder(reminder);
         } catch (e: unknown) {
-            if (e instanceof ReminderAlreadyExistsError) {
-                throw e;
+            if (e instanceof ReminderAlreadyExistsErrorRepo) { // TODO: use repo error here?
+                throw ReminderAlreadyExistsErrorDomain;
             }
             this.logger.error(e);
             throw new Error();
@@ -156,8 +153,9 @@ export class Aggregate {
         }
         try {
             const reminder: Reminder | null = await this.repo.getReminder(reminderId);
-            if (reminder == null) {
-                return;
+            if (reminder === null) {
+                this.logger.error("no such reminder"); // TODO.
+                return; // TODO: throw?
             }
             switch (reminder.taskType) {
                 case ReminderTaskType.HTTP_POST:
@@ -179,7 +177,7 @@ export class Aggregate {
         }
     }
 
-    private async sendHttpPost(reminder: Reminder): Promise<void> {
+    private async sendHttpPost(reminder: Reminder): Promise<void> { // TODO: Reminder or IReminder?
         /**
          * By default, Axios throws if:
          * - the server is unreachable;
@@ -187,7 +185,7 @@ export class Aggregate {
          */
         try {
             await this.httpClient.post(
-                reminder.httpPostTaskDetails?.url || "",
+                reminder.httpPostTaskDetails?.url ?? "",
                 reminder.payload
             );
         } catch (e: unknown) {
@@ -196,7 +194,7 @@ export class Aggregate {
         }
     }
 
-    private async sendEvent(reminder: Reminder): Promise<void> {
+    private async sendEvent(reminder: Reminder): Promise<void> { // TODO: Reminder or IReminder?
         // TODO: check if throws.
         await this.messageProducer.send({
             topic: reminder.eventTaskDetails?.topic,
@@ -204,9 +202,9 @@ export class Aggregate {
         });
     }
 
-    async getReminder(reminderId: string): Promise<Reminder | null> {
+    async getReminder(reminderId: string): Promise<Reminder | null> { // TODO: Reminder or IReminder?
         if (typeof reminderId != "string") { // TODO.
-            throw new InvalidReminderIdTypeError();
+            throw new InvalidReminderIdTypeErrorDomain();
         }
         try {
             return await this.repo.getReminder(reminderId);
@@ -216,7 +214,7 @@ export class Aggregate {
         }
     }
 
-    async getReminders(): Promise<Reminder[]> {
+    async getReminders(): Promise<Reminder[]> { // TODO: Reminder or IReminder?
         try {
             return await this.repo.getReminders();
         } catch (e: unknown) {
@@ -225,35 +223,37 @@ export class Aggregate {
         }
     }
 
-    async deleteReminder(reminderId: string): Promise<boolean> {
+    async deleteReminder(reminderId: string): Promise<void> {
         if (typeof reminderId != "string") { // TODO.
-            throw new InvalidReminderIdTypeError();
+            throw new InvalidReminderIdTypeErrorDomain();
         }
-        let reminderDeleted: boolean = false;
         try {
             // TODO: place everything here or just the deleteReminder() call?
-            reminderDeleted = await this.repo.deleteReminder(reminderId);
+            await this.repo.deleteReminder(reminderId);
         } catch (e: unknown) {
+            if (e instanceof NoSuchReminderErrorRepo) { // TODO: use repo error here?
+                throw new NoSuchReminderErrorDomain();
+            }
             this.logger.error(e);
             throw new Error();
         }
         const cronJob: CronJob | undefined = this.cronJobs.get(reminderId);
         if (cronJob === undefined) {
-            return reminderDeleted;
+            return;
         }
         cronJob.stop();
         this.cronJobs.delete(reminderId);
-        return true;
     }
 
     async deleteReminders(): Promise<void> {
         for (const reminderId of this.cronJobs.keys()) { // TODO: const? of?
             try {
                 // TODO: place everything here or just the deleteReminder() call?
-                // The return value of deleteReminder() is ignored because the rest of the function is supposed to
-                // run even if the reminder wasn't deleted.
                 await this.repo.deleteReminder(reminderId);
             } catch (e: unknown) {
+                if (e instanceof NoSuchReminderErrorRepo) { // TODO: use repo error here?
+                    throw new NoSuchReminderErrorDomain();
+                }
                 this.logger.error(e);
                 throw new Error();
             }

@@ -31,7 +31,7 @@
 
 import {SchedulingClientMock} from "./scheduling_client_mock";
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
+import {ReminderTaskType} from "@mojaloop/scheduling-bc-private-types-lib";
 import {Reminder} from "../../src/domain/types";
 
 // TODO: here or inside the describe function?

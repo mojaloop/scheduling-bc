@@ -42,22 +42,22 @@ import {ExpressWebServer} from "./web-server/express_web_server";
 /* Constants. */
 const NAME_SERVICE: string = "scheduling";
 // Server.
-const HOST_WEB_SERVER: string = process.env.SCHEDULING_HOST_SERVER || "localhost";
-const PORT_NO_WEB_SERVER: number = parseInt(process.env.SCHEDULING_PORT_NO_SERVER || "") || 1234;
+const HOST_WEB_SERVER: string = process.env.SCHEDULING_HOST_SERVER ?? "localhost";
+const PORT_NO_WEB_SERVER: number = parseInt(process.env.SCHEDULING_PORT_NO_SERVER ?? "") || 1234;
 const URL_WEB_SERVER_PATH_ROUTER: string = "/reminders";
 // Repository.
-const HOST_REPO: string = process.env.SCHEDULING_HOST_REPO || "localhost";
-const PORT_NO_REPO: number = parseInt(process.env.SCHEDULING_PORT_NO_REPO || "") || 27017;
+const HOST_REPO: string = process.env.SCHEDULING_HOST_REPO ?? "localhost";
+const PORT_NO_REPO: number = parseInt(process.env.SCHEDULING_PORT_NO_REPO ?? "") || 27017;
 const URL_REPO: string = `mongodb://${HOST_REPO}:${PORT_NO_REPO}`;
 const NAME_DB: string = "scheduling";
 const NAME_COLLECTION: string = "reminders";
 // Locks.
-const HOST_LOCKS: string = process.env.SCHEDULING_HOST_LOCKS || "localhost";
+const HOST_LOCKS: string = process.env.SCHEDULING_HOST_LOCKS ?? "localhost";
 const MAX_LOCK_SPINS: number = 10; // Max number of attempts to acquire a lock. TODO.
 const CLOCK_DRIFT_FACTOR: number = 0.01;
 // Message producer.
-const HOST_MESSAGE_BROKER: string = process.env.SCHEDULING_HOST_MESSAGE_BROKER || "localhost";
-const PORT_NO_MESSAGE_BROKER: number = parseInt(process.env.SCHEDULING_PORT_NO_MESSAGE_BROKER || "") || 9092;
+const HOST_MESSAGE_BROKER: string = process.env.SCHEDULING_HOST_MESSAGE_BROKER ?? "localhost";
+const PORT_NO_MESSAGE_BROKER: number = parseInt(process.env.SCHEDULING_PORT_NO_MESSAGE_BROKER ?? "") || 9092;
 const URL_MESSAGE_BROKER: string = `${HOST_MESSAGE_BROKER}:${PORT_NO_MESSAGE_BROKER}`; // TODO: name.
 const ID_MESSAGE_PRODUCER: string = NAME_SERVICE; // TODO: name.
 // Time.

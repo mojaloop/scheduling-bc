@@ -32,7 +32,7 @@
 // TODO: ESLint warning on the top of the editor window.
 
 import {IRepo} from "../../../src/domain/infrastructure-interfaces/irepo";
-import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
+import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 
 export class MemoryRepo implements IRepo {
@@ -87,6 +87,6 @@ export class MemoryRepo implements IRepo {
     }
 
     async getReminder(reminderId: string): Promise<IReminder | null> {
-        return this.map.get(reminderId) || null;
+        return this.map.get(reminderId) ?? null;
     }
 }

@@ -31,7 +31,7 @@
 
 import {SchedulingClient} from "../../src";
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {Reminder, ReminderTaskType} from "@mojaloop/scheduling-bc-scheduling-svc/dist/domain/types";
+import {IReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-private-types-lib"; // TODO.
 
 // TODO: here or inside the describe function?
 const URL_REMINDERS: string = "http://localhost:1234/reminders";
@@ -45,12 +45,10 @@ const schedulingClient: SchedulingClient = new SchedulingClient(
 );
 
 // TODO: throw errors instead of return null.
-describe("scheduling client - integration tests", () => { // TODO: async?
-    // TODO: create existent reminder.
-
-    test("create non-existent reminder", async () => { // TODO: non-existent?
-        const reminderIdExpected: string = Date.now().toString(); // TODO.
-        const reminder: Reminder = new Reminder(
+describe("scheduling client - integration tests", () => {
+    test("create non-existent reminder", async () => {
+        const reminderIdExpected: string = Date.now().toString();
+        const reminder: Reminder = new Reminder( // TODO.
             reminderIdExpected,
             "*/15 * * * * *",
             {},
@@ -62,60 +60,43 @@ describe("scheduling client - integration tests", () => { // TODO: async?
                 "topic": "test_topic"
             }
         );
-        const reminderIdReceived: string | null = await schedulingClient.createReminder(reminder);
-        expect(reminderIdReceived).toBe(reminderIdExpected);
+        try {
+            const reminderIdReceived: string = await schedulingClient.createReminder(reminder);
+            expect(reminderIdReceived).toBe(reminderIdExpected);
+        } catch (e: unknown) {
+            fail(e); // TODO.
+        }
     });
 
-    /*
-    test("get existent reminder", async () => {
-        const reminderId: string = "a";
-        const reminderSent: Reminder = new Reminder(
-            reminderId,
-            "*!/15 * * * * *",
-            {},
-            ReminderTaskType.HTTP_POST,
-            {
-                "url": "http://localhost:1111/"
-            },
-            {
-                "topic": "test_topic"
-            }
-        );
-        if (await schedulingClient.deleteReminder(reminderId)) {
-            await schedulingClient.createReminder(reminderSent); // Create the reminder, if it was deleted.
-        }
-        const reminderReceived: Reminder | null = await schedulingClient.getReminder(reminderId);
-        expect(reminderReceived); // TODO: not null or the whole reminder?
-    });*/
+    test("create existent reminder", async () => {
+        // TODO.
+    });
 
     test("get non-existent reminder", async () => {
         const reminderId: string = Date.now().toString();
-        const reminder: Reminder | null = await schedulingClient.getReminder(reminderId);
-        expect(reminder).toBeNull(); // TODO.
+        try {
+            const reminder: IReminder = await schedulingClient.getReminder(reminderId);
+            fail(reminder); // TODO.
+        } catch (e: unknown) {
+            logger.info(e); // TODO.
+        }
     });
 
-    /*test("delete existent reminder", async () => {
-        const reminderId: string = "a";
-        const reminder: Reminder = new Reminder(
-            reminderId,
-            "*!/15 * * * * *",
-            {},
-            ReminderTaskType.HTTP_POST,
-            {
-                "url": "http://localhost:1111/"
-            },
-            {
-                "topic": "test_topic"
-            }
-        );
-        await schedulingClient.createReminder(reminder);
-        const retDelete: boolean = await schedulingClient.deleteReminder(reminderId);
-        expect(retDelete).toBeTruthy(); // TODO: toBe(true)?
-    });*/
+    test("get existent reminder", async () => {
+        // TODO.
+    });
 
     test("delete non-existent reminder", async () => {
         const reminderId: string = Date.now().toString();
-        const retDelete: boolean = await schedulingClient.deleteReminder(reminderId);
-        expect(retDelete).toBe(false); // TODO.
+        try {
+            await schedulingClient.deleteReminder(reminderId);
+            fail(); // TODO.
+        } catch (e: unknown) {
+            logger.info(e); // TODO.
+        }
+    });
+
+    test("delete existent reminder", async () => {
+        // TODO.
     });
 });

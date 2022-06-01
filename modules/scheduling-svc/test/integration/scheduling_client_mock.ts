@@ -31,7 +31,7 @@
 
 import axios, {AxiosInstance, AxiosResponse} from "axios";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
+import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
 
 
 // TODO: change name - might be confused with the actual scheduling client.

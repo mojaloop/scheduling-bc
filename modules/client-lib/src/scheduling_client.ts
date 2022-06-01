@@ -30,8 +30,9 @@
 "use strict";
 
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import axios, {AxiosInstance, AxiosResponse} from "axios";
-import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
+import axios, {AxiosInstance, AxiosResponse, AxiosError} from "axios";
+import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
+import {UnableToCreateReminderError, UnableToDeleteReminderError, UnableToGetReminderError} from "./errors";
 
 export class SchedulingClient {
     // Properties received through the constructor.
@@ -52,33 +53,47 @@ export class SchedulingClient {
         });
     }
 
-    async createReminder(reminder: IReminder): Promise<string | null> { // TODO: return null?
+    async createReminder(reminder: IReminder): Promise<string> {
         try {
             const res: AxiosResponse<any> = await this.httpClient.post("/", reminder);
             return res.data;
         } catch(e: unknown) {
             this.logger.error(e);
-            return null;
+            if (axios.isAxiosError(e)) {
+                throw new UnableToCreateReminderError(
+                    (e as AxiosError).response?.data.message // TODO: receive a string?
+                );
+            }
+            throw new UnableToCreateReminderError(); // TODO.
         }
     }
 
-    async getReminder(reminderId: string): Promise<IReminder | null> {
+    async getReminder(reminderId: string): Promise<IReminder> {
         try {
             const res: AxiosResponse<any> = await this.httpClient.get(`/${reminderId}`);
             return res.data;
         } catch(e: unknown) {
             this.logger.error(e);
-            return null;
+            if (axios.isAxiosError(e)) {
+                throw new UnableToGetReminderError(
+                    (e as AxiosError).response?.data.message // TODO: receive a string?
+                );
+            }
+            throw new UnableToGetReminderError(); // TODO.
         }
     }
 
-    async deleteReminder(reminderId: string): Promise<boolean> {
+    async deleteReminder(reminderId: string): Promise<void> {
         try {
             await this.httpClient.delete(`/${reminderId}`);
-            return true;
         } catch (e: unknown) {
             this.logger.error(e);
-            return false;
+            if (axios.isAxiosError(e)) {
+                throw new UnableToDeleteReminderError(
+                    (e as AxiosError).response?.data.message // TODO: receive a string?
+                );
+            }
+            throw new UnableToDeleteReminderError(); // TODO.
         }
     }
 }

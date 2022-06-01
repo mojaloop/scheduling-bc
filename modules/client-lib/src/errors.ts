@@ -29,10 +29,6 @@
 
 "use strict";
 
-export class UnableToInitRepoErrorRepo extends Error{}
-export class ReminderAlreadyExistsErrorRepo extends Error{}
-export class UnableToStoreReminderErrorRepo extends Error{}
-export class UnableToGetReminderErrorRepo extends Error{}
-export class UnableToGetRemindersErrorRepo extends Error{}
-export class NoSuchReminderErrorRepo extends Error{}
-export class UnableToDeleteReminderErrorRepo extends Error{}
+export class UnableToCreateReminderError extends Error{}
+export class UnableToGetReminderError extends Error{}
+export class UnableToDeleteReminderError extends Error{}
