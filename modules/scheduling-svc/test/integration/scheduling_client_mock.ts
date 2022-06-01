@@ -29,7 +29,7 @@
 
 "use strict";
 
-import axios, {AxiosInstance, AxiosResponse} from "axios";
+import axios, {AxiosError, AxiosInstance, AxiosResponse} from "axios";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
 
@@ -60,7 +60,7 @@ export class SchedulingClientMock { // TODO: name.
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
-            return -1;
+            return (e as AxiosError).response?.status ?? -1;
         }
     }
 
@@ -70,7 +70,7 @@ export class SchedulingClientMock { // TODO: name.
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
-            return -1;
+            return (e as AxiosError).response?.status ?? -1;
         }
     }
 
@@ -80,7 +80,7 @@ export class SchedulingClientMock { // TODO: name.
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
-            return -1;
+            return (e as AxiosError).response?.status ?? -1;
         }
     }
 
@@ -90,7 +90,7 @@ export class SchedulingClientMock { // TODO: name.
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
-            return -1;
+            return (e as AxiosError).response?.status ?? -1;
         }
     }
 
@@ -100,7 +100,7 @@ export class SchedulingClientMock { // TODO: name.
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
-            return -1;
+            return (e as AxiosError).response?.status ?? -1;
         }
     }
 }

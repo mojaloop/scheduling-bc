@@ -73,7 +73,7 @@ export class Reminder implements IReminder {
     }
 
     // TODO.
-    static validateReminder(reminder: Reminder): void {
+    static validateReminder(reminder: Reminder): void { // TODO: change type to any?
         // Check if the essential properties are present.
         if (reminder.time === undefined
             || reminder.taskType === undefined

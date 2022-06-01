@@ -127,7 +127,7 @@ export class Aggregate {
             await this.repo.storeReminder(reminder);
         } catch (e: unknown) {
             if (e instanceof ReminderAlreadyExistsErrorRepo) { // TODO: use repo error here?
-                throw ReminderAlreadyExistsErrorDomain;
+                throw new ReminderAlreadyExistsErrorDomain();
             }
             this.logger.error(e);
             throw new Error();

@@ -1,4 +1,5 @@
-/*****
+/*
+/!*****
  License
  --------------
  Copyright © 2017 Bill & Melinda Gates Foundation
@@ -25,7 +26,7 @@
  * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
- ******/
+ ******!/
 
 "use strict";
 
@@ -38,7 +39,7 @@ import {MemoryLocks} from "./mocks/memory_locks";
 import {MemoryMessageProducer} from "./mocks/memory_message_producer";
 import {Aggregate} from "../../src/domain/aggregate";
 
-/* Constants. */
+/!* Constants. *!/
 const NAME_SERVICE: string = "scheduling";
 // Repository.
 const HOST_REPO: string = process.env.SCHEDULING_HOST_REPO ?? "localhost";
@@ -128,3 +129,4 @@ describe("scheduling client - unit tests", () => {
     test("delete reminders", async () => {
     });
 });
+*/

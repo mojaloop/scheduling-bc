@@ -32,7 +32,12 @@
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import axios, {AxiosInstance, AxiosResponse, AxiosError} from "axios";
 import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
-import {UnableToCreateReminderError, UnableToDeleteReminderError, UnableToGetReminderError} from "./errors";
+import {
+    UnableToCreateReminderError,
+    UnableToDeleteReminderError,
+    UnableToGetReminderError,
+    UnableToReachServerError
+} from "./errors";
 
 export class SchedulingClient {
     // Properties received through the constructor.
@@ -57,29 +62,27 @@ export class SchedulingClient {
         try {
             const res: AxiosResponse<any> = await this.httpClient.post("/", reminder);
             return res.data;
-        } catch(e: unknown) {
-            this.logger.error(e);
-            if (axios.isAxiosError(e)) {
-                throw new UnableToCreateReminderError(
-                    (e as AxiosError).response?.data.message // TODO: receive a string?
-                );
+        } catch (e: unknown) {
+            const serverErrorMessage: string | undefined = (e as AxiosError).response?.data?.message;
+            if (serverErrorMessage === undefined) {
+                this.logger.error(e);
+                throw new UnableToReachServerError(); // TODO.
             }
-            throw new UnableToCreateReminderError(); // TODO.
+            throw new UnableToCreateReminderError(serverErrorMessage); // TODO: receive a string?
         }
     }
 
-    async getReminder(reminderId: string): Promise<IReminder> {
+    async getReminder(reminderId: string): Promise<IReminder | null> {
         try {
             const res: AxiosResponse<any> = await this.httpClient.get(`/${reminderId}`);
             return res.data;
-        } catch(e: unknown) {
-            this.logger.error(e);
-            if (axios.isAxiosError(e)) {
-                throw new UnableToGetReminderError(
-                    (e as AxiosError).response?.data.message // TODO: receive a string?
-                );
+        } catch (e: unknown) {
+            const serverErrorMessage: string | undefined = (e as AxiosError).response?.data?.message;
+            if (serverErrorMessage === undefined) {
+                this.logger.error(e);
+                throw new UnableToReachServerError(); // TODO.
             }
-            throw new UnableToGetReminderError(); // TODO.
+            throw new UnableToGetReminderError(serverErrorMessage); // TODO: receive a string?
         }
     }
 
@@ -87,13 +90,12 @@ export class SchedulingClient {
         try {
             await this.httpClient.delete(`/${reminderId}`);
         } catch (e: unknown) {
-            this.logger.error(e);
-            if (axios.isAxiosError(e)) {
-                throw new UnableToDeleteReminderError(
-                    (e as AxiosError).response?.data.message // TODO: receive a string?
-                );
+            const serverErrorMessage: string | undefined = (e as AxiosError).response?.data?.message;
+            if (serverErrorMessage === undefined) {
+                this.logger.error(e);
+                throw new UnableToReachServerError(); // TODO.
             }
-            throw new UnableToDeleteReminderError(); // TODO.
+            throw new UnableToDeleteReminderError(serverErrorMessage); // TODO: receive a string?
         }
     }
 }

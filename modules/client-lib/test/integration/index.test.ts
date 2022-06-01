@@ -1,4 +1,5 @@
-/*****
+/*
+/!*****
  License
  --------------
  Copyright © 2017 Bill & Melinda Gates Foundation
@@ -25,7 +26,7 @@
  * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
- ******/
+ ******!/
 
 "use strict";
 
@@ -44,13 +45,13 @@ const schedulingClient: SchedulingClient = new SchedulingClient(
     TIMEOUT_MS_HTTP_CLIENT
 );
 
-// TODO: throw errors instead of return null.
+// TODO: throw errors instead of returning null.
 describe("scheduling client - integration tests", () => {
     test("create non-existent reminder", async () => {
         const reminderIdExpected: string = Date.now().toString();
         const reminder: Reminder = new Reminder( // TODO.
             reminderIdExpected,
-            "*/15 * * * * *",
+            "*!/15 * * * * *",
             {},
             ReminderTaskType.HTTP_POST,
             {
@@ -100,3 +101,4 @@ describe("scheduling client - integration tests", () => {
         // TODO.
     });
 });
+*/

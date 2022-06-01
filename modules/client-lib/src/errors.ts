@@ -29,6 +29,7 @@
 
 "use strict";
 
+export class UnableToReachServerError extends Error{}
 export class UnableToCreateReminderError extends Error{}
 export class UnableToGetReminderError extends Error{}
 export class UnableToDeleteReminderError extends Error{}
