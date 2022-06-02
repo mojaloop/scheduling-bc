@@ -1567,7 +1567,7 @@ __metadata:
     "@mojaloop/logging-bc-logging-client-lib": latest
     "@mojaloop/platform-shared-lib-messaging-types-lib": ^0.0.2
     "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib": ^0.0.4
-    "@mojaloop/scheduling-bc-private-types-lib": "workspace:*"
+    "@mojaloop/scheduling-bc-private-types-lib": ^0.0.1
     "@types/cron": ^1.7.3
     "@types/express": ^4.17.13
     "@types/jest": ^27.0.3
@@ -1590,6 +1590,7 @@ __metadata:
     jest: ^27.3.1
     jest-junit: ^13.0.0
     mongodb: ^4.4.1
+    nock: ^13.2.4
     npm-audit-resolver: ^2.3.1
     npm-check-updates: ^12.0.2
     nyc: ^15.1.0
@@ -1602,7 +1603,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@mojaloop/scheduling-bc-private-types-lib@workspace:*, @mojaloop/scheduling-bc-private-types-lib@workspace:modules/private-types-lib":
+"@mojaloop/scheduling-bc-private-types-lib@^0.0.1, @mojaloop/scheduling-bc-private-types-lib@workspace:modules/private-types-lib":
   version: 0.0.0-use.local
   resolution: "@mojaloop/scheduling-bc-private-types-lib@workspace:modules/private-types-lib"
   dependencies:
@@ -1650,7 +1651,7 @@ __metadata:
     "@mojaloop/logging-bc-logging-client-lib": latest
     "@mojaloop/platform-shared-lib-messaging-types-lib": ^0.0.2
     "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib": ^0.0.4
-    "@mojaloop/scheduling-bc-private-types-lib": "workspace:*"
+    "@mojaloop/scheduling-bc-private-types-lib": ^0.0.1
     "@types/cron": ^1.7.3
     "@types/express": ^4.17.13
     "@types/jest": ^27.0.3
@@ -7518,6 +7519,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash.set@npm:^4.3.2":
+  version: 4.3.2
+  resolution: "lodash.set@npm:4.3.2"
+  checksum: a9122f49eef9f2d0fc9061a33d87f8e5b8c6b23d46e8b9e9ce1529d3588d79741bd1145a3abdfa3b13082703e65af27ff18d8a07bfc22b9be32f3fc36f763f70
+  languageName: node
+  linkType: hard
+
 "lodash.template@npm:^4.5.0":
   version: 4.5.0
   resolution: "lodash.template@npm:4.5.0"
@@ -8164,6 +8172,18 @@ __metadata:
   version: 2.6.2
   resolution: "neo-async@npm:2.6.2"
   checksum: deac9f8d00eda7b2e5cd1b2549e26e10a0faa70adaa6fdadca701cc55f49ee9018e427f424bac0c790b7c7e2d3068db97f3093f1093975f2acb8f8818b936ed9
+  languageName: node
+  linkType: hard
+
+"nock@npm:^13.2.4":
+  version: 13.2.4
+  resolution: "nock@npm:13.2.4"
+  dependencies:
+    debug: ^4.1.0
+    json-stringify-safe: ^5.0.1
+    lodash.set: ^4.3.2
+    propagate: ^2.0.0
+  checksum: 2750a82ea22eebd8203eb1d7669ae09c3daae1fd573026372bad2515adad48d723a804f647bd45d7a499eb3a9a632560da406bde05bca9df762d3027db9099b5
   languageName: node
   linkType: hard
 
@@ -9413,6 +9433,13 @@ __metadata:
   dependencies:
     read: 1
   checksum: 443a3b39ac916099988ee0161ab4e22edd1fa27e3d39a38d60e48c11ca6df3f5a90bfe44d95af06ed8659c4050b789ffe64c3f9f8e49a4bea1ea19105c98445a
+  languageName: node
+  linkType: hard
+
+"propagate@npm:^2.0.0":
+  version: 2.0.1
+  resolution: "propagate@npm:2.0.1"
+  checksum: c4febaee2be0979e82fb6b3727878fd122a98d64a7fa3c9d09b0576751b88514a9e9275b1b92e76b364d488f508e223bd7e1dcdc616be4cdda876072fbc2a96c
   languageName: node
   linkType: hard
 

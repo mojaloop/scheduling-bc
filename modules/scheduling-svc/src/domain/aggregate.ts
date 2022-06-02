@@ -203,7 +203,7 @@ export class Aggregate {
     }
 
     async getReminder(reminderId: string): Promise<Reminder | null> { // TODO: Reminder or IReminder?
-        if (typeof reminderId != "string") { // TODO.
+        if (typeof reminderId !== "string") { // TODO.
             throw new InvalidReminderIdTypeErrorDomain();
         }
         try {
@@ -224,7 +224,7 @@ export class Aggregate {
     }
 
     async deleteReminder(reminderId: string): Promise<void> {
-        if (typeof reminderId != "string") { // TODO.
+        if (typeof reminderId !== "string") { // TODO.
             throw new InvalidReminderIdTypeErrorDomain();
         }
         try {

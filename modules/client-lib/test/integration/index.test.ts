@@ -1,4 +1,5 @@
-/*****
+/*
+/!*****
  License
  --------------
  Copyright © 2017 Bill & Melinda Gates Foundation
@@ -25,7 +26,7 @@
  * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
- ******/
+ ******!/
 
 "use strict";
 
@@ -50,7 +51,7 @@ describe("scheduling client - integration tests", () => {
         const reminderIdExpected: string = Date.now().toString();
         const reminder: Reminder = new Reminder( // TODO.
             reminderIdExpected,
-            "*/15 * * * * *",
+            "*!/15 * * * * *",
             {},
             ReminderTaskType.HTTP_POST,
             {
@@ -68,7 +69,7 @@ describe("scheduling client - integration tests", () => {
         const reminderIdExpected: string = Date.now().toString();
         const reminder: Reminder = new Reminder( // TODO.
             reminderIdExpected,
-            "*/15 * * * * *",
+            "*!/15 * * * * *",
             {},
             ReminderTaskType.HTTP_POST,
             {
@@ -100,7 +101,7 @@ describe("scheduling client - integration tests", () => {
         const reminderIdExpected: string = Date.now().toString();
         const reminderSent: Reminder = new Reminder( // TODO.
             reminderIdExpected,
-            "*/15 * * * * *",
+            "*!/15 * * * * *",
             {},
             ReminderTaskType.HTTP_POST,
             {
@@ -129,7 +130,7 @@ describe("scheduling client - integration tests", () => {
         const reminderIdExpected: string = Date.now().toString();
         const reminder: Reminder = new Reminder( // TODO.
             reminderIdExpected,
-            "*/15 * * * * *",
+            "*!/15 * * * * *",
             {},
             ReminderTaskType.HTTP_POST,
             {
@@ -148,3 +149,4 @@ describe("scheduling client - integration tests", () => {
         ).resolves; // TODO.
     });
 });
+*/

@@ -77,6 +77,7 @@
     "express": "^4.17.3",
     "ioredis": "^5.0.4",
     "mongodb": "^4.4.1",
+    "nock": "^13.2.4",
     "redlock": "^5.0.0-beta.2",
     "uuid": "^8.3.2"
   }

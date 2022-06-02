@@ -29,13 +29,63 @@
 
 "use strict";
 
+import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {REMINDER_ID, SchedulingServiceMock} from "./mocks/scheduling_service_mock";
+import {UnableToCreateReminderError, UnableToDeleteReminderError, UnableToGetReminderError} from "../../src/errors";
+import {SchedulingClient} from "../../src";
+import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
+
+const URL_REMINDERS: string = "http://localhost:1234/reminders";
+const TIMEOUT_MS_HTTP_CLIENT: number = 10_000;
+
+const logger: ILogger = new ConsoleLogger();
+const schedulingServiceMock: SchedulingServiceMock = new SchedulingServiceMock(
+    logger,
+    URL_REMINDERS
+);
+const schedulingClient: SchedulingClient = new SchedulingClient(
+    logger,
+    URL_REMINDERS,
+    TIMEOUT_MS_HTTP_CLIENT
+);
+
 describe("scheduling client - unit tests", () => {
     test("create non-existent reminder", async () => {
+        // TODO.
+    });
+
+    test("create existent reminder", async () => {
+        // TODO.
     });
 
     test("get non-existent reminder", async () => {
+        const reminderId: string = Date.now().toString();
+        await expect(
+            async () => {
+                await schedulingClient.getReminder(reminderId);
+            }
+        ).rejects.toThrow(UnableToGetReminderError);
+    });
+
+    test("get existent reminder", async () => {
+        const reminder: IReminder | null = await schedulingClient.getReminder(REMINDER_ID);
+        expect(reminder?.id).toBe(REMINDER_ID);
     });
 
     test("delete non-existent reminder", async () => {
+        const reminderId: string = Date.now().toString();
+        await expect(
+            async () => {
+                await schedulingClient.deleteReminder(reminderId);
+            }
+        ).rejects.toThrow(UnableToDeleteReminderError);
+    });
+
+    test("delete existent reminder", async () => {
+        await expect(
+            async () => {
+                await schedulingClient.deleteReminder(REMINDER_ID);
+            }
+        ).resolves; // TODO.
     });
 });

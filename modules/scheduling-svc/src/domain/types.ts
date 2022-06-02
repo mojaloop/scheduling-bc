@@ -82,11 +82,11 @@ export class Reminder implements IReminder {
             throw new MissingEssentialReminderPropertiesOrTaskDetailsErrorDomain();
         }
         // id.
-        if (typeof reminder.id != "string") {
+        if (typeof reminder.id !== "string") {
             throw new InvalidReminderIdTypeErrorDomain();
         }
         // time.
-        if (typeof reminder.time != "string") {
+        if (typeof reminder.time !== "string") {
             throw new InvalidReminderTimeTypeErrorDomain();
         }
         try {
@@ -95,15 +95,15 @@ export class Reminder implements IReminder {
             throw new InvalidReminderTimeErrorDomain();
         }
         // taskType.
-        if (typeof reminder.taskType != "string") {
+        if (typeof reminder.taskType !== "string") {
             throw new InvalidReminderTaskTypeTypeErrorDomain();
         }
         if (!(reminder.taskType in ReminderTaskType)) {
             throw new InvalidReminderTaskTypeErrorDomain();
         }
         // TaskDetails.
-        if (typeof reminder.httpPostTaskDetails?.url != "string"
-            && typeof reminder.eventTaskDetails?.topic != "string") {
+        if (typeof reminder.httpPostTaskDetails?.url !== "string"
+            && typeof reminder.eventTaskDetails?.topic !== "string") {
             throw new InvalidReminderTaskDetailsTypeErrorDomain();
         }
     }

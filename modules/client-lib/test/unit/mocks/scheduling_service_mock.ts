@@ -29,18 +29,124 @@
 
 "use strict";
 
-import {Reminder} from "@mojaloop/scheduling-bc-scheduling-svc/dist/domain/types";
+import nock from "nock";
+import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
+
+export const REMINDER_ID: string = "a";
 
 export class SchedulingServiceMock { // TODO: name.
-    async createReminder(): Promise<string> {
-        throw new Error("not implemented yet");
+    private readonly logger: ILogger;
+    private readonly URL_REMINDERS: string;
+
+    constructor(
+        logger: ILogger,
+        URL_REMINDERS: string,
+    ) {
+        this.logger = logger;
+        this.URL_REMINDERS = URL_REMINDERS;
+
+        this.setUp();
     }
 
-    async getReminder(): Promise<Reminder | null> {
-        throw new Error("not implemented yet");
+    setUp() {
+        // Create reminder.
+        nock(this.URL_REMINDERS)
+            .persist()
+            .post("/")
+            .reply(
+                (_, requestBody: any) => {
+                    return this.createReminder(requestBody);
+                }
+            );
+
+        // Get reminder.
+        nock(this.URL_REMINDERS)
+            .persist()
+            .get(fullPath => true) // TODO.
+            .reply(
+                (fullPath: string) => {
+                    return this.getReminder(
+                        // Extract the reminder id from the full path.
+                        fullPath.slice(
+                            fullPath.lastIndexOf("/") + 1
+                        )
+                    );
+                }
+            );
+
+        // Delete reminder.
+        nock(this.URL_REMINDERS)
+            .persist()
+            .delete(fullPath => true) // TODO.
+            .reply(
+                (fullPath: string) => {
+                    return this.deleteReminder(
+                        // Extract the reminder id from the full path.
+                        fullPath.slice(
+                            fullPath.lastIndexOf("/") + 1
+                        )
+                    );
+                }
+            );
     }
 
-    async deleteReminder(): Promise<boolean> {
-        throw new Error("not implemented yet");
+    createReminder(reminder: IReminder): any[] { // TODO: array with number and object.
+        if (reminder.id === REMINDER_ID) {
+            return [
+                400,
+                {
+                    status: "error",
+                    message: "reminder already exists"
+                }
+            ];
+        }
+        return [
+            200,
+            {
+                status: "success",
+                reminderId: reminder.id
+            }
+        ];
+    }
+
+    getReminder(reminderId: string): any {
+        if (reminderId !== REMINDER_ID) {
+            return [
+                404,
+                {
+                    status: "error",
+                    message: "no such reminder"
+                }
+            ];
+        }
+        return [
+            200,
+            {
+                status: "success",
+                reminder: {
+                    id: reminderId
+                }
+            }
+        ];
+    }
+
+    deleteReminder(reminderId: string): any {
+        if (reminderId !== REMINDER_ID) {
+            return [
+                404,
+                {
+                    status: "error",
+                    message: "no such reminder"
+                }
+            ];
+        }
+        return [
+            200,
+            {
+                status: "success",
+                message: "reminder deleted"
+            }
+        ];
     }
 }
