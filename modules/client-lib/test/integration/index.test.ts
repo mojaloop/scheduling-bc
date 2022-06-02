@@ -1,5 +1,4 @@
-/*
-/!*****
+/*****
  License
  --------------
  Copyright © 2017 Bill & Melinda Gates Foundation
@@ -26,13 +25,14 @@
  * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
- ******!/
+ ******/
 
 "use strict";
 
 import {SchedulingClient} from "../../src";
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {IReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-private-types-lib"; // TODO.
+import {IReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-private-types-lib";
+import {UnableToCreateReminderError, UnableToDeleteReminderError, UnableToGetReminderError} from "../../src/errors";
 
 // TODO: here or inside the describe function?
 const URL_REMINDERS: string = "http://localhost:1234/reminders";
@@ -45,13 +45,12 @@ const schedulingClient: SchedulingClient = new SchedulingClient(
     TIMEOUT_MS_HTTP_CLIENT
 );
 
-// TODO: throw errors instead of returning null.
 describe("scheduling client - integration tests", () => {
     test("create non-existent reminder", async () => {
         const reminderIdExpected: string = Date.now().toString();
         const reminder: Reminder = new Reminder( // TODO.
             reminderIdExpected,
-            "*!/15 * * * * *",
+            "*/15 * * * * *",
             {},
             ReminderTaskType.HTTP_POST,
             {
@@ -61,44 +60,91 @@ describe("scheduling client - integration tests", () => {
                 "topic": "test_topic"
             }
         );
-        try {
-            const reminderIdReceived: string = await schedulingClient.createReminder(reminder);
-            expect(reminderIdReceived).toBe(reminderIdExpected);
-        } catch (e: unknown) {
-            fail(e); // TODO.
-        }
+        const reminderIdReceived: string = await schedulingClient.createReminder(reminder);
+        expect(reminderIdReceived).toBe(reminderIdExpected);
     });
 
     test("create existent reminder", async () => {
-        // TODO.
+        const reminderIdExpected: string = Date.now().toString();
+        const reminder: Reminder = new Reminder( // TODO.
+            reminderIdExpected,
+            "*/15 * * * * *",
+            {},
+            ReminderTaskType.HTTP_POST,
+            {
+                "url": "http://localhost:1111/"
+            },
+            {
+                "topic": "test_topic"
+            }
+        );
+        const reminderIdReceived: string = await schedulingClient.createReminder(reminder);
+        expect(reminderIdReceived).toBe(reminderIdExpected);
+        await expect(
+            async () => {
+                await schedulingClient.createReminder(reminder);
+            }
+        ).rejects.toThrow(UnableToCreateReminderError); // TODO.
     });
 
     test("get non-existent reminder", async () => {
         const reminderId: string = Date.now().toString();
-        try {
-            const reminder: IReminder = await schedulingClient.getReminder(reminderId);
-            fail(reminder); // TODO.
-        } catch (e: unknown) {
-            logger.info(e); // TODO.
-        }
+        await expect(
+            async () => {
+                await schedulingClient.getReminder(reminderId);
+            }
+        ).rejects.toThrow(UnableToGetReminderError);
     });
 
     test("get existent reminder", async () => {
-        // TODO.
+        const reminderIdExpected: string = Date.now().toString();
+        const reminderSent: Reminder = new Reminder( // TODO.
+            reminderIdExpected,
+            "*/15 * * * * *",
+            {},
+            ReminderTaskType.HTTP_POST,
+            {
+                "url": "http://localhost:1111/"
+            },
+            {
+                "topic": "test_topic"
+            }
+        );
+        const reminderIdReceived: string = await schedulingClient.createReminder(reminderSent);
+        expect(reminderIdReceived).toBe(reminderIdExpected);
+        const reminderReceived: Reminder | null = await schedulingClient.getReminder(reminderIdExpected);
+        expect(reminderReceived?.id).toBe(reminderIdExpected);
     });
 
     test("delete non-existent reminder", async () => {
         const reminderId: string = Date.now().toString();
-        try {
-            await schedulingClient.deleteReminder(reminderId);
-            fail(); // TODO.
-        } catch (e: unknown) {
-            logger.info(e); // TODO.
-        }
+        await expect(
+            async () => {
+                await schedulingClient.deleteReminder(reminderId);
+            }
+        ).rejects.toThrow(UnableToDeleteReminderError);
     });
 
     test("delete existent reminder", async () => {
-        // TODO.
+        const reminderIdExpected: string = Date.now().toString();
+        const reminder: Reminder = new Reminder( // TODO.
+            reminderIdExpected,
+            "*/15 * * * * *",
+            {},
+            ReminderTaskType.HTTP_POST,
+            {
+                "url": "http://localhost:1111/"
+            },
+            {
+                "topic": "test_topic"
+            }
+        );
+        const reminderIdReceived: string = await schedulingClient.createReminder(reminder);
+        expect(reminderIdReceived).toBe(reminderIdExpected);
+        await expect(
+            async () => {
+                await schedulingClient.deleteReminder(reminderIdExpected);
+            }
+        ).resolves; // TODO.
     });
 });
-*/

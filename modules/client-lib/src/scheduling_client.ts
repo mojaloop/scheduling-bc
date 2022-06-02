@@ -61,9 +61,9 @@ export class SchedulingClient {
     async createReminder(reminder: IReminder): Promise<string> {
         try {
             const res: AxiosResponse<any> = await this.httpClient.post("/", reminder);
-            return res.data;
+            return res.data.reminderId;
         } catch (e: unknown) {
-            const serverErrorMessage: string | undefined = (e as AxiosError).response?.data?.message;
+            const serverErrorMessage: string | undefined = (e as AxiosError).response?.data.message;
             if (serverErrorMessage === undefined) {
                 this.logger.error(e);
                 throw new UnableToReachServerError(); // TODO.
@@ -75,9 +75,9 @@ export class SchedulingClient {
     async getReminder(reminderId: string): Promise<IReminder | null> {
         try {
             const res: AxiosResponse<any> = await this.httpClient.get(`/${reminderId}`);
-            return res.data;
+            return res.data.reminder;
         } catch (e: unknown) {
-            const serverErrorMessage: string | undefined = (e as AxiosError).response?.data?.message;
+            const serverErrorMessage: string | undefined = (e as AxiosError).response?.data.message;
             if (serverErrorMessage === undefined) {
                 this.logger.error(e);
                 throw new UnableToReachServerError(); // TODO.
@@ -90,7 +90,7 @@ export class SchedulingClient {
         try {
             await this.httpClient.delete(`/${reminderId}`);
         } catch (e: unknown) {
-            const serverErrorMessage: string | undefined = (e as AxiosError).response?.data?.message;
+            const serverErrorMessage: string | undefined = (e as AxiosError).response?.data.message;
             if (serverErrorMessage === undefined) {
                 this.logger.error(e);
                 throw new UnableToReachServerError(); // TODO.
