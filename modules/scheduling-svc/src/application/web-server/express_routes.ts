@@ -30,18 +30,17 @@
 "use strict";
 
 import express from "express";
-import {
-    InvalidReminderIdTypeErrorDomain,
-    InvalidReminderTaskDetailsTypeErrorDomain,
-    InvalidReminderTaskTypeErrorDomain,
-    InvalidReminderTaskTypeTypeErrorDomain,
-    InvalidReminderTimeErrorDomain,
-    InvalidReminderTimeTypeErrorDomain, MissingEssentialReminderPropertiesOrTaskDetailsErrorDomain, NoSuchReminderErrorDomain,
-    ReminderAlreadyExistsErrorDomain
-} from "../../domain/errors/domain_errors";
 import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {Aggregate} from "../../domain/aggregate";
+import {
+    InvalidReminderIdTypeError, InvalidReminderTaskDetailsTypeError,
+    InvalidReminderTaskTypeError,
+    InvalidReminderTaskTypeTypeError,
+    InvalidReminderTimeError,
+    InvalidReminderTimeTypeError,
+    MissingEssentialReminderPropertiesOrTaskDetailsError, NoSuchReminderError, ReminderAlreadyExistsError
+} from "../../domain/errors";
 
 // TODO: check status codes.
 export class ExpressRoutes {
@@ -87,42 +86,42 @@ export class ExpressRoutes {
                 reminderId: reminderId
             });
         } catch (e: unknown) {
-            if (e instanceof MissingEssentialReminderPropertiesOrTaskDetailsErrorDomain) {
+            if (e instanceof MissingEssentialReminderPropertiesOrTaskDetailsError) {
                 this.sendErrorResponse(
                     res,
                     400,
                     "missing essential reminder properties or task details");
-            } else if (e instanceof InvalidReminderIdTypeErrorDomain) {
+            } else if (e instanceof InvalidReminderIdTypeError) {
                 this.sendErrorResponse(
                     res,
                     400,
                     "invalid reminder id type");
-            } else if (e instanceof InvalidReminderTimeTypeErrorDomain) {
+            } else if (e instanceof InvalidReminderTimeTypeError) {
                 this.sendErrorResponse(
                     res,
                     400,
                     "invalid reminder time type");
-            } else if (e instanceof InvalidReminderTimeErrorDomain) {
+            } else if (e instanceof InvalidReminderTimeError) {
                 this.sendErrorResponse(
                     res,
                     400,
                     "invalid reminder time");
-            } else if (e instanceof InvalidReminderTaskTypeTypeErrorDomain) {
+            } else if (e instanceof InvalidReminderTaskTypeTypeError) {
                 this.sendErrorResponse(
                     res,
                     400,
                     "invalid reminder task type type (the type of the task type)");
-            } else if (e instanceof InvalidReminderTaskTypeErrorDomain) {
+            } else if (e instanceof InvalidReminderTaskTypeError) {
                 this.sendErrorResponse(
                     res,
                     400,
                     "invalid reminder task type");
-            } else if (e instanceof InvalidReminderTaskDetailsTypeErrorDomain) {
+            } else if (e instanceof InvalidReminderTaskDetailsTypeError) {
                 this.sendErrorResponse(
                     res,
                     400,
                     "invalid reminder task details type");
-            } else if (e instanceof ReminderAlreadyExistsErrorDomain) {
+            } else if (e instanceof ReminderAlreadyExistsError) {
                 this.sendErrorResponse(
                     res,
                     400,
@@ -151,7 +150,7 @@ export class ExpressRoutes {
                 reminder: reminder
             });
         } catch (e: unknown) {
-            if (e instanceof InvalidReminderIdTypeErrorDomain) {
+            if (e instanceof InvalidReminderIdTypeError) {
                 this.sendErrorResponse(
                     res,
                     400,
@@ -188,12 +187,12 @@ export class ExpressRoutes {
                 message: "reminder deleted"
             });
         } catch (e: unknown) {
-            if (e instanceof InvalidReminderIdTypeErrorDomain) {
+            if (e instanceof InvalidReminderIdTypeError) {
                 this.sendErrorResponse(
                     res,
                     400,
                     "invalid reminder id type");
-            } else if (e instanceof NoSuchReminderErrorDomain) {
+            } else if (e instanceof NoSuchReminderError) {
                 this.sendErrorResponse(
                     res,
                     404,

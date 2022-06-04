@@ -30,13 +30,12 @@
 "use strict";
 
 import {
-    InvalidReminderIdTypeErrorDomain, InvalidReminderTaskDetailsTypeErrorDomain,
-    InvalidReminderTaskTypeErrorDomain,
-    InvalidReminderTaskTypeTypeErrorDomain,
-    InvalidReminderTimeErrorDomain,
-    InvalidReminderTimeTypeErrorDomain,
-    MissingEssentialReminderPropertiesOrTaskDetailsErrorDomain
-} from "./errors/domain_errors";
+    InvalidReminderIdTypeError, InvalidReminderTaskDetailsTypeError, InvalidReminderTaskTypeError,
+    InvalidReminderTaskTypeTypeError,
+    InvalidReminderTimeError,
+    InvalidReminderTimeTypeError,
+    MissingEssentialReminderPropertiesOrTaskDetailsError
+} from "./errors";
 import {CronTime} from "cron";
 import {IReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-private-types-lib";
 
@@ -79,32 +78,32 @@ export class Reminder implements IReminder {
             || reminder.taskType === undefined
             || (reminder.httpPostTaskDetails?.url === undefined
                 && reminder.eventTaskDetails?.topic === undefined)) {
-            throw new MissingEssentialReminderPropertiesOrTaskDetailsErrorDomain();
+            throw new MissingEssentialReminderPropertiesOrTaskDetailsError();
         }
         // id.
         if (typeof reminder.id !== "string") {
-            throw new InvalidReminderIdTypeErrorDomain();
+            throw new InvalidReminderIdTypeError();
         }
         // time.
         if (typeof reminder.time !== "string") {
-            throw new InvalidReminderTimeTypeErrorDomain();
+            throw new InvalidReminderTimeTypeError();
         }
         try {
             new CronTime(reminder.time);
         } catch (e: unknown) {
-            throw new InvalidReminderTimeErrorDomain();
+            throw new InvalidReminderTimeError();
         }
         // taskType.
         if (typeof reminder.taskType !== "string") {
-            throw new InvalidReminderTaskTypeTypeErrorDomain();
+            throw new InvalidReminderTaskTypeTypeError();
         }
         if (!(reminder.taskType in ReminderTaskType)) {
-            throw new InvalidReminderTaskTypeErrorDomain();
+            throw new InvalidReminderTaskTypeError();
         }
         // TaskDetails.
         if (typeof reminder.httpPostTaskDetails?.url !== "string"
             && typeof reminder.eventTaskDetails?.topic !== "string") {
-            throw new InvalidReminderTaskDetailsTypeErrorDomain();
+            throw new InvalidReminderTaskDetailsTypeError();
         }
     }
 }

@@ -29,39 +29,19 @@
 
 "use strict";
 
-import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
-import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+export class MissingEssentialReminderPropertiesOrTaskDetailsError extends Error{}
+export class InvalidReminderIdTypeError extends Error{}
+export class InvalidReminderTimeTypeError extends Error{}
+export class InvalidReminderTimeError extends Error{}
+export class InvalidReminderTaskTypeTypeError extends Error{}
+export class InvalidReminderTaskTypeError extends Error{}
+export class InvalidReminderTaskDetailsTypeError extends Error{}
 
-export class MemoryMessageProducerOptions { // TODO: here? export declare?
-    readonly brokerList: string;
-    readonly producerClientId?: string; // TODO: same as "string | undefined"?
-}
+export class ReminderAlreadyExistsError extends Error{}
+export class NoSuchReminderError extends Error{}
 
-export class MemoryMessageProducer implements IMessageProducer{
-    // Properties received through the constructor.
-    private readonly options: MemoryMessageProducerOptions;
-    private readonly logger: ILogger;
-
-    constructor(
-        options: MemoryMessageProducerOptions,
-        logger: ILogger
-    ) {
-        this.options = options;
-        this.logger = logger;
-    }
-
-    async connect(): Promise<void> {
-        return;
-    }
-
-    async destroy(): Promise<void> {
-        return;
-    }
-
-    async send(message: any): Promise<void> {
-    }
-
-    async disconnect(): Promise<void> {
-        return;
-    }
-}
+export class UnableToInitRepoError extends Error{}
+export class UnableToStoreReminderError extends Error{}
+export class UnableToGetReminderError extends Error{}
+export class UnableToGetRemindersError extends Error{}
+export class UnableToDeleteReminderError extends Error{}

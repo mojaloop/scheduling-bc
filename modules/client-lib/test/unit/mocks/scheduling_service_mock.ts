@@ -33,15 +33,17 @@ import nock from "nock";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
 
-export const REMINDER_ID: string = "a";
-
 export class SchedulingServiceMock { // TODO: name.
+    // Properties received through the constructor.
     private readonly logger: ILogger;
     private readonly URL_REMINDERS: string;
+    // Other properties.
+    public static readonly NON_EXISTENT_REMINDER_ID: string = "a";
+    public static readonly EXISTENT_REMINDER_ID: string = "b";
 
     constructor(
         logger: ILogger,
-        URL_REMINDERS: string,
+        URL_REMINDERS: string
     ) {
         this.logger = logger;
         this.URL_REMINDERS = URL_REMINDERS;
@@ -49,104 +51,78 @@ export class SchedulingServiceMock { // TODO: name.
         this.setUp();
     }
 
-    setUp() {
+    setUp(): void {
         // Create reminder.
         nock(this.URL_REMINDERS)
             .persist()
             .post("/")
             .reply(
                 (_, requestBody: any) => {
-                    return this.createReminder(requestBody);
+                    if (requestBody.id === SchedulingServiceMock.EXISTENT_REMINDER_ID) {
+                        return [
+                            400,
+                            {
+                                status: "error",
+                                message: "reminder already exists"
+                            }
+                        ];
+                    }
+                    return [
+                        200,
+                        {
+                            status: "success",
+                            reminderId: requestBody.id
+                        }
+                    ];
                 }
             );
 
-        // Get reminder.
+        // Get non-existent reminder.
         nock(this.URL_REMINDERS)
             .persist()
-            .get(fullPath => true) // TODO.
+            .get(`/${(SchedulingServiceMock.NON_EXISTENT_REMINDER_ID)}`)
             .reply(
-                (fullPath: string) => {
-                    return this.getReminder(
-                        // Extract the reminder id from the full path.
-                        fullPath.slice(
-                            fullPath.lastIndexOf("/") + 1
-                        )
-                    );
-                }
-            );
-
-        // Delete reminder.
-        nock(this.URL_REMINDERS)
-            .persist()
-            .delete(fullPath => true) // TODO.
-            .reply(
-                (fullPath: string) => {
-                    return this.deleteReminder(
-                        // Extract the reminder id from the full path.
-                        fullPath.slice(
-                            fullPath.lastIndexOf("/") + 1
-                        )
-                    );
-                }
-            );
-    }
-
-    createReminder(reminder: IReminder): any[] { // TODO: array with number and object.
-        if (reminder.id === REMINDER_ID) {
-            return [
-                400,
-                {
-                    status: "error",
-                    message: "reminder already exists"
-                }
-            ];
-        }
-        return [
-            200,
-            {
-                status: "success",
-                reminderId: reminder.id
-            }
-        ];
-    }
-
-    getReminder(reminderId: string): any {
-        if (reminderId !== REMINDER_ID) {
-            return [
                 404,
                 {
                     status: "error",
                     message: "no such reminder"
                 }
-            ];
-        }
-        return [
-            200,
-            {
-                status: "success",
-                reminder: {
-                    id: reminderId
+            );
+        // Get existent reminder.
+        nock(this.URL_REMINDERS)
+            .persist()
+            .get(`/${(SchedulingServiceMock.EXISTENT_REMINDER_ID)}`)
+            .reply(
+                200,
+                {
+                    status: "success",
+                    reminder: {
+                        id: SchedulingServiceMock.EXISTENT_REMINDER_ID
+                    }
                 }
-            }
-        ];
-    }
+            );
 
-    deleteReminder(reminderId: string): any {
-        if (reminderId !== REMINDER_ID) {
-            return [
+        // Delete non-existent reminder.
+        nock(this.URL_REMINDERS)
+            .persist()
+            .delete(`/${(SchedulingServiceMock.NON_EXISTENT_REMINDER_ID)}`)
+            .reply(
                 404,
                 {
                     status: "error",
                     message: "no such reminder"
                 }
-            ];
-        }
-        return [
-            200,
-            {
-                status: "success",
-                message: "reminder deleted"
-            }
-        ];
+            );
+        // Delete existent reminder.
+        nock(this.URL_REMINDERS)
+            .persist()
+            .delete(`/${(SchedulingServiceMock.EXISTENT_REMINDER_ID)}`)
+            .reply(
+                200,
+                {
+                    status: "success",
+                    message: "reminder deleted"
+                }
+            );
     }
 }

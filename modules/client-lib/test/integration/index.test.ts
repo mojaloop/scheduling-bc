@@ -1,5 +1,4 @@
-/*
-/!*****
+/*****
  License
  --------------
  Copyright © 2017 Bill & Melinda Gates Foundation
@@ -26,7 +25,7 @@
  * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
- ******!/
+ ******/
 
 "use strict";
 
@@ -49,36 +48,36 @@ const schedulingClient: SchedulingClient = new SchedulingClient(
 describe("scheduling client - integration tests", () => {
     test("create non-existent reminder", async () => {
         const reminderIdExpected: string = Date.now().toString();
-        const reminder: Reminder = new Reminder( // TODO.
-            reminderIdExpected,
-            "*!/15 * * * * *",
-            {},
-            ReminderTaskType.HTTP_POST,
-            {
+        const reminder: IReminder = { // TODO.
+            id: reminderIdExpected,
+            time: "*/15 * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
                 "url": "http://localhost:1111/"
             },
-            {
+            eventTaskDetails: {
                 "topic": "test_topic"
             }
-        );
+        }
         const reminderIdReceived: string = await schedulingClient.createReminder(reminder);
         expect(reminderIdReceived).toBe(reminderIdExpected);
     });
 
     test("create existent reminder", async () => {
         const reminderIdExpected: string = Date.now().toString();
-        const reminder: Reminder = new Reminder( // TODO.
-            reminderIdExpected,
-            "*!/15 * * * * *",
-            {},
-            ReminderTaskType.HTTP_POST,
-            {
+        const reminder: IReminder = { // TODO.
+            id: reminderIdExpected,
+            time: "*/15 * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
                 "url": "http://localhost:1111/"
             },
-            {
+            eventTaskDetails: {
                 "topic": "test_topic"
             }
-        );
+        }
         const reminderIdReceived: string = await schedulingClient.createReminder(reminder);
         expect(reminderIdReceived).toBe(reminderIdExpected);
         await expect(
@@ -99,21 +98,21 @@ describe("scheduling client - integration tests", () => {
 
     test("get existent reminder", async () => {
         const reminderIdExpected: string = Date.now().toString();
-        const reminderSent: Reminder = new Reminder( // TODO.
-            reminderIdExpected,
-            "*!/15 * * * * *",
-            {},
-            ReminderTaskType.HTTP_POST,
-            {
+        const reminderSent: IReminder = { // TODO.
+            id: reminderIdExpected,
+            time: "*/15 * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
                 "url": "http://localhost:1111/"
             },
-            {
+            eventTaskDetails: {
                 "topic": "test_topic"
             }
-        );
+        }
         const reminderIdReceived: string = await schedulingClient.createReminder(reminderSent);
         expect(reminderIdReceived).toBe(reminderIdExpected);
-        const reminderReceived: Reminder | null = await schedulingClient.getReminder(reminderIdExpected);
+        const reminderReceived: IReminder | null = await schedulingClient.getReminder(reminderIdExpected);
         expect(reminderReceived?.id).toBe(reminderIdExpected);
     });
 
@@ -128,18 +127,18 @@ describe("scheduling client - integration tests", () => {
 
     test("delete existent reminder", async () => {
         const reminderIdExpected: string = Date.now().toString();
-        const reminder: Reminder = new Reminder( // TODO.
-            reminderIdExpected,
-            "*!/15 * * * * *",
-            {},
-            ReminderTaskType.HTTP_POST,
-            {
+        const reminder: IReminder = { // TODO.
+            id: reminderIdExpected,
+            time: "*/15 * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
                 "url": "http://localhost:1111/"
             },
-            {
+            eventTaskDetails: {
                 "topic": "test_topic"
             }
-        );
+        }
         const reminderIdReceived: string = await schedulingClient.createReminder(reminder);
         expect(reminderIdReceived).toBe(reminderIdExpected);
         await expect(
@@ -149,4 +148,3 @@ describe("scheduling client - integration tests", () => {
         ).resolves; // TODO.
     });
 });
-*/

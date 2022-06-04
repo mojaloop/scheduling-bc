@@ -34,11 +34,11 @@ import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
 import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
 import {MongoClient, Collection, DeleteResult} from "mongodb";
 import {
-    NoSuchReminderErrorRepo, ReminderAlreadyExistsErrorRepo,
-    UnableToDeleteReminderErrorRepo,
-    UnableToGetReminderErrorRepo,
-    UnableToGetRemindersErrorRepo, UnableToInitRepoErrorRepo, UnableToStoreReminderErrorRepo
-} from "../domain/errors/repo_errors";
+    NoSuchReminderError,
+    ReminderAlreadyExistsError,
+    UnableToDeleteReminderError, UnableToGetReminderError,
+    UnableToGetRemindersError, UnableToInitRepoError, UnableToStoreReminderError
+} from "../domain/errors";
 
 // TODO: if domain errors can't be thrown in the infrastructure, why can domain types be used?
 export class MongoRepo implements IRepo {
@@ -78,7 +78,7 @@ export class MongoRepo implements IRepo {
         try {
             await this.mongoClient.connect(); // Throws if the repo is unreachable.
         } catch (e: unknown) {
-            throw new UnableToInitRepoErrorRepo(); // TODO.
+            throw new UnableToInitRepoError(); // TODO.
         }
         // The following doesn't throw if the repo is unreachable, nor if the db or collection don't exist.
         this.reminders = this.mongoClient.db(this.NAME_DB).collection(this.NAME_COLLECTION);
@@ -94,7 +94,7 @@ export class MongoRepo implements IRepo {
             const reminder: any = await this.reminders.findOne({id: reminderId}); // TODO: type.
             return reminder !== null;
         } catch(e: unknown) {
-            throw new UnableToGetReminderErrorRepo();
+            throw new UnableToGetReminderError();
         }
     }
 
@@ -102,14 +102,14 @@ export class MongoRepo implements IRepo {
         try {
             // insertOne() allows for duplicates.
             if (await this.reminderExists(reminder.id)) { // TODO: call class's function?
-                throw new ReminderAlreadyExistsErrorRepo(); // TODO: here?
+                throw new ReminderAlreadyExistsError(); // TODO: here?
             }
             await this.reminders.insertOne(reminder);
         } catch (e: unknown) {
-            if (e instanceof ReminderAlreadyExistsErrorRepo) {
+            if (e instanceof ReminderAlreadyExistsError) {
                 throw e;
             }
-            throw new UnableToStoreReminderErrorRepo();
+            throw new UnableToStoreReminderError();
         }
     }
 
@@ -119,7 +119,7 @@ export class MongoRepo implements IRepo {
             const reminder: any = await this.reminders.findOne({id: reminderId}); // TODO: type.
             return reminder as unknown as IReminder; // TODO.
         } catch(e: unknown) {
-            throw new UnableToGetReminderErrorRepo();
+            throw new UnableToGetReminderError();
         }
     }
 
@@ -134,7 +134,7 @@ export class MongoRepo implements IRepo {
                     .toArray();
             return reminders as unknown as IReminder[]; // TODO.
         } catch(e: unknown) {
-            throw new UnableToGetRemindersErrorRepo();
+            throw new UnableToGetRemindersError();
         }
     }
 
@@ -144,13 +144,13 @@ export class MongoRepo implements IRepo {
             const deleteResult: DeleteResult = await this.reminders.deleteOne({id: reminderId});
             // deleteResult.acknowledged is true whether the item exists or not.
             if (deleteResult.deletedCount === 0) {
-                throw new NoSuchReminderErrorRepo(); // TODO: here?
+                throw new NoSuchReminderError(); // TODO: here?
             }
         } catch (e: unknown) {
-            if (e instanceof NoSuchReminderErrorRepo) {
+            if (e instanceof NoSuchReminderError) {
                 throw e;
             }
-            throw new UnableToDeleteReminderErrorRepo();
+            throw new UnableToDeleteReminderError();
         }
     }
 }

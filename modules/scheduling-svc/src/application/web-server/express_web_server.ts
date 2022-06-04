@@ -39,7 +39,7 @@ export class ExpressWebServer {
     private readonly logger: ILogger;
     private readonly HOST_WEB_SERVER: string;
     private readonly PORT_NO_WEB_SERVER: number;
-    private readonly URL_WEB_SERVER_PATH_ROUTER: string;
+    private readonly PATH_ROUTER: string;
     // Other properties.
     private readonly URL_WEB_SERVER_BASE: string;
     private readonly app: express.Express;
@@ -49,13 +49,13 @@ export class ExpressWebServer {
         logger: ILogger,
         HOST_WEB_SERVER: string,
         PORT_NO_WEB_SERVER: number,
-        URL_WEB_SERVER_PATH_ROUTER: string,
+        PATH_ROUTER: string,
         aggregate: Aggregate
     ) {
         this.logger = logger;
         this.HOST_WEB_SERVER = HOST_WEB_SERVER;
         this.PORT_NO_WEB_SERVER = PORT_NO_WEB_SERVER;
-        this.URL_WEB_SERVER_PATH_ROUTER = URL_WEB_SERVER_PATH_ROUTER;
+        this.PATH_ROUTER = PATH_ROUTER;
 
         this.URL_WEB_SERVER_BASE = `http://${this.HOST_WEB_SERVER}:${this.PORT_NO_WEB_SERVER}`;
         this.app = express();
@@ -70,7 +70,7 @@ export class ExpressWebServer {
     private configure() {
         this.app.use(express.json()); // For parsing application/json.
         this.app.use(express.urlencoded({extended: true})); // For parsing application/x-www-form-urlencoded.
-        this.app.use(this.URL_WEB_SERVER_PATH_ROUTER, this.routes.router);
+        this.app.use(this.PATH_ROUTER, this.routes.router);
     }
 
     start(): void {

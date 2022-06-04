@@ -37,12 +37,8 @@ import {Reminder} from "./types";
 import {ReminderTaskType} from "@mojaloop/scheduling-bc-private-types-lib";
 import {CronJob} from "cron";
 import * as uuid from "uuid";
-import {
-    InvalidReminderIdTypeErrorDomain, NoSuchReminderErrorDomain,
-    ReminderAlreadyExistsErrorDomain
-} from "./errors/domain_errors";
 import axios, {AxiosInstance} from "axios";
-import {NoSuchReminderErrorRepo, ReminderAlreadyExistsErrorRepo} from "./errors/repo_errors";
+import {InvalidReminderIdTypeError, NoSuchReminderError, ReminderAlreadyExistsError} from "./errors";
 
 // TODO: check error handling.
 export class Aggregate {
@@ -126,8 +122,8 @@ export class Aggregate {
             }
             await this.repo.storeReminder(reminder);
         } catch (e: unknown) {
-            if (e instanceof ReminderAlreadyExistsErrorRepo) { // TODO: use repo error here?
-                throw new ReminderAlreadyExistsErrorDomain();
+            if (e instanceof ReminderAlreadyExistsError) { // TODO: use repo error here?
+                throw new ReminderAlreadyExistsError();
             }
             this.logger.error(e);
             throw new Error();
@@ -204,7 +200,7 @@ export class Aggregate {
 
     async getReminder(reminderId: string): Promise<Reminder | null> { // TODO: Reminder or IReminder?
         if (typeof reminderId !== "string") { // TODO.
-            throw new InvalidReminderIdTypeErrorDomain();
+            throw new InvalidReminderIdTypeError();
         }
         try {
             return await this.repo.getReminder(reminderId);
@@ -225,14 +221,14 @@ export class Aggregate {
 
     async deleteReminder(reminderId: string): Promise<void> {
         if (typeof reminderId !== "string") { // TODO.
-            throw new InvalidReminderIdTypeErrorDomain();
+            throw new InvalidReminderIdTypeError();
         }
         try {
             // TODO: place everything here or just the deleteReminder() call?
             await this.repo.deleteReminder(reminderId);
         } catch (e: unknown) {
-            if (e instanceof NoSuchReminderErrorRepo) { // TODO: use repo error here?
-                throw new NoSuchReminderErrorDomain();
+            if (e instanceof NoSuchReminderError) { // TODO: use repo error here?
+                throw new NoSuchReminderError();
             }
             this.logger.error(e);
             throw new Error();
@@ -251,8 +247,8 @@ export class Aggregate {
                 // TODO: place everything here or just the deleteReminder() call?
                 await this.repo.deleteReminder(reminderId);
             } catch (e: unknown) {
-                if (e instanceof NoSuchReminderErrorRepo) { // TODO: use repo error here?
-                    throw new NoSuchReminderErrorDomain();
+                if (e instanceof NoSuchReminderError) { // TODO: use repo error here?
+                    throw new NoSuchReminderError();
                 }
                 this.logger.error(e);
                 throw new Error();

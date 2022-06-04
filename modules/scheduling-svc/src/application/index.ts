@@ -44,7 +44,7 @@ const NAME_SERVICE: string = "scheduling";
 // Server.
 const HOST_WEB_SERVER: string = process.env.SCHEDULING_HOST_SERVER ?? "localhost";
 const PORT_NO_WEB_SERVER: number = parseInt(process.env.SCHEDULING_PORT_NO_SERVER ?? "") || 1234;
-const URL_WEB_SERVER_PATH_ROUTER: string = "/reminders";
+const PATH_ROUTER: string = "/reminders";
 // Repository.
 const HOST_REPO: string = process.env.SCHEDULING_HOST_REPO ?? "localhost";
 const PORT_NO_REPO: number = parseInt(process.env.SCHEDULING_PORT_NO_REPO ?? "") || 27017;
@@ -113,7 +113,7 @@ const webServer: ExpressWebServer = new ExpressWebServer(
     logger,
     HOST_WEB_SERVER,
     PORT_NO_WEB_SERVER,
-    URL_WEB_SERVER_PATH_ROUTER,
+    PATH_ROUTER,
     aggregate
 );
 
