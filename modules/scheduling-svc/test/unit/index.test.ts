@@ -1,5 +1,4 @@
-/*
-/!*****
+/*****
  License
  --------------
  Copyright © 2017 Bill & Melinda Gates Foundation
@@ -26,7 +25,7 @@
  * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
- ******!/
+ ******/
 
 "use strict";
 
@@ -38,8 +37,11 @@ import {MemoryRepo} from "./mocks/memory_repo";
 import {MemoryLocks} from "./mocks/memory_locks";
 import {MemoryMessageProducer} from "./mocks/memory_message_producer";
 import {Aggregate} from "../../src/domain/aggregate";
+import {NoSuchReminderError} from "../../src/domain/errors";
+import {Reminder} from "../../dist/domain/types";
+import {ReminderTaskType} from "@mojaloop/scheduling-bc-private-types-lib";
 
-/!* Constants. *!/
+/* Constants. */
 const NAME_SERVICE: string = "scheduling";
 // Repository.
 const HOST_REPO: string = process.env.SCHEDULING_HOST_REPO ?? "localhost";
@@ -107,26 +109,84 @@ const aggregate: Aggregate = new Aggregate( // TODO: Aggregate?
 
 describe("scheduling client - unit tests", () => {
     beforeAll(async () => {
-        await aggregate.init(); // The aggregate initializes all the dependencies.
+        await aggregate.init();
     });
 
     afterAll(async () => {
-        await aggregate.destroy(); // The aggregate destroys all the dependencies.
+        await aggregate.destroy();
+    });
+
+    test("create non-existent reminder", async () => {
+        const reminderIdExpected: string = Date.now().toString();
+        const reminder: Reminder = new Reminder(
+            reminderIdExpected,
+            "*/15 * * * * *",
+            {},
+            ReminderTaskType.HTTP_POST,
+            {
+                "url": "http://localhost:1111/"
+            },
+            {
+                "topic": "test_topic"
+            }
+        );
+        const reminderIdReceived: string = await aggregate.createReminder(reminder);
+        expect(reminderIdReceived).toBe(reminderIdExpected); // TODO: check this?
+    });
+
+    test("create existent reminder", async () => {
+    });
+
+    test("get non-existent reminder", async () => {
+        await expect(
+            async () => {
+                await aggregate.getReminder(Date.now().toString());
+            }
+        ).rejects.toThrow(NoSuchReminderError);
+    });
+
+    test("get existent reminder", async () => {
     });
 
     test("get reminders", async () => {
     });
 
-    test("get reminder", async () => {
+    test("delete non-existent reminder", async () => {
+        await expect(
+            async () => {
+                await aggregate.deleteReminder(Date.now().toString());
+            }
+        ).rejects.toThrow(NoSuchReminderError);
     });
 
-    test("create reminder", async () => {
-    });
-
-    test("delete reminder", async () => {
+    test("delete existent reminder", async () => {
+        const reminderIdExpected: string = Date.now().toString();
+        const reminder: Reminder = new Reminder(
+            reminderIdExpected,
+            "*/15 * * * * *",
+            {},
+            ReminderTaskType.HTTP_POST,
+            {
+                "url": "http://localhost:1111/"
+            },
+            {
+                "topic": "test_topic"
+            }
+        );
+        const reminderIdReceived: string = await aggregate.createReminder(reminder);
+        expect(reminderIdReceived).toBe(reminderIdExpected); // TODO: check this?
+        await expect(
+            async () => {
+                await aggregate.deleteReminder(reminderIdExpected);
+            }
+        ).resolves; // TODO.
     });
 
     test("delete reminders", async () => {
+        await expect(
+            async () => {
+                await aggregate.deleteReminders();
+            }
+        ).resolves; // TODO.
     });
 });
-*/

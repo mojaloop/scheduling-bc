@@ -31,7 +31,6 @@
 
 import nock from "nock";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
 
 export class SchedulingServiceMock { // TODO: name.
     // Properties received through the constructor.
