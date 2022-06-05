@@ -37,9 +37,9 @@ import {MemoryRepo} from "./mocks/memory_repo";
 import {MemoryLocks} from "./mocks/memory_locks";
 import {MemoryMessageProducer} from "./mocks/memory_message_producer";
 import {Aggregate} from "../../src/domain/aggregate";
-import {NoSuchReminderError} from "../../src/domain/errors";
-import {Reminder} from "../../dist/domain/types";
+import {NoSuchReminderError, ReminderAlreadyExistsError} from "../../src/domain/errors";
 import {ReminderTaskType} from "@mojaloop/scheduling-bc-private-types-lib";
+import {Reminder} from "../../src/domain/types";
 
 /* Constants. */
 const NAME_SERVICE: string = "scheduling";
@@ -131,24 +131,65 @@ describe("scheduling client - unit tests", () => {
             }
         );
         const reminderIdReceived: string = await aggregate.createReminder(reminder);
-        expect(reminderIdReceived).toBe(reminderIdExpected); // TODO: check this?
+        expect(reminderIdReceived).toBe(reminderIdExpected);
     });
 
     test("create existent reminder", async () => {
+        const reminderIdExpected: string = Date.now().toString();
+        const reminder: Reminder = new Reminder(
+            reminderIdExpected,
+            "*/15 * * * * *",
+            {},
+            ReminderTaskType.HTTP_POST,
+            {
+                "url": "http://localhost:1111/"
+            },
+            {
+                "topic": "test_topic"
+            }
+        );
+        const reminderIdReceived: string = await aggregate.createReminder(reminder);
+        expect(reminderIdReceived).toBe(reminderIdExpected); // TODO: check this?
+        await expect(
+            async () => {
+                await aggregate.createReminder(reminder);
+            }
+        ).rejects.toThrow(ReminderAlreadyExistsError); // TODO.
     });
 
     test("get non-existent reminder", async () => {
-        await expect(
-            async () => {
-                await aggregate.getReminder(Date.now().toString());
-            }
-        ).rejects.toThrow(NoSuchReminderError);
+        const reminderId: string = Date.now().toString();
+        const reminder: Reminder | null = await aggregate.getReminder(reminderId);
+        expect(reminder).toBeNull();
     });
 
     test("get existent reminder", async () => {
+        const reminderIdExpected: string = Date.now().toString();
+        const reminderSent: Reminder = new Reminder(
+            reminderIdExpected,
+            "*/15 * * * * *",
+            {},
+            ReminderTaskType.HTTP_POST,
+            {
+                "url": "http://localhost:1111/"
+            },
+            {
+                "topic": "test_topic"
+            }
+        );
+        const reminderIdReceived: string = await aggregate.createReminder(reminderSent);
+        expect(reminderIdReceived).toBe(reminderIdExpected); // TODO: check this?
+        const reminderReceived: Reminder | null = await aggregate.getReminder(reminderIdExpected);
+        expect(reminderReceived?.id).toBe(reminderIdExpected);
     });
 
+    // TODO: what to test for here?
     test("get reminders", async () => {
+        await expect(
+            async () => {
+                await aggregate.getReminders();
+            }
+        ).resolves; // TODO.
     });
 
     test("delete non-existent reminder", async () => {

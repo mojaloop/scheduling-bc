@@ -46,37 +46,6 @@ const schedulingClientMock: SchedulingClientMock = new SchedulingClientMock(
 );
 
 describe("scheduling service - integration tests", () => {
-    test("get non-existent reminder", async () => {
-        const reminderId: string = Date.now().toString();
-        const statusCodeResponse: number = await schedulingClientMock.getReminder(reminderId);
-        expect(statusCodeResponse).toBe(404);
-    });
-
-    test("get existent reminder", async () => {
-        const reminderId: string = Date.now().toString();
-        const reminder: Reminder = new Reminder(
-            reminderId,
-            "*/15 * * * * *",
-            {},
-            ReminderTaskType.HTTP_POST,
-            {
-                "url": "http://localhost:1111/"
-            },
-            {
-                "topic": "test_topic"
-            }
-        );
-        const statusCodeResponseCreate: number = await schedulingClientMock.createReminder(reminder);
-        expect(statusCodeResponseCreate).toBe(200);
-        const statusCodeResponseGet: number = await schedulingClientMock.getReminder(reminderId);
-        expect(statusCodeResponseGet).toBe(200);
-    });
-
-    test("get reminders", async () => {
-        const statusCodeResponse: number = await schedulingClientMock.getReminders();
-        expect(statusCodeResponse).toBe(200);
-    });
-
     test("create non-existent reminder", async () => {
         const reminderId: string = Date.now().toString();
         const reminder: Reminder = new Reminder(
@@ -113,6 +82,37 @@ describe("scheduling service - integration tests", () => {
         expect(statusCodeResponseCreateFirst).toBe(200);
         const statusCodeResponseCreateSecond: number = await schedulingClientMock.createReminder(reminder);
         expect(statusCodeResponseCreateSecond).toBe(400);
+    });
+
+    test("get non-existent reminder", async () => {
+        const reminderId: string = Date.now().toString();
+        const statusCodeResponse: number = await schedulingClientMock.getReminder(reminderId);
+        expect(statusCodeResponse).toBe(404);
+    });
+
+    test("get existent reminder", async () => {
+        const reminderId: string = Date.now().toString();
+        const reminder: Reminder = new Reminder(
+            reminderId,
+            "*/15 * * * * *",
+            {},
+            ReminderTaskType.HTTP_POST,
+            {
+                "url": "http://localhost:1111/"
+            },
+            {
+                "topic": "test_topic"
+            }
+        );
+        const statusCodeResponseCreate: number = await schedulingClientMock.createReminder(reminder);
+        expect(statusCodeResponseCreate).toBe(200);
+        const statusCodeResponseGet: number = await schedulingClientMock.getReminder(reminderId);
+        expect(statusCodeResponseGet).toBe(200);
+    });
+
+    test("get reminders", async () => {
+        const statusCodeResponse: number = await schedulingClientMock.getReminders();
+        expect(statusCodeResponse).toBe(200);
     });
 
     test("delete non-existent reminder", async () => {

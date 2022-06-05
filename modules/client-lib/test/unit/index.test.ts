@@ -90,11 +90,9 @@ describe("scheduling client - unit tests", () => {
     });
 
     test("get non-existent reminder", async () => {
-        await expect(
-            async () => {
-                await schedulingClient.getReminder(SchedulingServiceMock.NON_EXISTENT_REMINDER_ID);
-            }
-        ).rejects.toThrow(UnableToGetReminderError);
+        const reminder: IReminder | null =
+            await schedulingClient.getReminder(SchedulingServiceMock.NON_EXISTENT_REMINDER_ID);
+        expect(reminder).toBeNull();
     });
 
     test("get existent reminder", async () => {

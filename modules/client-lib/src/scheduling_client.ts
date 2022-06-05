@@ -74,7 +74,17 @@ export class SchedulingClient {
 
     async getReminder(reminderId: string): Promise<IReminder | null> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.get(`/${reminderId}`);
+            const res: AxiosResponse<any> = await this.httpClient.get(
+                `/${reminderId}`,
+                {
+                    validateStatus: (statusCode: number) => {
+                        return statusCode === 200 || statusCode === 404; // Resolve only 200s and 404s.
+                    }
+                }
+            );
+            if (res.status === 404) {
+                return null;
+            }
             return res.data.reminder;
         } catch (e: unknown) {
             const serverErrorMessage: string | undefined = (e as AxiosError).response?.data.message;

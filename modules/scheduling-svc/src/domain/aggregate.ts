@@ -103,6 +103,11 @@ export class Aggregate {
     }
 
     async destroy(): Promise<void> {
+        this.cronJobs.forEach((cronJob: CronJob) => {
+            cronJob.stop();
+            // When running the unit tests - where no server (application) is present and the aggregate is tested with
+            // infrastructure mocks - if the cron jobs aren't stopped, the process is never terminated.
+        })
         await this.messageProducer.destroy();
         await this.repo.destroy();
     }

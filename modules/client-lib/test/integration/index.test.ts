@@ -89,11 +89,8 @@ describe("scheduling client - integration tests", () => {
 
     test("get non-existent reminder", async () => {
         const reminderId: string = Date.now().toString();
-        await expect(
-            async () => {
-                await schedulingClient.getReminder(reminderId);
-            }
-        ).rejects.toThrow(UnableToGetReminderError);
+        const reminder: IReminder | null = await schedulingClient.getReminder(reminderId);
+        expect(reminder).toBeNull();
     });
 
     test("get existent reminder", async () => {

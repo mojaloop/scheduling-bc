@@ -39,14 +39,12 @@ export class MemoryMessageProducerOptions { // TODO: here? export declare?
 
 export class MemoryMessageProducer implements IMessageProducer{
     // Properties received through the constructor.
-    private readonly options: MemoryMessageProducerOptions;
     private readonly logger: ILogger;
 
     constructor(
         options: MemoryMessageProducerOptions,
         logger: ILogger
     ) {
-        this.options = options;
         this.logger = logger;
     }
 

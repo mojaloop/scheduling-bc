@@ -34,6 +34,10 @@
 import {IRepo} from "../../../src/domain/infrastructure-interfaces/irepo";
 import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
 import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {
+    NoSuchReminderError,
+    ReminderAlreadyExistsError
+} from "../../../src/domain/errors";
 
 export class MemoryRepo implements IRepo {
     // Properties received through the constructor.
@@ -65,6 +69,9 @@ export class MemoryRepo implements IRepo {
 
     // TODO.
     async storeReminder(reminder: IReminder): Promise<void> {
+        if (this.reminders.has(reminder.id)) {
+            throw new ReminderAlreadyExistsError();
+        }
         this.reminders.set(reminder.id, reminder);
     }
 
@@ -76,7 +83,10 @@ export class MemoryRepo implements IRepo {
         return [...this.reminders.values()]; // TODO: check.
     }
 
+    // TODO.
     async deleteReminder(reminderId: string): Promise<void> {
-        this.reminders.delete(reminderId);
+        if (!this.reminders.delete(reminderId)) {
+            throw new NoSuchReminderError();
+        }
     }
 }
