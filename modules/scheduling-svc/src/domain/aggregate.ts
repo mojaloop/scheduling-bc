@@ -127,7 +127,7 @@ export class Aggregate {
             }
             await this.repo.storeReminder(reminder);
         } catch (e: unknown) {
-            if (e instanceof ReminderAlreadyExistsError) { // TODO: use repo error here?
+            if (e instanceof ReminderAlreadyExistsError) {
                 throw new ReminderAlreadyExistsError();
             }
             this.logger.error(e);
@@ -232,7 +232,7 @@ export class Aggregate {
             // TODO: place everything here or just the deleteReminder() call?
             await this.repo.deleteReminder(reminderId);
         } catch (e: unknown) {
-            if (e instanceof NoSuchReminderError) { // TODO: use repo error here?
+            if (e instanceof NoSuchReminderError) {
                 throw new NoSuchReminderError();
             }
             this.logger.error(e);
@@ -252,7 +252,7 @@ export class Aggregate {
                 // TODO: place everything here or just the deleteReminder() call?
                 await this.repo.deleteReminder(reminderId);
             } catch (e: unknown) {
-                if (e instanceof NoSuchReminderError) { // TODO: use repo error here?
+                if (e instanceof NoSuchReminderError) {
                     throw new NoSuchReminderError();
                 }
                 this.logger.error(e);

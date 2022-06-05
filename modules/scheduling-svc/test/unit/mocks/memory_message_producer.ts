@@ -37,7 +37,8 @@ export class MemoryMessageProducerOptions { // TODO: here? export declare?
     readonly producerClientId?: string;
 }
 
-export class MemoryMessageProducer implements IMessageProducer{
+// TODO: do these functions need to do anything?
+export class MemoryMessageProducer implements IMessageProducer {
     // Properties received through the constructor.
     private readonly logger: ILogger;
 
