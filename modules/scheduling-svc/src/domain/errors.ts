@@ -19,16 +19,29 @@
  their names indented and be marked with a '-'. Email address can be added
  optionally within square brackets <email>.
 
- * Gates Foundation
- - Name Surname <name.surname@gatesfoundation.com>
-
  * Crosslake
  - Pedro Sousa Barreto <pedrob@crosslaketech.com>
+
+ * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
  ******/
 
-"use strict"
+"use strict";
 
-const message: string = "Hello, World!"
-console.log(message) // eslint-disable-line no-console
+export class MissingEssentialReminderPropertiesOrTaskDetailsError extends Error{}
+export class InvalidReminderIdTypeError extends Error{}
+export class InvalidReminderTimeTypeError extends Error{}
+export class InvalidReminderTimeError extends Error{}
+export class InvalidReminderTaskTypeTypeError extends Error{}
+export class InvalidReminderTaskTypeError extends Error{}
+export class InvalidReminderTaskDetailsTypeError extends Error{}
+
+export class ReminderAlreadyExistsError extends Error{}
+export class NoSuchReminderError extends Error{}
+
+export class UnableToInitRepoError extends Error{}
+export class UnableToStoreReminderError extends Error{}
+export class UnableToGetReminderError extends Error{}
+export class UnableToGetRemindersError extends Error{}
+export class UnableToDeleteReminderError extends Error{}

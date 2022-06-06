@@ -1,9 +1,10 @@
 {
-  "name": "@mojaloop/scheduling-bc-scheduling-svc",
+  "name": "@mojaloop/scheduling-bc-private-types-lib",
   "version": "0.0.1",
-  "description": "mojaloop scheduling service",
+  "description": "mojaloop scheduling private types lib",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/mojaloop/scheduling-bc/tree/main/modules/scheduling-svc",
+  "homepage": "https://github.com/mojaloop/scheduling-bc/tree/main/modules/private-types-lib",
+  "private": true,
   "bugs": {
     "url": "https://github.com/mojaloop/scheduling-bc/issues#readme"
   },
@@ -11,7 +12,6 @@
     "Gonçalo Garcia <goncalogarcia99@gmail.com>",
     "Pedro Sousa Barreto <pedrob@crosslaketech.com>"
   ],
-  "private": true,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
@@ -72,7 +72,6 @@
     "@mojaloop/logging-bc-logging-client-lib": "latest",
     "@mojaloop/platform-shared-lib-messaging-types-lib": "^0.0.2",
     "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib": "^0.0.4",
-    "@mojaloop/scheduling-bc-private-types-lib": "^0.0.1",
     "axios": "^0.26.1",
     "cron": "^1.8.2",
     "express": "^4.17.3",
