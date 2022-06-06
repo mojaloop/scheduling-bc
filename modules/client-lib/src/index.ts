@@ -30,3 +30,4 @@
 "use strict";
 
 export * from "./scheduling_client";
+export {IReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-private-types-lib"

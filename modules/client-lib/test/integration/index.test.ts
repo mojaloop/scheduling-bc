@@ -29,9 +29,9 @@
 
 "use strict";
 
-import {SchedulingClient} from "../../src";
+import {SchedulingClient, IReminder, ReminderTaskType} from "../../src";
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
-import {IReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-private-types-lib";
+//import {IReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-private-types-lib";
 import {UnableToCreateReminderError, UnableToDeleteReminderError, UnableToGetReminderError} from "../../src/errors";
 
 // TODO: here or inside the describe function?
