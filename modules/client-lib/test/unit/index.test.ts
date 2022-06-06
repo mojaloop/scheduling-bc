@@ -29,7 +29,7 @@
 
 "use strict";
 
-import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {SchedulingServiceMock} from "./mocks/scheduling_service_mock";
 import {UnableToCreateReminderError, UnableToDeleteReminderError, UnableToGetReminderError} from "../../src/errors";
 import {SchedulingClient} from "../../src";

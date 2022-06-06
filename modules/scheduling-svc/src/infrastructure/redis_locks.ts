@@ -30,7 +30,7 @@
 "use strict";
 
 import {ILocks} from "../domain/infrastructure-interfaces/ilocks";
-import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import Client from "ioredis";
 import Redlock, {Lock} from "redlock";
 

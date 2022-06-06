@@ -30,7 +30,7 @@
 "use strict";
 
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
-import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 
 export class MemoryMessageProducerOptions { // TODO: here? export declare?
     readonly brokerList: string;

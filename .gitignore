@@ -65,7 +65,7 @@ typings/
 # Output of 'npm pack'
 *.tgz
 
-# Yarn
+# yarn not using Zero-Installs:
 .pnp.*
 .yarn/*
 !.yarn/patches

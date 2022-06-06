@@ -30,7 +30,7 @@
 "use strict";
 
 import {IRepo} from "../domain/infrastructure-interfaces/irepo";
-import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
 import {MongoClient, Collection, DeleteResult} from "mongodb";
 import {

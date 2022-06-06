@@ -29,7 +29,7 @@
 
 "use strict";
 
-import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {Aggregate} from "../domain/aggregate";
 import {MongoRepo} from "../infrastructure/mongo_repo";
 import {RedisLocks} from "../infrastructure/redis_locks";

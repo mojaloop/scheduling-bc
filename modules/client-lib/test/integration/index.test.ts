@@ -30,7 +30,7 @@
 "use strict";
 
 import {SchedulingClient, IReminder, ReminderTaskType} from "../../src";
-import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-public-types-lib";
 //import {IReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-private-types-lib";
 import {UnableToCreateReminderError, UnableToDeleteReminderError, UnableToGetReminderError} from "../../src/errors";
 

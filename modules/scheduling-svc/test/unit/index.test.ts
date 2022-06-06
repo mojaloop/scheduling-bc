@@ -29,7 +29,7 @@
 
 "use strict";
 
-import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IRepo} from "../../src/domain/infrastructure-interfaces/irepo";
 import {ILocks} from "../../src/domain/infrastructure-interfaces/ilocks";
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";

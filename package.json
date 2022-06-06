@@ -13,36 +13,46 @@
     "Pedro Sousa Barreto <pedrob@crosslaketech.com>"
   ],
   "scripts": {
-    "prepare": "husky install",
-    "start": "lerna run --no-progress --stream  start",
-    "start:scheduling-svc": "lerna run build --no-progress --stream --scope='@mojaloop/scheduling-bc-scheduling-svc' && lerna run --no-progress --stream --scope='@mojaloop/scheduling-bc-scheduling-svc' start",
-    "build": "lerna run --stream build",
-    "watch": "lerna run --no-progress --stream --parallel watch",
-    "clean": "yarn run clean:dist && yarn run clean:npm",
-    "clean:npm": "lerna clean",
-    "clean:dist": "lerna run clean",
+    "start": "yarn workspaces foreach --parallel -v run start",
+    "start:scheduling-svc": "yarn workspace @mojaloop/scheduling-bc-scheduling-svc run start",
+    "build": "yarn workspaces foreach -v run build",
+    "watch": "yarn workspaces foreach --parallel -v run watch",
+    "clean": "yarn run clean:dist",
+    "clean:npm": "yarn workspaces foreach --parallel -v run clean:npm",
+    "clean:dist": "yarn workspaces foreach --parallel -v run clean:dist",
     "pretest": "echo 'FIX ME'",
-    "standard": "yarn run --no-progress --stream lint'",
-    "lint": "lerna run --no-progress --stream lint",
-    "lint:scheduling-svc": "lerna run --no-progress --stream lint --scope='@mojaloop-poc/scheduling-bc-scheduling-svc'",
-    "lint:fix": "lerna run --no-progress --stream lint:fix",
-    "test:unit": "lerna run --no-progress --stream test:unit",
-    "test:coverage": "lerna run --no-progress --stream test:coverage",
-    "test:coverage-check": "lerna run --no-progress --stream test:coverage-check",
-    "test:integration": "lerna run --no-progress --stream test:integration",
-    "audit:resolve": "lerna run --no-progress --stream audit:resolve",
-    "audit:check": "lerna run --no-progress --stream audit:check",
-    "dep:check": "lerna run --no-progress --stream dep:check",
-    "dep:update": "lerna run --no-progress --stream dep:update"
-  },
-  "dependencies": {
-    "lerna": "^4.0.0"
+    "lint": "yarn workspaces foreach -v run lint",
+    "lint:fix": "yarn workspaces foreach -v run lint:fix",
+    "test:unit": "yarn workspaces foreach -v run test:unit",
+    "test:coverage": "yarn workspaces foreach --parallel -v run test:coverage",
+    "test:coverage-check": "yarn workspaces foreach --parallel -v run test:coverage-check",
+    "test:integration": "yarn workspaces foreach --parallel -v run test:integration",
+    "audit:resolve": "yarn workspaces foreach --parallel -v run audit:resolve",
+    "audit:check": "yarn workspaces foreach --parallel -v run audit:check",
+    "dep:check": "yarn workspaces foreach --parallel -v run dep:check",
+    "dep:update": "yarn workspaces foreach --parallel -v run dep:update",
+    "prepare": "husky install",
+    "publish:private-types-lib": "yarn workspace @mojaloop/scheduling-bc-private-types-lib run publish",
+    "publish:client-lib": "yarn workspace @mojaloop/scheduling-bc-client-lib run publish"
   },
   "devDependencies": {
-    "husky": "^7.0.4"
+    "@types/jest": "^27.0.3",
+    "@types/node": "^16.11.9",
+    "@types/node-cache": "^4.2.5",
+    "@typescript-eslint/eslint-plugin": "^5.22.0",
+    "@typescript-eslint/parser": "^5.22.0",
+    "eslint": "^8.14.0",
+    "husky": "^8.0.0",
+    "jest": "^27.3.1",
+    "npm-check-updates": "^12.5.11",
+    "ts-jest": "^27.0.7",
+    "typescript": "^4.6.4"
   },
   "workspaces": [
     "modules/*"
   ],
-  "packageManager": "yarn@3.1.0"
+  "packageManager": "yarn@3.2.1",
+  "engines": {
+    "yarn": "3.2.0"
+  }
 }

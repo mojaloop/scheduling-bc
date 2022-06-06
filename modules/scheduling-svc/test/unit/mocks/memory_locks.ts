@@ -30,7 +30,7 @@
 "use strict";
 
 import {ILocks} from "../../../src/domain/infrastructure-interfaces/ilocks";
-import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 
 // TODO: test with multiple instances?
 export class MemoryLocks implements ILocks {

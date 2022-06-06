@@ -33,7 +33,7 @@
 
 import {IRepo} from "../../../src/domain/infrastructure-interfaces/irepo";
 import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
-import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {
     NoSuchReminderError,
     ReminderAlreadyExistsError

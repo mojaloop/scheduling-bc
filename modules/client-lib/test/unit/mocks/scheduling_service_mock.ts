@@ -30,7 +30,7 @@
 "use strict";
 
 import nock from "nock";
-import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 
 export class SchedulingServiceMock { // TODO: name.
     // Properties received through the constructor.

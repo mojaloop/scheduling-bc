@@ -31,7 +31,7 @@
 
 import express from "express";
 import {ExpressRoutes} from "./express_routes";
-import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {Aggregate} from "../../domain/aggregate";
 
 export class ExpressWebServer {

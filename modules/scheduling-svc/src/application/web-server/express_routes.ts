@@ -31,7 +31,7 @@
 
 import express from "express";
 import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
-import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {Aggregate} from "../../domain/aggregate";
 import {
     InvalidReminderIdTypeError, InvalidReminderTaskDetailsTypeError,

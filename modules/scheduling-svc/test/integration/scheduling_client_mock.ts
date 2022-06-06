@@ -30,7 +30,7 @@
 "use strict";
 
 import axios, {AxiosError, AxiosInstance, AxiosResponse} from "axios";
-import {ILogger} from "@mojaloop/logging-bc-logging-client-lib";
+import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IReminder} from "@mojaloop/scheduling-bc-private-types-lib";
 
 
