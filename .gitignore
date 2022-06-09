@@ -121,3 +121,6 @@ devspace*
 # --------------- #
 .idea
 **/*.iml
+
+# Gedit backups.
+*~

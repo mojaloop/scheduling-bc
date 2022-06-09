@@ -1,0 +1,63 @@
+{
+  "name": "@mojaloop/scheduling-bc-service",
+  "version": "0.0.1",
+  "description": "Scheduling bounded context - service.",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/mojaloop/scheduling-bc/tree/main/modules/service",
+  "bugs": {
+    "url": "https://github.com/mojaloop/scheduling-bc/issues#readme"
+  },
+  "contributors": [
+    "Gonçalo Garcia <goncalogarcia99@gmail.com>",
+    "Pedro Sousa Barreto <pedrob@crosslaketech.com>"
+  ],
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
+  "scripts": {
+    "start": "yarn run service",
+    "service": "tsc && node dist/application/index.js",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "clean": "rm -Rf dist",
+    "pretest": "yarn run build",
+    "standard": "yarn run lint",
+    "lint": "yarn run build && npx eslint ./src",
+    "lint:fix": "yarn run build && npx eslint ./src --fix",
+    "test:integration": "jest --passWithNoTests --testMatch '**/test/integration/**/*.test.ts'",
+    "test:unit": "jest --passWithNoTests --testMatch '**/test/unit/**/*.test.ts'",
+    "test:coverage": "jest --passWithNoTests --coverage --coverageThreshold='{}' --testMatch '**/test/unit/**/*.test.ts'",
+    "test:coverage-check": "jest --coverage --testMatch '**/test/unit/**/*.test.ts'",
+    "audit:resolve": "SHELL=sh resolve-audit",
+    "audit:check": "SHELL=sh check-audit",
+    "dep:check": "yarn run ncu -e 2",
+    "dep:update": "yarn run ncu -u"
+  },
+  "devDependencies": {
+    "@types/cron": "^1.7.3",
+    "@types/express": "^4.17.13",
+    "@types/uuid": "^8.3.4",
+    "eslint": "^8.14.0",
+    "husky": "^7.0.4",
+    "jest": "^27.3.1",
+    "npm-check-updates": "^12.5.11",
+    "ts-jest": "^27.0.7",
+    "typescript": "^4.6.4"
+  },
+  "dependencies": {
+    "@mojaloop/logging-bc-public-types-lib": "0.0.3",
+    "@mojaloop/platform-shared-lib-messaging-types-lib": "^0.0.3",
+    "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib": "^0.0.8",
+    "@mojaloop/scheduling-bc-private-types": "workspace:*",
+    "axios": "^0.26.1",
+    "cron": "^1.8.2",
+    "express": "^4.17.3",
+    "ioredis": "^5.0.4",
+    "mongodb": "^4.4.1",
+    "redlock": "^5.0.0-beta.2",
+    "uuid": "^8.3.2"
+  }
+}
