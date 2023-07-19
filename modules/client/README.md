@@ -1,1 +1,0 @@
-# Scheduling Bounded Context - Client

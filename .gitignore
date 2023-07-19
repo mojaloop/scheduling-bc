@@ -65,7 +65,7 @@ typings/
 # Output of 'npm pack'
 *.tgz
 
-# yarn not using Zero-Installs:
+# Yarn
 .pnp.*
 .yarn/*
 !.yarn/patches
@@ -116,11 +116,12 @@ devspace*
 # General Ignore
 *IGNORE*
 
-# --------------- #
-# IntelliJ #
-# --------------- #
-.idea
-**/*.iml
 
-# Gedit backups.
-*~
+# yarn not using Zero-Installs:
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
