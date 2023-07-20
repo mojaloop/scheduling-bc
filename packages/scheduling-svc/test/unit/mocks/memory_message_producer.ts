@@ -19,27 +19,45 @@
  their names indented and be marked with a '-'. Email address can be added
  optionally within square brackets <email>.
 
- * Gates Foundation
- - Name Surname <name.surname@gatesfoundation.com>
-
  * Crosslake
  - Pedro Sousa Barreto <pedrob@crosslaketech.com>
+
+ * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
  ******/
 
 "use strict";
 
-describe("application X integration tests", () => {
-    beforeAll(async () => {
-        // Setup
-    });
+import { IMessageProducer } from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import { ILogger } from "@mojaloop/logging-bc-public-types-lib";
 
-    afterAll(async () => {
-        // Cleanup
-    });
+export class MemoryMessageProducerOptions { // TODO: here? export declare?
+    readonly brokerList: string;
+    readonly producerClientId?: string;
+}
 
-    test("test name", async () => {
-        // Test item goes here
-    });
-});
+// TODO: do these functions need to do anything?
+export class MemoryMessageProducer implements IMessageProducer {
+    // Properties received through the constructor.
+    private readonly logger: ILogger;
+
+    constructor(
+        options: MemoryMessageProducerOptions,
+        logger: ILogger
+    ) {
+        this.logger = logger;
+    }
+
+    async connect(): Promise<void> {
+    }
+
+    async destroy(): Promise<void> {
+    }
+
+    async send(message: any): Promise<void> {
+    }
+
+    async disconnect(): Promise<void> {
+    }
+}

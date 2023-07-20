@@ -209,7 +209,7 @@ export class Aggregate {
 			throw Error(errorMessage);
 		}
 
-		timeoutEvent = reminder.payload.fspiopOpaqueState,
+		timeoutEvent.fspiopOpaqueState = reminder.payload.fspiopOpaqueState,
 		
 		await this.messageProducer.send(timeoutEvent);
 	}
