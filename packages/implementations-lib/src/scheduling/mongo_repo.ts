@@ -41,46 +41,47 @@ import {
 
 // TODO: if domain errors can't be thrown in the infrastructure, why can domain types be used?
 export class MongoRepo implements IRepo {
-    // Properties received through the constructor.
-    private readonly logger: ILogger;
-    private readonly URL_REPO: string;
-    private readonly NAME_DB: string;
-    private readonly NAME_COLLECTION: string;
-    private readonly TIMEOUT_MS_REPO_OPERATIONS: number;
-    // Other properties.
-    private readonly mongoClient: MongoClient;
+    private readonly _logger: ILogger;
+    private readonly _connectionString: string;
+    private readonly _dbName;
+    private readonly _collectionName = "reminders";
+    private mongoClient: MongoClient;
     private reminders: Collection;
+    private readonly timeoutRepoOperations: number;
 
-    constructor(
-        logger: ILogger,
-        URL_REPO: string,
-        NAME_DB: string,
-        NAME_COLLECTION: string,
-        TIMEOUT_MS_REPO_OPERATIONS: number
-    ) {
-        this.logger = logger;
-        this.URL_REPO = URL_REPO;
-        this.NAME_DB = NAME_DB;
-        this.NAME_COLLECTION = NAME_COLLECTION;
-        this.TIMEOUT_MS_REPO_OPERATIONS = TIMEOUT_MS_REPO_OPERATIONS;
+    constructor(logger: ILogger, connectionString: string, dbName: string, timeoutRepoOperations: number) {
 
-        this.mongoClient = new MongoClient(
-            this.URL_REPO,
+        this._logger = logger.createChild(this.constructor.name);
+        this._connectionString = connectionString;
+        this._dbName = dbName;
+        this.timeoutRepoOperations = timeoutRepoOperations;
+
+        this.mongoClient = new MongoClient(this._connectionString,
             {
                 // TODO: are other timeouts required?
-                socketTimeoutMS: this.TIMEOUT_MS_REPO_OPERATIONS
-            }
-        );
+                socketTimeoutMS: this.timeoutRepoOperations
+            });
+        this.mongoClient.connect();
+        this.reminders = this.mongoClient
+            .db(this._dbName)
+            .collection(this._collectionName);
     }
 
     async init(): Promise<void> {
         try {
-            await this.mongoClient.connect(); // Throws if the repo is unreachable.
+            this.mongoClient = new MongoClient(this._connectionString);
+            this.mongoClient.connect();
+            this.reminders = this.mongoClient
+                .db(this._dbName)
+                .collection(this._collectionName);
         } catch (e: unknown) {
-            throw new UnableToInitRepoError(); // TODO.
+            this._logger.error(
+                `Unable to connect to the database: ${(e as Error).message}`
+            );
+            throw new UnableToInitRepoError(
+                "Unable to connect to the database"
+            );
         }
-        // The following doesn't throw if the repo is unreachable, nor if the db or collection don't exist.
-        this.reminders = this.mongoClient.db(this.NAME_DB).collection(this.NAME_COLLECTION);
     }
 
     async destroy(): Promise<void> {

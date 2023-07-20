@@ -34,6 +34,7 @@ import express from "express";
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IConfigurationClient} from "@mojaloop/platform-configuration-bc-public-types-lib";
 import {
+    Aggregate,
     IReminder,
     InvalidReminderIdTypeError, InvalidReminderTaskDetailsTypeError,
     InvalidReminderTaskTypeError,
@@ -42,49 +43,139 @@ import {
     InvalidReminderTimeTypeError,
     MissingEssentialReminderPropertiesOrTaskDetailsError, NoSuchReminderError, ReminderAlreadyExistsError
 } from "@mojaloop/scheduling-bc-domain-lib";
+import { BaseRoutes } from "./base/base_routes";
+import {
+    ForbiddenError,
+    MakerCheckerViolationError,
+    UnauthorizedError,
+    CallSecurityContext, IAuthorizationClient,
+} from "@mojaloop/security-bc-public-types-lib";
+import {TokenHelper} from "@mojaloop/security-bc-client-lib";
 
-export class ExpressRoutes {
-    private _logger:ILogger;
-    private _configClient: IConfigurationClient;
+// Extend express request to include our security fields
+declare module "express-serve-static-core" {
+    export interface Request {
+        securityContext: null | CallSecurityContext;
+    }
+}
 
-    private _mainRouter = express.Router();
+export class SchedulingExpressRoutes extends BaseRoutes {
+    private readonly _tokenHelper: TokenHelper;
+    private readonly _authorizationClient: IAuthorizationClient;
 
 
-    constructor(configClient: IConfigurationClient, logger:ILogger) {
-        this._configClient = configClient;
-        this._logger = logger;
+    constructor(logger: ILogger, schedulingAgg: Aggregate, tokenHelper: TokenHelper, authorizationClient: IAuthorizationClient) {
+        super(logger, schedulingAgg);
 
+        this._tokenHelper = tokenHelper;
+        this._authorizationClient = authorizationClient;
+
+        // inject authentication - all request below this require a valid token
+        this.mainRouter.use(this._authenticationMiddleware.bind(this));
+        
         // endpoints
-        this._mainRouter.get("/version", this.getVersion.bind(this));
+        // this.mainRouter.get("/version", this.getVersion.bind(this));
 
         // Posts.
-        this._mainRouter.post("/", this.postReminder.bind(this));
+        this.mainRouter.post("/", this.postReminder.bind(this));
         // Gets.
-        this._mainRouter.get("/:reminderId", this.getReminder.bind(this));
-        this._mainRouter.get("/", this.getReminders.bind(this));
+        this.mainRouter.get("/:reminderId", this.getReminder.bind(this));
+        this.mainRouter.get("/", this.getReminders.bind(this));
         // Deletes.
-        this._mainRouter.delete("/:reminderId", this.deleteReminder.bind(this));
-        this._mainRouter.delete("/", this.deleteReminders.bind(this));
+        this.mainRouter.delete("/:reminderId", this.deleteReminder.bind(this));
+        this.mainRouter.delete("/", this.deleteReminders.bind(this));
     }
 
-    get MainRouter():express.Router{
-        return this._mainRouter;
+    // private async getVersion(req: express.Request, res: express.Response, next: express.NextFunction){
+    //     this.logger.debug("Got request to version endpoint");
+    //     return res.send({
+    //         environmentName: this._configClient.environmentName,
+    //         bcName: this._configClient.boundedContextName,
+    //         appName: this._configClient.applicationName,
+    //         appVersion: this._configClient.applicationVersion,
+    //         configsIterationNumber: this._configClient.appConfigs.iterationNumber
+    //     });
+    // }
+
+    private async _authenticationMiddleware(
+        req: express.Request,
+        res: express.Response,
+        next: express.NextFunction
+    ) {
+        const authorizationHeader = req.headers["authorization"];
+
+        if (!authorizationHeader) return res.sendStatus(401);
+
+        const bearer = authorizationHeader.trim().split(" ");
+        if (bearer.length != 2) {
+            return res.sendStatus(401);
+        }
+
+        const bearerToken = bearer[1];
+        let verified;
+        try {
+            verified = await this._tokenHelper.verifyToken(bearerToken);
+        } catch (err) {
+            this.logger.error(err, "unable to verify token");
+            return res.sendStatus(401);
+        }
+        if (!verified) {
+            return res.sendStatus(401);
+        }
+
+        const decoded = this._tokenHelper.decodeToken(bearerToken);
+        if (!decoded.sub || decoded.sub.indexOf("::") == -1) {
+            return res.sendStatus(401);
+        }
+
+        const subSplit = decoded.sub.split("::");
+        const subjectType = subSplit[0];
+        const subject = subSplit[1];
+
+        req.securityContext = {
+            accessToken: bearerToken,
+            clientId: subjectType.toUpperCase().startsWith("APP") ? subject : null,
+            username: subjectType.toUpperCase().startsWith("USER") ? subject : null,
+            rolesIds: decoded.roles,
+        };
+
+        return next();
     }
 
-    private async getVersion(req: express.Request, res: express.Response, next: express.NextFunction){
-        this._logger.debug("Got request to version endpoint");
-        return res.send({
-            environmentName: this._configClient.environmentName,
-            bcName: this._configClient.boundedContextName,
-            appName: this._configClient.applicationName,
-            appVersion: this._configClient.applicationVersion,
-            configsIterationNumber: this._configClient.appConfigs.iterationNumber
-        });
+    private _handleUnauthorizedError(err: Error, res: express.Response): boolean {
+        if (err instanceof UnauthorizedError) {
+            this.logger.warn(err.message);
+            res.status(401).json({
+                status: "error",
+                msg: err.message,
+            });
+            return true;
+        } else if (err instanceof ForbiddenError) {
+            this.logger.warn(err.message);
+            res.status(403).json({
+                status: "error",
+                msg: err.message,
+            });
+            return true;
+        }
+
+        return false;
+    }
+
+    private _enforcePrivilege(secCtx: CallSecurityContext, privilegeId: string): void {
+        for (const roleId of secCtx.rolesIds) {
+            if (this._authorizationClient.roleHasPrivilege(roleId, privilegeId)) {
+                return;
+            }
+        }
+        const error = new ForbiddenError("Caller is missing role with privilegeId: " + privilegeId);
+        this.logger.isWarnEnabled() && this.logger.warn(error.message);
+        throw error;
     }
 
     private async postReminder(req: express.Request, res: express.Response): Promise<void> {
         try {
-            const reminderId: string = await this.aggregate.createReminder(req.body);
+            const reminderId: string = await this.schedulingAgg.createReminder(req.body);
             res.status(200).json({
                 status: "success",
                 reminderId: reminderId
@@ -141,7 +232,7 @@ export class ExpressRoutes {
 
     private async getReminder(req: express.Request, res: express.Response): Promise<void> {
         try {
-            const reminder: IReminder | null = await this.aggregate.getReminder(req.params.reminderId);
+            const reminder: IReminder | null = await this.schedulingAgg.getReminder(req.params.reminderId);
             if (reminder === null) {
                 this.sendErrorResponse(
                     res,
@@ -170,7 +261,7 @@ export class ExpressRoutes {
 
     private async getReminders(req: express.Request, res: express.Response): Promise<void> {
         try {
-            const reminders: IReminder[] = await this.aggregate.getReminders();
+            const reminders: IReminder[] = await this.schedulingAgg.getReminders();
             res.status(200).json({
                 status: "success",
                 reminders: reminders
@@ -185,7 +276,7 @@ export class ExpressRoutes {
 
     private async deleteReminder(req: express.Request, res: express.Response): Promise<void> {
         try {
-            await this.aggregate.deleteReminder(req.params.reminderId);
+            await this.schedulingAgg.deleteReminder(req.params.reminderId);
             res.status(200).json({
                 status: "success",
                 message: "reminder deleted"
@@ -213,7 +304,7 @@ export class ExpressRoutes {
 
     private async deleteReminders(req: express.Request, res: express.Response): Promise<void> {
         try {
-            await this.aggregate.deleteReminders();
+            await this.schedulingAgg.deleteReminders();
             res.status(200).json({
                 status: "success",
                 message: "reminders deleted"

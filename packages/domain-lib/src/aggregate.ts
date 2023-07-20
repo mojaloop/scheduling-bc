@@ -31,12 +31,13 @@
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib"
-import { IReminder, ReminderTaskType} from "./types";
+import { IReminder, Reminder, ReminderTaskType} from "./types";
 import {CronJob} from "cron";
 import * as uuid from "uuid";
 import axios, {AxiosInstance} from "axios";
 import {InvalidReminderIdTypeError, NoSuchReminderError, ReminderAlreadyExistsError} from "./errors";
 import { ILocks, IRepo } from "./interfaces/infrastructure";
+import { TransferTimeoutEvt, TransfersBCTopics } from "@mojaloop/platform-shared-lib-public-messages-lib";
 
 // TODO: check error handling.
 export class Aggregate {
@@ -58,7 +59,6 @@ export class Aggregate {
 		repo: IRepo,
 		locks: ILocks,
 		messageProducer: IMessageProducer,
-		Reminder: IReminder,
 		TIME_ZONE: string,
 		TIMEOUT_MS_LOCK_ACQUIRED: number,
 		MIN_DURATION_MS_TASK: number,
@@ -68,7 +68,6 @@ export class Aggregate {
 		this.repo = repo;
 		this.locks = locks;
 		this.messageProducer = messageProducer;
-		this.Reminder = Reminder;
 		this.TIME_ZONE = TIME_ZONE;
 		this.TIMEOUT_MS_LOCK_ACQUIRED = TIMEOUT_MS_LOCK_ACQUIRED;
 		this.MIN_DURATION_MS_TASK = MIN_DURATION_MS_TASK;
@@ -119,7 +118,7 @@ export class Aggregate {
 		if (reminder.id === undefined || reminder.id === null) { // TODO.
 			reminder.id = "";
 		}
-		this.Reminder.validateReminder(reminder);
+		Reminder.validateReminder(reminder);
 		try {
 			if (reminder.id === "") {
 				do {
@@ -198,16 +197,21 @@ export class Aggregate {
 
 	private async sendEvent(reminder: any): Promise<void> { // TODO: Reminder or IReminder?
 		// TODO: check if throws.
-		await this.messageProducer.send({
-			topic: reminder.eventTaskDetails?.topic,
-			value: {
-				msgType: 2,
-				msgName: "TransferTimeoutEvt",
-				fspiopOpaqueState: reminder.payload.fspiopOpaqueState,
-				payload: reminder.payload.payload
-			}
-			
-		});
+		let timeoutEvent = null;
+
+		if(reminder.eventTaskDetails?.topic === TransfersBCTopics.TimeoutEvents) {
+			timeoutEvent = new TransferTimeoutEvt(reminder.payload.payload)
+		}
+
+		if(!timeoutEvent) {
+			const errorMessage = `Unable to create reminder due to non-existent timeout topic: ${reminder.eventTaskDetails?.topic}`
+			this.logger.error(errorMessage);
+			throw Error(errorMessage);
+		}
+
+		timeoutEvent = reminder.payload.fspiopOpaqueState,
+		
+		await this.messageProducer.send(timeoutEvent);
 	}
 
 	async getReminder(reminderId: string): Promise<IReminder | null> { // TODO: Reminder or IReminder?

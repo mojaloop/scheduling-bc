@@ -32,6 +32,84 @@
 
 "use strict";
 
+import {
+    InvalidReminderIdTypeError, InvalidReminderTaskDetailsTypeError, InvalidReminderTaskTypeError,
+    InvalidReminderTaskTypeTypeError,
+    InvalidReminderTimeError,
+    InvalidReminderTimeTypeError,
+    MissingEssentialReminderPropertiesOrTaskDetailsError
+} from "./errors";
+import {CronTime} from "cron";
+
+export class Reminder implements IReminder {
+    id: string;
+    time: string; // TODO: Date.
+    payload: any;
+    taskType: ReminderTaskType;
+    httpPostTaskDetails: null | {
+        url: string
+    };
+    eventTaskDetails: null | {
+        topic: string
+    };
+
+    constructor(
+        id: string = "",
+        time: string,
+        payload: any = null,
+        taskType: ReminderTaskType,
+        httpPostTaskDetails: null | {
+            url: string
+        } = null,
+        eventTaskDetails: null | {
+            topic: string
+        } = null
+    ) {
+        this.id = id;
+        this.time = time;
+        this.payload = payload;
+        this.taskType = taskType;
+        this.httpPostTaskDetails = httpPostTaskDetails;
+        this.eventTaskDetails = eventTaskDetails;
+    }
+
+    // TODO.
+    static validateReminder(reminder: IReminder): void { // TODO: change type to any?
+        // Check if the essential properties are present.
+        if (reminder.time === undefined
+            || reminder.taskType === undefined
+            || (reminder.httpPostTaskDetails?.url === undefined
+                && reminder.eventTaskDetails?.topic === undefined)) {
+            throw new MissingEssentialReminderPropertiesOrTaskDetailsError();
+        }
+        // id.
+        if (typeof reminder.id !== "string") {
+            throw new InvalidReminderIdTypeError();
+        }
+        // time.
+        if (typeof reminder.time !== "string") {
+            throw new InvalidReminderTimeTypeError();
+        }
+        try {
+            new CronTime(reminder.time);
+        } catch (e: unknown) {
+            throw new InvalidReminderTimeError();
+        }
+        // taskType.
+        if (typeof reminder.taskType !== "string") {
+            throw new InvalidReminderTaskTypeTypeError();
+        }
+        if (!(reminder.taskType in ReminderTaskType)) {
+            throw new InvalidReminderTaskTypeError();
+        }
+        // TaskDetails.
+        if (typeof reminder.httpPostTaskDetails?.url !== "string"
+            && typeof reminder.eventTaskDetails?.topic !== "string") {
+            throw new InvalidReminderTaskDetailsTypeError();
+        }
+    }
+}
+
 export interface IReminder {
     id: string;
     time: string; // TODO: Date.

@@ -1,2 +1,2 @@
-# Account Scheduling Client Lib
+# Scheduling Client Lib
 
