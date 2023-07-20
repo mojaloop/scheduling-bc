@@ -32,7 +32,7 @@
 
 "use strict";
 
-import { IReminder } from "../types";
+import { IReminder } from "@mojaloop/scheduling-bc-public-types-lib";
 
 export interface IRepo {
     /**

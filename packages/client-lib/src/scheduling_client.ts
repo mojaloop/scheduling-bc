@@ -31,7 +31,7 @@
 
  import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
  import axios, {AxiosInstance, AxiosResponse, AxiosError} from "axios";
- import { IReminder } from "@mojaloop/scheduling-bc-domain-lib";
+ import { IReminder } from "@mojaloop/scheduling-bc-public-types-lib";
  import {
 	 UnableToCreateReminderError,
 	 UnableToDeleteReminderError,

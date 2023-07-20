@@ -31,7 +31,8 @@
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib"
-import { IReminder, Reminder, ReminderTaskType} from "./types";
+import { IReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
+import { Reminder } from "./types";
 import {CronJob} from "cron";
 import * as uuid from "uuid";
 import axios, {AxiosInstance} from "axios";
@@ -46,7 +47,6 @@ export class Aggregate {
 	private readonly repo: IRepo;
 	private readonly locks: ILocks;
 	private readonly messageProducer: IMessageProducer;
-	private readonly Reminder: IReminder;
 	private readonly TIME_ZONE: string;
 	private readonly TIMEOUT_MS_LOCK_ACQUIRED: number;
 	private readonly MIN_DURATION_MS_TASK: number;

@@ -29,9 +29,10 @@
 
 "use strict";
 
-import { IRepo, IReminder } from "@mojaloop/scheduling-bc-domain-lib";
-import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
-import {MongoClient, Collection, DeleteResult} from "mongodb";
+import { IRepo } from "@mojaloop/scheduling-bc-domain-lib";
+import { ILogger } from "@mojaloop/logging-bc-public-types-lib";
+import { IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
+import { MongoClient, Collection, DeleteResult } from "mongodb";
 import {
     NoSuchReminderError,
     ReminderAlreadyExistsError,

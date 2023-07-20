@@ -35,7 +35,6 @@ import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IConfigurationClient} from "@mojaloop/platform-configuration-bc-public-types-lib";
 import {
     Aggregate,
-    IReminder,
     InvalidReminderIdTypeError, InvalidReminderTaskDetailsTypeError,
     InvalidReminderTaskTypeError,
     InvalidReminderTaskTypeTypeError,
@@ -43,6 +42,7 @@ import {
     InvalidReminderTimeTypeError,
     MissingEssentialReminderPropertiesOrTaskDetailsError, NoSuchReminderError, ReminderAlreadyExistsError
 } from "@mojaloop/scheduling-bc-domain-lib";
+import { IReminder } from "@mojaloop/scheduling-bc-public-types-lib"
 import { BaseRoutes } from "./base/base_routes";
 import {
     ForbiddenError,
@@ -71,7 +71,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
         this._authorizationClient = authorizationClient;
 
         // inject authentication - all request below this require a valid token
-        this.mainRouter.use(this._authenticationMiddleware.bind(this));
+        // this.mainRouter.use(this._authenticationMiddleware.bind(this));
         
         // endpoints
         // this.mainRouter.get("/version", this.getVersion.bind(this));

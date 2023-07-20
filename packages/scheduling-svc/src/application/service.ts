@@ -44,7 +44,7 @@ import { TRANSFERS_BOUNDED_CONTEXT_NAME } from "@mojaloop/platform-shared-lib-pu
 //TODO re-enable configs
 //import appConfigs from "./config";
 import {
-	Aggregate, ILocks, IReminder, IRepo,
+	Aggregate, ILocks, IRepo,
 } from "@mojaloop/scheduling-bc-domain-lib";
 // import { AuditClient, KafkaAuditClientDispatcher, LocalAuditClientCryptoProvider } from "@mojaloop/auditing-bc-client-lib";
 // import {
@@ -180,15 +180,15 @@ export class Service {
 		}
 		globalLogger = this.logger = logger.createChild("Service");
 
-		// authorization client
-		if (!authorizationClient) {
-			// setup privileges - bootstrap app privs and get priv/role associations
-			authorizationClient = new AuthorizationClient(BC_NAME, APP_NAME, APP_VERSION, AUTH_Z_SVC_BASEURL, logger);
-			// authorizationClient.addPrivilegesArray(SchedulingPrivilegesDefinition);
-			await (authorizationClient as AuthorizationClient).bootstrap(true);
-			await (authorizationClient as AuthorizationClient).fetch();
-		}
-		this.authorizationClient = authorizationClient;
+		// // authorization client
+		// if (!authorizationClient) {
+		// 	// setup privileges - bootstrap app privs and get priv/role associations
+		// 	authorizationClient = new AuthorizationClient(BC_NAME, APP_NAME, APP_VERSION, AUTH_Z_SVC_BASEURL, logger);
+		// 	// authorizationClient.addPrivilegesArray(SchedulingPrivilegesDefinition);
+		// 	await (authorizationClient as AuthorizationClient).bootstrap(true);
+		// 	await (authorizationClient as AuthorizationClient).fetch();
+		// }
+		// this.authorizationClient = authorizationClient;
 
 		// token helper
 		this.tokenHelper = new TokenHelper(AUTH_N_SVC_JWKS_URL, logger, AUTH_N_TOKEN_ISSUER_NAME, AUTH_N_TOKEN_AUDIENCE);
@@ -256,7 +256,7 @@ export class Service {
 
 			// Add client http routes
 			const schedulingClientRoutes = new SchedulingExpressRoutes(this.logger, this.aggregate, this.tokenHelper, this.authorizationClient);
-			this.app.use("/scheduling", schedulingClientRoutes.mainRouter);
+			this.app.use("/reminders", schedulingClientRoutes.mainRouter);
 
 			// Add health and metrics http routes
 			this.app.get("/health", (req: express.Request, res: express.Response) => {return res.send({ status: "OK" }); });

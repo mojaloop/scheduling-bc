@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@mojaloop/scheduling-bc-domain-lib": "*",
+    "@mojaloop/scheduling-bc-public-types-lib": "*",
     "cron": "^1.8.2",
     "ioredis": "~5.3.2",
     "mongodb": "^5.6.0",

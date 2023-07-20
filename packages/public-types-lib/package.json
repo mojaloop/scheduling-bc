@@ -1,0 +1,41 @@
+{
+    "name": "@mojaloop/scheduling-bc-public-types-lib",
+    "version": "0.0.1",
+    "description": "Scheduling BC - Public Types Library",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/mojaloop/scheduling-bc/tree/main/packages/public-types-lib"
+    },
+    "bugs": {
+        "url": "https://github.com/mojaloop/scheduling-bc/issues"
+    },
+    "license": "Apache-2.0",
+    "contributors": [
+        "Gonçalo Garcia <goncalogarcia99@gmail.com>",
+        "Pedro Sousa Barreto <pedrob@crosslaketech.com>"
+    ],
+    "private": false,
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "clean": "npm run clean:npm; npm run clean:dist",
+        "clean:dist": "rm -rf dist",
+        "clean:npm": "rm -rf node_modules",
+        "dep:check": "ncu -e 2",
+        "dep:update": "ncu -u",
+        "lint": "eslint ./src",
+        "lint:fix": "eslint ./src --fix",
+        "build": "tsc",
+        "test:unit": "echo \"public-types-lib doesn't have unit tests\""
+    },
+    "engines": {
+        "node": ">=18.13.0"
+    },
+    "devDependencies": {},
+    "dependencies": {
+        "tslib": "~2.5.2"
+    }
+}
