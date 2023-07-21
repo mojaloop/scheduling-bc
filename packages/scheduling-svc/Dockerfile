@@ -15,7 +15,9 @@ RUN npm install -g node-gyp
 COPY package*.json ./
 
 # copy any local libraries this service needs
-#COPY packages/public-types-lib/package.json ./packages/public-types-lib/
+COPY packages/public-types-lib/package.json ./packages/public-types-lib/
+COPY packages/domain-lib/package.json ./packages/domain-lib/
+COPY packages/implementations-lib/package.json ./packages/implementations-lib/
 COPY packages/scheduling-svc/package.json ./packages/scheduling-svc/
 
 #RUN ls -la
@@ -35,7 +37,9 @@ RUN BUILD_LIBRDKAFKA=0 npm install
 COPY tsconfig.json ./
 
 # copy required supporting modules/packages (only the private ones not published to npm)
-#COPY packages/public-types-lib ./packages/public-types-lib
+COPY packages/public-types-lib ./packages/public-types-lib
+COPY packages/domain-lib ./packages/domain-lib
+COPY packages/implementations-lib ./packages/implementations-lib
 
 # copy service code
 COPY packages/scheduling-svc ./packages/scheduling-svc
@@ -52,6 +56,6 @@ RUN apk add librdkafka
 COPY --from=builder /app .
 
 # expose correct service oprt
-# EXPOSE 8111
+EXPOSE 1234
 
 CMD [ "npm", "run", "start:scheduling-svc" ]
