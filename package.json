@@ -50,6 +50,9 @@
         "typescript": "^4.9.5"
     },
     "workspaces": [
+        "packages/public-types-lib",
+        "packages/domain-lib",
+        "packages/implementations-lib",
         "packages/*"
     ],
     "engines": {
