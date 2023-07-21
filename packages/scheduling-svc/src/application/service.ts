@@ -72,7 +72,10 @@ import { KafkaLogger } from "@mojaloop/logging-bc-client-lib";
 import { Server } from "net";
 // import { existsSync } from "fs";
 import process from "process";
-import { AuthorizationClient, TokenHelper } from "@mojaloop/security-bc-client-lib";
+import { 
+	// AuthorizationClient, 
+	TokenHelper
+} from "@mojaloop/security-bc-client-lib";
 import { IAuthorizationClient } from "@mojaloop/security-bc-public-types-lib";
 
 // Global vars
@@ -112,11 +115,11 @@ const SVC_DEFAULT_HTTP_PORT = process.env["SVC_DEFAULT_HTTP_PORT"] || 1234;
 
 // security
 const AUTH_N_SVC_BASEURL = process.env["AUTH_N_SVC_BASEURL"] || "http://localhost:3201";
-const AUTH_N_SVC_TOKEN_URL = AUTH_N_SVC_BASEURL + "/token"; // TODO this should not be known here, libs that use the base should add the suffix
+// const AUTH_N_SVC_TOKEN_URL = AUTH_N_SVC_BASEURL + "/token"; // TODO this should not be known here, libs that use the base should add the suffix
 const AUTH_N_TOKEN_ISSUER_NAME = process.env["AUTH_N_TOKEN_ISSUER_NAME"] || "mojaloop.vnext.dev.default_issuer";
 const AUTH_N_TOKEN_AUDIENCE = process.env["AUTH_N_TOKEN_AUDIENCE"] || "mojaloop.vnext.dev.default_audience";
 const AUTH_N_SVC_JWKS_URL = process.env["AUTH_N_SVC_JWKS_URL"] || `${AUTH_N_SVC_BASEURL}/.well-known/jwks.json`;
-const AUTH_Z_SVC_BASEURL = process.env["AUTH_Z_SVC_BASEURL"] || "http://localhost:3202";
+// const AUTH_Z_SVC_BASEURL = process.env["AUTH_Z_SVC_BASEURL"] || "http://localhost:3202";
 
 // // Audit
 // const AUDIT_KEY_FILE_PATH = process.env["AUDIT_KEY_FILE_PATH"] || "/app/data/audit_private_key.pem";
@@ -132,19 +135,19 @@ const producerOptions: MLKafkaJsonProducerOptions = {
 
 // Locks.
 const HOST_LOCKS: string = process.env.SCHEDULING_HOST_LOCKS ?? "localhost";
-const MAX_LOCK_SPINS: number = 10; // Max number of attempts to acquire a lock. TODO.
-const CLOCK_DRIFT_FACTOR: number = 0.01;
+const MAX_LOCK_SPINS = 10; // Max number of attempts to acquire a lock. TODO.
+const CLOCK_DRIFT_FACTOR = 0.01;
 
 // Time.
-const TIME_ZONE: string = "UTC";
-const TIMEOUT_MS_REPO_OPERATIONS: number = 10_000; // TODO.
-const DELAY_MS_LOCK_SPINS: number = 200; // Time between acquire attempts. TODO.
-const DELAY_MS_LOCK_SPINS_JITTER: number = 200; // TODO.
-const THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION: number = 500; // TODO.
-const TIMEOUT_MS_LOCK_ACQUIRED: number = 30_000; // TODO.
-const MIN_DURATION_MS_TASK: number = 2_000; // TODO.
-const TIMEOUT_MS_HTTP_CLIENT: number = 10_000; // TODO.
-const TIMEOUT_MS_EVENT: number = 10_000; // TODO.
+const TIME_ZONE = "UTC";
+const TIMEOUT_MS_REPO_OPERATIONS = 10_000; // TODO.
+const DELAY_MS_LOCK_SPINS = 200; // Time between acquire attempts. TODO.
+const DELAY_MS_LOCK_SPINS_JITTER = 200; // TODO.
+const THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION = 500; // TODO.
+const TIMEOUT_MS_LOCK_ACQUIRED = 30_000; // TODO.
+const MIN_DURATION_MS_TASK = 2_000; // TODO.
+const TIMEOUT_MS_HTTP_CLIENT = 10_000; // TODO.
+// const TIMEOUT_MS_EVENT = 10_000; // TODO.
 
 // kafka logger
 export class Service {

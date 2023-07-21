@@ -92,7 +92,7 @@ export class MongoRepo implements IRepo {
     async reminderExists(reminderId: string): Promise<boolean> {
         try {
             // findOne() doesn't throw if no item is found - null is returned.
-            const reminder: any = await this.reminders.findOne({id: reminderId}); // TODO: type.
+            const reminder = await this.reminders.findOne({id: reminderId}); // TODO: type.
             return reminder !== null;
         } catch(e: unknown) {
             throw new UnableToGetReminderError();
@@ -117,7 +117,7 @@ export class MongoRepo implements IRepo {
     async getReminder(reminderId: string): Promise<IReminder | null> {
         try {
             // findOne() doesn't throw if no item is found - null is returned.
-            const reminder: any = await this.reminders.findOne({id: reminderId}); // TODO: type.
+            const reminder = await this.reminders.findOne({id: reminderId}); // TODO: type.
             return reminder as unknown as IReminder; // TODO.
         } catch(e: unknown) {
             throw new UnableToGetReminderError();
@@ -127,7 +127,7 @@ export class MongoRepo implements IRepo {
     async getReminders(): Promise<IReminder[]> {
         try {
             // find() doesn't throw if no items are found.
-            const reminders: any = // TODO: type.
+            const reminders = // TODO: type.
                 await this.reminders
                     .find(
                         {}, // All documents.

@@ -33,7 +33,7 @@
 export interface IReminder {
     id: string;
     time: string; // TODO: Date.
-    payload: any;
+    payload: any; 	// eslint-disable-line @typescript-eslint/no-explicit-any
     taskType: ReminderTaskType;
     httpPostTaskDetails: null | {
         url: string

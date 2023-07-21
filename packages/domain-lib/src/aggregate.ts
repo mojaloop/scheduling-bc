@@ -30,7 +30,7 @@
 "use strict";
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
-import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib"
+import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import { IReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
 import { Reminder } from "./types";
 import {CronJob} from "cron";
@@ -107,7 +107,7 @@ export class Aggregate {
 			cronJob.stop();
 			// When running the unit tests - where no server (application) is present and the aggregate is tested with
 			// infrastructure mocks - if the cron jobs aren't stopped, the process is never terminated.
-		})
+		});
 		await this.messageProducer.destroy();
 		await this.repo.destroy();
 	}
@@ -195,16 +195,16 @@ export class Aggregate {
 		}
 	}
 
-	private async sendEvent(reminder: any): Promise<void> { // TODO: Reminder or IReminder?
+	private async sendEvent(reminder: IReminder): Promise<void> { // TODO: Reminder or IReminder?
 		// TODO: check if throws.
 		let timeoutEvent = null;
 
 		if(reminder.eventTaskDetails?.topic === TransfersBCTopics.TimeoutEvents) {
-			timeoutEvent = new TransferTimeoutEvt(reminder.payload.payload)
+			timeoutEvent = new TransferTimeoutEvt(reminder.payload.payload);
 		}
 
 		if(!timeoutEvent) {
-			const errorMessage = `Unable to create reminder due to non-existent timeout topic: ${reminder.eventTaskDetails?.topic}`
+			const errorMessage = `Unable to create reminder due to non-existent timeout topic: ${reminder.eventTaskDetails?.topic}`;
 			this.logger.error(errorMessage);
 			throw Error(errorMessage);
 		}

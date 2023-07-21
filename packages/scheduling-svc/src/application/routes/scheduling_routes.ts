@@ -32,7 +32,7 @@
 
 import express from "express";
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
-import {IConfigurationClient} from "@mojaloop/platform-configuration-bc-public-types-lib";
+// import {IConfigurationClient} from "@mojaloop/platform-configuration-bc-public-types-lib";
 import {
     Aggregate,
     InvalidReminderIdTypeError, InvalidReminderTaskDetailsTypeError,
@@ -42,11 +42,11 @@ import {
     InvalidReminderTimeTypeError,
     MissingEssentialReminderPropertiesOrTaskDetailsError, NoSuchReminderError, ReminderAlreadyExistsError
 } from "@mojaloop/scheduling-bc-domain-lib";
-import { IReminder } from "@mojaloop/scheduling-bc-public-types-lib"
+import { IReminder } from "@mojaloop/scheduling-bc-public-types-lib";
 import { BaseRoutes } from "./base/base_routes";
 import {
     ForbiddenError,
-    MakerCheckerViolationError,
+    // MakerCheckerViolationError,
     UnauthorizedError,
     CallSecurityContext, IAuthorizationClient,
 } from "@mojaloop/security-bc-public-types-lib";

@@ -45,7 +45,7 @@ import { IReminder, ReminderTaskType } from "@mojaloop/scheduling-bc-public-type
 export class Reminder implements IReminder {
     id: string;
     time: string; // TODO: Date.
-    payload: any;
+    payload: any; // eslint-disable-line @typescript-eslint/no-explicit-any
     taskType: ReminderTaskType;
     httpPostTaskDetails: null | {
         url: string
@@ -55,9 +55,9 @@ export class Reminder implements IReminder {
     };
 
     constructor(
-        id: string = "",
+        id = "",
         time: string,
-        payload: any = null,
+        payload: any = null, // eslint-disable-line @typescript-eslint/no-explicit-any
         taskType: ReminderTaskType,
         httpPostTaskDetails: null | {
             url: string
