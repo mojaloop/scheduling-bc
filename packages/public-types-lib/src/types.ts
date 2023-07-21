@@ -43,6 +43,19 @@ export interface IReminder {
     };
 }
 
+export interface ISingleReminder {
+    id: string;
+    time: string | number; // TODO: Date.
+    payload: any; 	// eslint-disable-line @typescript-eslint/no-explicit-any
+    taskType: ReminderTaskType;
+    httpPostTaskDetails: null | {
+        url: string
+    };
+    eventTaskDetails: null | {
+        topic: string
+    };
+}
+
 export enum ReminderTaskType {
     HTTP_POST = "HTTP_POST",
     EVENT = "EVENT"

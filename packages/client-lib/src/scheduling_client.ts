@@ -31,7 +31,7 @@ optionally within square brackets <email>.
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import axios, { AxiosError, AxiosInstance } from "axios";
-import { IReminder } from "@mojaloop/scheduling-bc-public-types-lib";
+import { IReminder, ISingleReminder } from "@mojaloop/scheduling-bc-public-types-lib";
 import {
 	UnableToCreateReminderError,
 	UnableToDeleteReminderError,
@@ -61,6 +61,20 @@ export class SchedulingClient {
 	async createReminder(reminder: IReminder): Promise<string> {
 		try {
 			const res = await this.httpClient.post("/", reminder);
+			return res.data.reminderId;
+		} catch (e: unknown) {
+			const serverErrorMessage: string | undefined = (e as AxiosError).message;
+			if (serverErrorMessage === undefined) {
+				this.logger.error(e);
+				throw new UnableToReachServerError(); // TODO.
+			}
+			throw new UnableToCreateReminderError(serverErrorMessage); // TODO: receive a string?
+		}
+	}
+
+	async createSingleReminder(reminder: ISingleReminder): Promise<string> {
+		try {
+			const res = await this.httpClient.post("/single", reminder);
 			return res.data.reminderId;
 		} catch (e: unknown) {
 			const serverErrorMessage: string | undefined = (e as AxiosError).message;

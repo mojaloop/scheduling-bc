@@ -31,8 +31,8 @@
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
-import { IReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
-import { Reminder } from "./types";
+import { IReminder, ISingleReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
+import { Reminder, SingleReminder } from "./types";
 import {CronJob} from "cron";
 import * as uuid from "uuid";
 import axios, {AxiosInstance} from "axios";
@@ -145,6 +145,41 @@ export class Aggregate {
 		return reminder.id;
 	}
 
+	async createSingleReminder(reminder: ISingleReminder): Promise<string> {
+		// TODO: change the database model to also store the original expiration datetime? 
+		reminder.time = this.dateToCron(reminder.time);
+		
+		if (reminder.id === undefined || reminder.id === null) { 
+			reminder.id = "";
+		}
+		SingleReminder.validateReminder(reminder);
+		try {
+			if (reminder.id === "") {
+				do {
+					reminder.id = uuid.v4();
+				} while (await this.repo.reminderExists(reminder.id));
+			}
+			await this.repo.storeReminder(reminder as IReminder);
+		} catch (e: unknown) {
+			if (e instanceof ReminderAlreadyExistsError) {
+				throw new ReminderAlreadyExistsError();
+			}
+			this.logger.error(e);
+			throw new Error();
+		}
+		this.cronJobs.set(reminder.id, new CronJob(
+			reminder.time,
+			() => {
+				this.runReminderTask(reminder.id);
+			},
+			null,
+			true,
+			this.TIME_ZONE,
+			this /* Context. */));
+		return reminder.id;
+	}
+
+
 	// This function takes at least MIN_DURATION_MS_TASK to execute.
 	// Duration of getReminder() + duration of httpPost()/event() <= TIMEOUT_MS_LOCK_ACQUIRED.
 	private async runReminderTask(reminderId: string): Promise<void> {
@@ -212,6 +247,10 @@ export class Aggregate {
 		timeoutEvent.fspiopOpaqueState = reminder.payload.fspiopOpaqueState,
 		
 		await this.messageProducer.send(timeoutEvent);
+
+		await this.deleteReminder(reminder.id);
+
+		return;
 	}
 
 	async getReminder(reminderId: string): Promise<IReminder | null> { // TODO: Reminder or IReminder?
@@ -276,5 +315,17 @@ export class Aggregate {
 			cronJob.stop();
 			this.cronJobs.delete(reminderId);
 		}
+	}
+
+	private dateToCron(time: string | number): string {
+		const date = new Date(time);
+
+		const minutes = date.getMinutes();
+		const hours = date.getHours();
+		const days = date.getDate();
+		const months = date.getMonth() + 1;
+		const dayOfWeek = date.getDay();
+	
+		return `${minutes} ${hours} ${days} ${months} ${dayOfWeek}`;
 	}
 }

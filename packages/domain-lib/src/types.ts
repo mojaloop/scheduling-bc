@@ -40,7 +40,7 @@ import {
     MissingEssentialReminderPropertiesOrTaskDetailsError
 } from "./errors";
 import {CronTime} from "cron";
-import { IReminder, ReminderTaskType } from "@mojaloop/scheduling-bc-public-types-lib";
+import { IReminder, ISingleReminder, ReminderTaskType } from "@mojaloop/scheduling-bc-public-types-lib";
 
 export class Reminder implements IReminder {
     id: string;
@@ -93,6 +93,75 @@ export class Reminder implements IReminder {
         }
         try {
             new CronTime(reminder.time);
+        } catch (e: unknown) {
+            throw new InvalidReminderTimeError();
+        }
+        // taskType.
+        if (typeof reminder.taskType !== "string") {
+            throw new InvalidReminderTaskTypeTypeError();
+        }
+        if (!(reminder.taskType in ReminderTaskType)) {
+            throw new InvalidReminderTaskTypeError();
+        }
+        // TaskDetails.
+        if (typeof reminder.httpPostTaskDetails?.url !== "string"
+            && typeof reminder.eventTaskDetails?.topic !== "string") {
+            throw new InvalidReminderTaskDetailsTypeError();
+        }
+    }
+}
+
+export class SingleReminder implements ISingleReminder {
+    id: string;
+    time: string | number; // TODO: Date.
+    payload: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    taskType: ReminderTaskType;
+    httpPostTaskDetails: null | {
+        url: string
+    };
+    eventTaskDetails: null | {
+        topic: string
+    };
+
+    constructor(
+        id = "",
+        time: string | number,
+        payload: any = null, // eslint-disable-line @typescript-eslint/no-explicit-any
+        taskType: ReminderTaskType,
+        httpPostTaskDetails: null | {
+            url: string
+        } = null,
+        eventTaskDetails: null | {
+            topic: string
+        } = null
+    ) {
+        this.id = id;
+        this.time = time;
+        this.payload = payload;
+        this.taskType = taskType;
+        this.httpPostTaskDetails = httpPostTaskDetails;
+        this.eventTaskDetails = eventTaskDetails;
+    }
+
+    // TODO.
+    static validateReminder(reminder: ISingleReminder): void { // TODO: change type to any?
+        // Check if the essential properties are present.
+        if (reminder.time === undefined
+            || reminder.taskType === undefined
+            || (reminder.httpPostTaskDetails?.url === undefined
+                && reminder.eventTaskDetails?.topic === undefined)) {
+            throw new MissingEssentialReminderPropertiesOrTaskDetailsError();
+        }
+        // id.
+        if (typeof reminder.id !== "string") {
+            throw new InvalidReminderIdTypeError();
+        }
+        // time.
+        if (typeof reminder.time !== "string" && typeof reminder.time !== "number") {
+            throw new InvalidReminderTimeTypeError();
+        }
+        try {
+            new Date(reminder.time);
         } catch (e: unknown) {
             throw new InvalidReminderTimeError();
         }

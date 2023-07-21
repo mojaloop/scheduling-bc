@@ -78,6 +78,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
 
         // Posts.
         this.mainRouter.post("/", this.postReminder.bind(this));
+        this.mainRouter.post("/single", this.postSingleReminder.bind(this));
         // Gets.
         this.mainRouter.get("/:reminderId", this.getReminder.bind(this));
         this.mainRouter.get("/", this.getReminders.bind(this));
@@ -176,6 +177,63 @@ export class SchedulingExpressRoutes extends BaseRoutes {
     private async postReminder(req: express.Request, res: express.Response): Promise<void> {
         try {
             const reminderId: string = await this.schedulingAgg.createReminder(req.body);
+            res.status(200).json({
+                status: "success",
+                reminderId: reminderId
+            });
+        } catch (e: unknown) {
+            if (e instanceof MissingEssentialReminderPropertiesOrTaskDetailsError) {
+                this.sendErrorResponse(
+                    res,
+                    400,
+                    "missing essential reminder properties or task details");
+            } else if (e instanceof InvalidReminderIdTypeError) {
+                this.sendErrorResponse(
+                    res,
+                    400,
+                    "invalid reminder id type");
+            } else if (e instanceof InvalidReminderTimeTypeError) {
+                this.sendErrorResponse(
+                    res,
+                    400,
+                    "invalid reminder time type");
+            } else if (e instanceof InvalidReminderTimeError) {
+                this.sendErrorResponse(
+                    res,
+                    400,
+                    "invalid reminder time");
+            } else if (e instanceof InvalidReminderTaskTypeTypeError) {
+                this.sendErrorResponse(
+                    res,
+                    400,
+                    "invalid reminder task type type (the type of the task type)");
+            } else if (e instanceof InvalidReminderTaskTypeError) {
+                this.sendErrorResponse(
+                    res,
+                    400,
+                    "invalid reminder task type");
+            } else if (e instanceof InvalidReminderTaskDetailsTypeError) {
+                this.sendErrorResponse(
+                    res,
+                    400,
+                    "invalid reminder task details type");
+            } else if (e instanceof ReminderAlreadyExistsError) {
+                this.sendErrorResponse(
+                    res,
+                    400,
+                    "reminder already exists");
+            } else {
+                this.sendErrorResponse(
+                    res,
+                    500,
+                    "unknown error");
+            }
+        }
+    }
+
+    private async postSingleReminder(req: express.Request, res: express.Response): Promise<void> {
+        try {
+            const reminderId: string = await this.schedulingAgg.createSingleReminder(req.body);
             res.status(200).json({
                 status: "success",
                 reminderId: reminderId
