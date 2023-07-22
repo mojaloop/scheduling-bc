@@ -146,9 +146,6 @@ export class Aggregate {
 	}
 
 	async createSingleReminder(reminder: ISingleReminder): Promise<string> {
-		// TODO: change the database model to also store the original expiration datetime? 
-		reminder.time = this.dateToCron(reminder.time);
-		
 		if (reminder.id === undefined || reminder.id === null) { 
 			reminder.id = "";
 		}
@@ -168,7 +165,7 @@ export class Aggregate {
 			throw new Error();
 		}
 		this.cronJobs.set(reminder.id, new CronJob(
-			reminder.time,
+			new Date(reminder.time),
 			() => {
 				this.runReminderTask(reminder.id);
 			},
@@ -248,7 +245,11 @@ export class Aggregate {
 		
 		await this.messageProducer.send(timeoutEvent);
 
-		await this.deleteReminder(reminder.id);
+		// Delete the reminder if it's a valid date, since we use it to schedule a one-time task
+		const timestamp = Date.parse(reminder.time);
+		if (!isNaN(timestamp)) {
+			await this.deleteReminder(reminder.id);
+		}
 
 		return;
 	}
@@ -317,15 +318,4 @@ export class Aggregate {
 		}
 	}
 
-	private dateToCron(time: string | number): string {
-		const date = new Date(time);
-
-		const minutes = date.getMinutes();
-		const hours = date.getHours();
-		const days = date.getDate();
-		const months = date.getMonth() + 1;
-		const dayOfWeek = date.getDay();
-	
-		return `${minutes} ${hours} ${days} ${months} ${dayOfWeek}`;
-	}
 }
