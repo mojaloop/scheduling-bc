@@ -54,6 +54,7 @@ const lock: ILocks = new LockMock();
 const authorizationClient: IAuthorizationClient = new AuthorizationClientMock();
 const messageProducer: IMessageProducer = new MessageProducerMock();
 const tokenhelper: ITokenHelper = new TokenHelperMock();
+
 const schedulingClient: SchedulingClient = new SchedulingClient(
     logger,
     URL_REMINDERS,
@@ -114,7 +115,7 @@ describe("scheduling client - unit tests", () => {
         const returnedReminder = await schedulingClient.getReminder("2");
 
         // Assert
-        expect(returnedReminder).toBeUndefined();
+        expect(returnedReminder).toBeNull();
     });
 
     test("scheduling-bc: client-lib: delete reminder - should return null when getting a deleted reminder", async ()=>{
@@ -125,7 +126,7 @@ describe("scheduling client - unit tests", () => {
         const returnedReminder = await schedulingClient.getReminder("1");
 
         // Assert
-        expect(returnedReminder).toBeUndefined();
+        expect(returnedReminder).toBeNull();
 
     });
 
@@ -168,22 +169,22 @@ describe("scheduling client - unit tests", () => {
             }
         }
         // Act and Assert
-        await expect(faultySchedulingClient.createSingleReminder(reminder)).rejects;
+        await expect(faultySchedulingClient.createSingleReminder(reminder)).rejects.toThrow();
 
     });
 
-    test("scheduling-bc: client-lib: get reminder - should return null when given non existent ID", async ()=>{
+    test("scheduling-bc: client-lib: get reminder with faulty client - should fail even when passed an ID", async ()=>{
          //Assert
-        await expect(faultySchedulingClient.getReminder("2")).rejects;
+        await expect(faultySchedulingClient.getReminder("2")).rejects.toThrow();
     });
 
-    test("scheduling-bc: client-lib: delete reminder - should return null when getting a deleted reminder", async ()=>{
+    test("scheduling-bc: client-lib: delete reminder with faulty client - should fail to delete", async ()=>{
         // Assert
-        await expect(faultySchedulingClient.deleteReminder("1")).rejects;
+        await expect(faultySchedulingClient.deleteReminder("1")).rejects.toThrow();
 
     });
 
-    test("scheduling-bc: client-lib: create single reminder - should return a single reminder on getReminder after creating a single reminder", async ()=>{
+    test("scheduling-bc: client-lib: create single reminder with faulty client - should fail to create reminder", async ()=>{
         // Arrange 
         const singleReminder: IReminder = {
             id: "3",
@@ -197,8 +198,8 @@ describe("scheduling client - unit tests", () => {
                 "topic": "test_topic"
             }
         };
-
-        await expect(faultySchedulingClient.createReminder(singleReminder)).rejects;
+        // Assert
+        await expect(faultySchedulingClient.createReminder(singleReminder)).rejects.toThrow();
     });
 
 });

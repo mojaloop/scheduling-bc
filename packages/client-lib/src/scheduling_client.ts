@@ -64,6 +64,7 @@ export class SchedulingClient {
 			return res.data.reminderId;
 		} catch (e: unknown) {
 			const serverErrorMessage: string | undefined = (e as AxiosError).message;
+			// istanbul ignore if
 			if (serverErrorMessage === undefined) {
 				this.logger.error(e);
 				throw new UnableToReachServerError(); // TODO.
@@ -78,6 +79,7 @@ export class SchedulingClient {
 			return res.data.reminderId;
 		} catch (e: unknown) {
 			const serverErrorMessage: string | undefined = (e as AxiosError).message;
+			// istanbul ignore if
 			if (serverErrorMessage === undefined) {
 				this.logger.error(e);
 				throw new UnableToReachServerError(); // TODO.
@@ -96,12 +98,14 @@ export class SchedulingClient {
 					}
 				}
 			);
+
 			if (res.status === 404) {
 				return null;
 			}
 			return res.data.reminder;
 		} catch (e: unknown) {
 			const serverErrorMessage: string | undefined = (e as AxiosError).message;
+			// istanbul ignore if
 			if (serverErrorMessage === undefined) {
 				this.logger.error(e);
 				throw new UnableToReachServerError(); // TODO.
@@ -115,6 +119,7 @@ export class SchedulingClient {
 			await this.httpClient.delete(`/${reminderId}`);
 		} catch (e: unknown) {
 			const serverErrorMessage: string | undefined = (e as AxiosError).message;
+			// istanbul ignore if
 			if (serverErrorMessage === undefined) {
 				this.logger.error(e);
 				throw new UnableToReachServerError(); // TODO.

@@ -35,12 +35,13 @@ import {ILocks, IRepo,} from "@mojaloop/scheduling-bc-domain-lib";
 import { IMessageProducer, IMessage } from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
 import {IAuthorizationClient, ITokenHelper} from "@mojaloop/security-bc-public-types-lib";
+import { isUndefined } from "util";
 
 export class SchedulingRepoMock implements IRepo {
-    private reminders:Record<string, IReminder> = {};
+    private reminders = new Map<String, IReminder>();
 
     deleteReminder(reminderId: string): Promise<void> {
-        delete this.reminders[reminderId]
+        this.reminders.delete(reminderId);
         return Promise.resolve(undefined);
     }
 
@@ -49,11 +50,20 @@ export class SchedulingRepoMock implements IRepo {
     }
 
     getReminder(reminderId: string): Promise<IReminder | null> {
-        return Promise.resolve(this.reminders[reminderId]);
+        const reminder = this.reminders.get(reminderId);
+        // check if reminder is undefined.
+        if (!reminder){
+            return Promise.resolve(null); 
+        }
+        return Promise.resolve(reminder);
     }
 
     getReminders(): Promise<IReminder[]> {
-        return Promise.resolve([]);
+        var remindersList: IReminder [] = [];
+        this.reminders.forEach(reminder=>{
+            remindersList.push(reminder)
+        });
+        return Promise.resolve(remindersList);
     }
 
     init(): Promise<void> {
@@ -61,11 +71,11 @@ export class SchedulingRepoMock implements IRepo {
     }
 
     reminderExists(reminderId: string): Promise<boolean> {
-        return Promise.resolve(reminderId in this.reminders);
+        return Promise.resolve(this.reminders.has(reminderId ));
     }
 
     storeReminder(reminder: IReminder): Promise<void> {
-        this.reminders[reminder.id] = reminder;
+        this.reminders.set(reminder.id,reminder);
         return Promise.resolve(undefined);
     }
 
