@@ -31,6 +31,7 @@ import { LockMock, MessageProducerMock, SchedulingRepoMock } from "../mocks/doma
 import { ILocks } from "../../src/index";
 import { IMessageProducer } from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import { IReminder, ISingleReminder, ReminderTaskType } from "@mojaloop/scheduling-bc-public-types-lib";
+import { TransfersBCTopics } from "@mojaloop/platform-shared-lib-public-messages-lib";
 
 
 // Aggregate constructor arguments 
@@ -39,12 +40,17 @@ const repo: IRepo = new SchedulingRepoMock();
 const locks: ILocks = new LockMock();
 const messageProducer: IMessageProducer = new MessageProducerMock();
 
-const aggregate = new Aggregate(logger,repo,locks,messageProducer,"UTC+3",10,10,10);
+const aggregate = new Aggregate(logger,repo,locks,messageProducer,"UTC",10000,10000,10000);
 
 describe("scheduling-bc domain lib tests", ()=>{
 
+    afterEach(async () => {
+        jest.restoreAllMocks();
+    });
+
     afterAll(async ()=>{
         await aggregate.destroy();
+        jest.clearAllMocks();
     });
     test("scheduling bc- domain-lib: initialise aggregate - should pass ", async ()=>{
         // Act & Assert
@@ -55,26 +61,95 @@ describe("scheduling-bc domain lib tests", ()=>{
         // Arrange 
         const reminder: IReminder = {
             id: "3",
-            time: "*/15 * * * * *",
-            payload: {},
-            taskType: ReminderTaskType.HTTP_POST,
+            time: "*/1 * * * * *",
+            payload: {
+                payload: {
+                    name: "test"
+                }
+            },
+            taskType: ReminderTaskType.EVENT,
             httpPostTaskDetails: {
                 "url": "http://localhost:1111/"
             },
             eventTaskDetails: {
-                "topic": "test_topic"
+                "topic": TransfersBCTopics.TimeoutEvents
             }
         }
 
         // Act
         const returnedReminderID = await aggregate.createReminder(reminder);
+        const returnedReminder = await aggregate.getReminder(returnedReminderID);
 
         // Assert
-        const returnedReminder = await aggregate.getReminder(returnedReminderID);
-        expect(returnedReminder).toEqual(reminder);
-        
+        expect(returnedReminder?.id).toEqual(reminder.id);
     });
 
+    test("scheduling bc- domain-lib: create reminder :should send event message through cronjob of reminder of type Event", async () => {
+        // Arrange 
+        const reminder: IReminder = {
+            id: "3",
+            time: "*/1 * * * * *",
+            payload: {
+                payload: {
+                    name: "test"
+                }
+            },
+            taskType: ReminderTaskType.EVENT,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": TransfersBCTopics.TimeoutEvents
+            }
+        }
+
+        jest.spyOn(messageProducer, "send");
+
+        // Act
+        await aggregate.createReminder(reminder);
+
+        await new Promise((r) => setTimeout(r, 1000));
+
+        // Assert
+        expect(messageProducer.send).toHaveBeenCalledWith(expect.objectContaining({
+            "payload": reminder.payload.payload,
+        }));
+    });
+
+    test("scheduling bc- domain-lib: create reminder :should not be able to send reminder due to reminder being locked", async () => {
+        // Arrange 
+        const reminder: IReminder = {
+            id: "3",
+            time: "*/1 * * * * *",
+            payload: {
+                payload: {
+                    name: "test"
+                }
+            },
+            taskType: ReminderTaskType.EVENT,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": TransfersBCTopics.TimeoutEvents
+            }
+        }
+
+        jest.spyOn(locks, "acquire").mockResolvedValue(false);
+        jest.spyOn(messageProducer, "send");
+
+        // Act
+        const returnedReminderID = await aggregate.createReminder(reminder);
+
+        await new Promise((r) => setTimeout(r, 2000));
+
+        const returnedReminder = await aggregate.getReminder(returnedReminderID);
+
+        // Assert
+        expect(messageProducer.send).not.toBeCalled();
+        expect(returnedReminder).toEqual(reminder);
+    });
+    
     test("scheduling bc- domain-lib: get reminders :returned reminders should be greater than zero",async ()=>{
         // Act
         const reminders: IReminder[] = await aggregate.getReminders();
