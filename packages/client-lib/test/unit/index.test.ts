@@ -22,7 +22,7 @@
  * Crosslake
  - Pedro Sousa Barreto <pedrob@crosslaketech.com>
 
- * Gonçalo Garcia <goncalogarcia99@gmail.com>
+ - Gonçalo Garcia <goncalogarcia99@gmail.com>
 
  --------------
  ******/
@@ -30,30 +30,67 @@
 "use strict";
 
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-public-types-lib";
-import {SchedulingServiceMock} from "./mocks/scheduling_service_mock";
-import {UnableToCreateReminderError, UnableToDeleteReminderError} from "../../src/errors";
 import {SchedulingClient} from "../../src";
-import { IReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
+import {Service} from "../../../scheduling-svc/src/application/service"
+import {
+    SchedulingRepoMock,
+    LockMock,
+    AuthorizationClientMock,
+    MessageProducerMock,
+    TokenHelperMock
+} from "./mocks/scheduling_service_mock";
+import {ILocks, IRepo} from "@mojaloop/scheduling-bc-domain-lib";
+import {IAuthorizationClient, ITokenHelper} from "@mojaloop/security-bc-public-types-lib";
+import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import { IReminder, ISingleReminder, ReminderTaskType } from "@mojaloop/scheduling-bc-public-types-lib";
 
 const URL_REMINDERS: string = "http://localhost:1234/reminders";
+const FAULTY_URL_REMINDERS: string = "http://localhost:1000/reminders";
 const TIMEOUT_MS_HTTP_CLIENT: number = 10_000;
 
 const logger: ILogger = new ConsoleLogger();
-const schedulingServiceMock: SchedulingServiceMock = new SchedulingServiceMock(
-    logger,
-    URL_REMINDERS
-);
+const schedulingRepo: IRepo = new SchedulingRepoMock();
+const lock: ILocks = new LockMock();
+const authorizationClient: IAuthorizationClient = new AuthorizationClientMock();
+const messageProducer: IMessageProducer = new MessageProducerMock();
+const tokenhelper: ITokenHelper = new TokenHelperMock();
 const schedulingClient: SchedulingClient = new SchedulingClient(
     logger,
     URL_REMINDERS,
     TIMEOUT_MS_HTTP_CLIENT
 );
+const faultySchedulingClient: SchedulingClient = new SchedulingClient(
+    logger,
+    FAULTY_URL_REMINDERS,
+    TIMEOUT_MS_HTTP_CLIENT
+);
 
 describe("scheduling client - unit tests", () => {
-    test("create non-existent reminder", async () => {
-        const reminderIdExpected: string = SchedulingServiceMock.NON_EXISTENT_REMINDER_ID;
-        const reminder: IReminder = {
-            id: reminderIdExpected,
+    beforeAll(()=>{
+        // Start the scheduling service
+        Service.start(
+            schedulingRepo,
+            tokenhelper,
+            logger,
+            messageProducer,
+            authorizationClient,
+            lock
+        ).then(() => {
+            console.log("Started scheduling service");
+        });
+    });
+
+    afterAll(()=>{
+        // Stop the service
+        Service.stop().then(()=>{
+            console.log("Service has been stopped.")
+        });
+    });
+
+    test("scheduling-bc: client-lib: create reminder - should pass with correct arguments", async () => {
+        // Arrange
+        const reminder: ISingleReminder = {
+            id: "1",
             time: "*/15 * * * * *",
             payload: {},
             taskType: ReminderTaskType.HTTP_POST,
@@ -64,14 +101,62 @@ describe("scheduling client - unit tests", () => {
                 "topic": "test_topic"
             }
         }
-        const reminderIdReceived: string = await schedulingClient.createReminder(reminder);
-        expect(reminderIdReceived).toBe(reminderIdExpected);
+        // Act
+        const reminderID:string = await schedulingClient.createSingleReminder(reminder);
+
+        // Assert
+        const returnedReminder = await schedulingClient.getReminder(reminderID);
+        await expect(reminderID).toEqual(returnedReminder?.id);
     });
 
-    test("create existent reminder", async () => {
-        const reminderIdExpected: string = SchedulingServiceMock.EXISTENT_REMINDER_ID;
-        const reminder: IReminder = {
-            id: reminderIdExpected,
+    test("scheduling-bc: client-lib: get reminder - should return null when given non existent ID", async ()=>{
+        // Act and Assert
+        const returnedReminder = await schedulingClient.getReminder("2");
+
+        // Assert
+        expect(returnedReminder).toBeUndefined();
+    });
+
+    test("scheduling-bc: client-lib: delete reminder - should return null when getting a deleted reminder", async ()=>{
+        // Arrange
+        await schedulingClient.deleteReminder("1");
+
+        //Act
+        const returnedReminder = await schedulingClient.getReminder("1");
+
+        // Assert
+        expect(returnedReminder).toBeUndefined();
+
+    });
+
+    test("scheduling-bc: client-lib: create single reminder - should return a single reminder on getReminder after creating a single reminder", async ()=>{
+        // Arrange 
+        const singleReminder: IReminder = {
+            id: "3",
+            time: "*/15 * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": "test_topic"
+            }
+        };
+
+        schedulingClient.createReminder(singleReminder);
+
+        // Act 
+        const returnedReminder = await schedulingClient.getReminder("3");
+
+        // Assert
+        expect(returnedReminder?.id).toEqual("3");
+    });
+
+    test("scheduling-bc: client-lib: create reminder with faulty client - should fail with correct arguments", async () => {
+        // Arrange
+        const reminder: ISingleReminder = {
+            id: "1",
             time: "*/15 * * * * *",
             payload: {},
             taskType: ReminderTaskType.HTTP_POST,
@@ -82,37 +167,38 @@ describe("scheduling client - unit tests", () => {
                 "topic": "test_topic"
             }
         }
-        await expect(
-            async () => {
-                await schedulingClient.createReminder(reminder);
+        // Act and Assert
+        await expect(faultySchedulingClient.createSingleReminder(reminder)).rejects;
+
+    });
+
+    test("scheduling-bc: client-lib: get reminder - should return null when given non existent ID", async ()=>{
+         //Assert
+        await expect(faultySchedulingClient.getReminder("2")).rejects;
+    });
+
+    test("scheduling-bc: client-lib: delete reminder - should return null when getting a deleted reminder", async ()=>{
+        // Assert
+        await expect(faultySchedulingClient.deleteReminder("1")).rejects;
+
+    });
+
+    test("scheduling-bc: client-lib: create single reminder - should return a single reminder on getReminder after creating a single reminder", async ()=>{
+        // Arrange 
+        const singleReminder: IReminder = {
+            id: "3",
+            time: "*/15 * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": "test_topic"
             }
-        ).rejects.toThrow(UnableToCreateReminderError); // TODO.
+        };
+
+        await expect(faultySchedulingClient.createReminder(singleReminder)).rejects;
     });
 
-    test("get non-existent reminder", async () => {
-        const reminder: IReminder | null =
-            await schedulingClient.getReminder(SchedulingServiceMock.NON_EXISTENT_REMINDER_ID);
-        expect(reminder).toBeNull();
-    });
-
-    test("get existent reminder", async () => {
-        const reminder: IReminder | null = await schedulingClient.getReminder(SchedulingServiceMock.EXISTENT_REMINDER_ID);
-        expect(reminder?.id).toBe(SchedulingServiceMock.EXISTENT_REMINDER_ID);
-    });
-
-    test("delete non-existent reminder", async () => {
-        await expect(
-            async () => {
-                await schedulingClient.deleteReminder(SchedulingServiceMock.NON_EXISTENT_REMINDER_ID);
-            }
-        ).rejects.toThrow(UnableToDeleteReminderError);
-    });
-
-    test("delete existent reminder", async () => {
-        await expect(
-            async () => {
-                await schedulingClient.deleteReminder(SchedulingServiceMock.EXISTENT_REMINDER_ID);
-            }
-        ).resolves; // TODO.
-    });
 });

@@ -31,97 +31,102 @@
 
 import nock from "nock";
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
+import {ILocks, IRepo,} from "@mojaloop/scheduling-bc-domain-lib";
+import { IMessageProducer, IMessage } from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
+import {IAuthorizationClient, ITokenHelper} from "@mojaloop/security-bc-public-types-lib";
 
-export class SchedulingServiceMock { // TODO: name.
-    // Properties received through the constructor.
-    private readonly logger: ILogger;
-    private readonly URL_REMINDERS: string;
-    // Other properties.
-    public static readonly NON_EXISTENT_REMINDER_ID: string = "a";
-    public static readonly EXISTENT_REMINDER_ID: string = "b";
+export class SchedulingRepoMock implements IRepo {
+    private reminders:Record<string, IReminder> = {};
 
-    constructor(
-        logger: ILogger,
-        URL_REMINDERS: string
-    ) {
-        this.logger = logger;
-        this.URL_REMINDERS = URL_REMINDERS;
-
-        this.setUp();
+    deleteReminder(reminderId: string): Promise<void> {
+        delete this.reminders[reminderId]
+        return Promise.resolve(undefined);
     }
 
-    setUp(): void {
-        // Create reminder.
-        nock(this.URL_REMINDERS)
-            .persist()
-            .post("/")
-            .reply(
-                (_, requestBody: any) => {
-                    if (requestBody.id === SchedulingServiceMock.EXISTENT_REMINDER_ID) {
-                        return [
-                            400,
-                            {
-                                status: "error",
-                                message: "reminder already exists"
-                            }
-                        ];
-                    }
-                    return [
-                        200,
-                        {
-                            status: "success",
-                            reminderId: requestBody.id
-                        }
-                    ];
-                }
-            );
+    destroy(): Promise<void> {
+        return Promise.resolve(undefined);
+    }
 
-        // Get non-existent reminder.
-        nock(this.URL_REMINDERS)
-            .persist()
-            .get(`/${(SchedulingServiceMock.NON_EXISTENT_REMINDER_ID)}`)
-            .reply(
-                404,
-                {
-                    status: "error",
-                    message: "no such reminder"
-                }
-            );
-        // Get existent reminder.
-        nock(this.URL_REMINDERS)
-            .persist()
-            .get(`/${(SchedulingServiceMock.EXISTENT_REMINDER_ID)}`)
-            .reply(
-                200,
-                {
-                    status: "success",
-                    reminder: {
-                        id: SchedulingServiceMock.EXISTENT_REMINDER_ID
-                    }
-                }
-            );
+    getReminder(reminderId: string): Promise<IReminder | null> {
+        return Promise.resolve(this.reminders[reminderId]);
+    }
 
-        // Delete non-existent reminder.
-        nock(this.URL_REMINDERS)
-            .persist()
-            .delete(`/${(SchedulingServiceMock.NON_EXISTENT_REMINDER_ID)}`)
-            .reply(
-                404,
-                {
-                    status: "error",
-                    message: "no such reminder"
-                }
-            );
-        // Delete existent reminder.
-        nock(this.URL_REMINDERS)
-            .persist()
-            .delete(`/${(SchedulingServiceMock.EXISTENT_REMINDER_ID)}`)
-            .reply(
-                200,
-                {
-                    status: "success",
-                    message: "reminder deleted"
-                }
-            );
+    getReminders(): Promise<IReminder[]> {
+        return Promise.resolve([]);
+    }
+
+    init(): Promise<void> {
+        return Promise.resolve(undefined);
+    }
+
+    reminderExists(reminderId: string): Promise<boolean> {
+        return Promise.resolve(reminderId in this.reminders);
+    }
+
+    storeReminder(reminder: IReminder): Promise<void> {
+        this.reminders[reminder.id] = reminder;
+        return Promise.resolve(undefined);
+    }
+
+}
+
+export class MessageProducerMock implements IMessageProducer {
+    connect(): Promise<void> {
+        return Promise.resolve(undefined);
+    }
+
+    destroy(): Promise<void> {
+        return Promise.resolve(undefined);
+    }
+
+    disconnect(): Promise<void> {
+        return Promise.resolve(undefined);
+    }
+
+    send(message: IMessage | IMessage[]): Promise<void> {
+        return Promise.resolve(undefined);
+    }
+
+}
+
+export class LockMock implements ILocks {
+    acquire(lockId: string, durationMs: number): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+    release(lockId: string): Promise<boolean> {
+        return Promise.resolve(false);
+    }
+
+}
+
+export class AuthorizationClientMock implements IAuthorizationClient {
+    addPrivilege(privId: string, labelName: string, description: string): void {
+    }
+
+    addPrivilegesArray(privsArray: { privId: string; labelName: string; description: string }[]): void {
+    }
+
+    roleHasPrivilege(roleId: string, privilegeId: string): boolean {
+        return false;
+    }
+
+}
+
+export class TokenHelperMock  implements ITokenHelper {
+    private _logger: ILogger;
+    private _jwksUrl: string;
+    private _issuerName: string;
+    private _audience:string;
+    private _jwksClient:string;
+    init(): Promise<void> {
+        return Promise.resolve();
+    }
+    decodeToken(accessToken: string) {
+        return Promise.resolve();
+    }
+    verifyToken(accessToken: string): Promise<boolean> {
+        return Promise.resolve(true);
     }
 }

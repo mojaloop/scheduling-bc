@@ -72,11 +72,11 @@ import { KafkaLogger } from "@mojaloop/logging-bc-client-lib";
 import { Server } from "net";
 // import { existsSync } from "fs";
 import process from "process";
-import { 
-	// AuthorizationClient, 
+import {
+	// AuthorizationClient,
 	TokenHelper
 } from "@mojaloop/security-bc-client-lib";
-import { IAuthorizationClient } from "@mojaloop/security-bc-public-types-lib";
+import { IAuthorizationClient, ITokenHelper } from "@mojaloop/security-bc-public-types-lib";
 
 // Global vars
 const BC_NAME = "scheduling-bc";
@@ -157,12 +157,13 @@ export class Service {
 	static expressServer: Server;
 	static logger: ILogger;
 	static messageProducer: IMessageProducer;
-	static tokenHelper: TokenHelper;
+	static tokenHelper: ITokenHelper;
     static authorizationClient: IAuthorizationClient;
 	static locks: ILocks;
 
 	static async start(
 		schedulingRepo?: IRepo,
+		tokenHelper?: ITokenHelper,
 		logger?: ILogger,
 		messageProducer?: IMessageProducer,
         authorizationClient?: IAuthorizationClient,
@@ -194,9 +195,13 @@ export class Service {
 		// this.authorizationClient = authorizationClient;
 
 		// token helper
-		this.tokenHelper = new TokenHelper(AUTH_N_SVC_JWKS_URL, logger, AUTH_N_TOKEN_ISSUER_NAME, AUTH_N_TOKEN_AUDIENCE);
-		await this.tokenHelper.init();
-		
+		if(!tokenHelper){
+			this.tokenHelper = new TokenHelper(AUTH_N_SVC_JWKS_URL, logger, AUTH_N_TOKEN_ISSUER_NAME, AUTH_N_TOKEN_AUDIENCE);
+			await this.tokenHelper.init();
+		}
+		this.tokenHelper = tokenHelper as ITokenHelper;
+
+
 		if (!schedulingRepo) {
 			schedulingRepo = new MongoRepo(this.logger, MONGO_URL, DB_NAME, TIMEOUT_MS_REPO_OPERATIONS);
 		}
@@ -258,7 +263,7 @@ export class Service {
 			this.app.use(express.urlencoded({extended: true})); // for parsing application/x-www-form-urlencoded
 
 			// Add client http routes
-			const schedulingClientRoutes = new SchedulingExpressRoutes(this.logger, this.aggregate, this.tokenHelper, this.authorizationClient);
+			const schedulingClientRoutes = new SchedulingExpressRoutes(this.logger, this.aggregate, this.tokenHelper as TokenHelper, this.authorizationClient);
 			this.app.use("/reminders", schedulingClientRoutes.mainRouter);
 
 			// Add health and metrics http routes
