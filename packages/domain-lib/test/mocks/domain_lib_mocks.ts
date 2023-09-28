@@ -34,7 +34,7 @@ import {ReminderAlreadyExistsError, UnableToStoreReminderError} from "../../src/
 
  
  export class SchedulingRepoMock implements IRepo {
-     private reminders = new Map<String, IReminder>();
+     private reminders = new Map<string, IReminder>();
  
      deleteReminder(reminderId: string): Promise<void> {
          this.reminders.delete(reminderId);
@@ -103,7 +103,7 @@ import {ReminderAlreadyExistsError, UnableToStoreReminderError} from "../../src/
  
  export class LockMock implements ILocks {
      acquire(lockId: string, durationMs: number): Promise<boolean> {
-         return Promise.resolve(false);
+         return Promise.resolve(true);
      }
  
      release(lockId: string): Promise<boolean> {
