@@ -27,12 +27,11 @@
 
  "use strict";
 
- import nock from "nock";
- import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
+import {ReminderAlreadyExistsError, UnableToStoreReminderError} from "../../src/errors"
  import {ILocks, IRepo,} from "@mojaloop/scheduling-bc-domain-lib";
  import { IMessageProducer, IMessage } from "@mojaloop/platform-shared-lib-messaging-types-lib";
  import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
- import {IAuthorizationClient, ITokenHelper} from "@mojaloop/security-bc-public-types-lib";
+
  
  export class SchedulingRepoMock implements IRepo {
      private reminders = new Map<String, IReminder>();
@@ -66,8 +65,18 @@
          return Promise.resolve(this.reminders.has(reminderId ));
      }
  
-     storeReminder(reminder: IReminder): Promise<void> {
-         this.reminders.set(reminder.id,reminder);
+     async storeReminder(reminder: IReminder): Promise<void> {
+        try {
+            if (await this.reminderExists(reminder.id)) { 
+                throw new ReminderAlreadyExistsError(); 
+            }
+            this.reminders.set(reminder.id,reminder);
+        } catch (e: unknown) {
+            if (e instanceof ReminderAlreadyExistsError) {
+                throw new ReminderAlreadyExistsError();
+            }
+            throw new UnableToStoreReminderError();
+        }
          return Promise.resolve(undefined);
      }
  

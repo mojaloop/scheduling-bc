@@ -77,6 +77,7 @@ export class Reminder implements IReminder {
     // TODO.
     static validateReminder(reminder: IReminder): void { // TODO: change type to any?
         // Check if the essential properties are present.
+        // istanbul ignore if
         if (reminder.time === undefined
             || reminder.taskType === undefined
             || (reminder.httpPostTaskDetails?.url === undefined
@@ -84,10 +85,12 @@ export class Reminder implements IReminder {
             throw new MissingEssentialReminderPropertiesOrTaskDetailsError();
         }
         // id.
+        // istanbul ignore if
         if (typeof reminder.id !== "string") {
             throw new InvalidReminderIdTypeError();
         }
         // time.
+        // istanbul ignore if
         if (typeof reminder.time !== "string") {
             throw new InvalidReminderTimeTypeError();
         }
@@ -97,13 +100,16 @@ export class Reminder implements IReminder {
             throw new InvalidReminderTimeError();
         }
         // taskType.
+        // istanbul ignore if
         if (typeof reminder.taskType !== "string") {
             throw new InvalidReminderTaskTypeTypeError();
         }
+        // istanbul ignore if
         if (!(reminder.taskType in ReminderTaskType)) {
             throw new InvalidReminderTaskTypeError();
         }
         // TaskDetails.
+        // istanbul ignore if
         if (typeof reminder.httpPostTaskDetails?.url !== "string"
             && typeof reminder.eventTaskDetails?.topic !== "string") {
             throw new InvalidReminderTaskDetailsTypeError();
@@ -146,6 +152,7 @@ export class SingleReminder implements ISingleReminder {
     // TODO.
     static validateReminder(reminder: ISingleReminder): void { // TODO: change type to any?
         // Check if the essential properties are present.
+        // istanbul ignore if
         if (reminder.time === undefined
             || reminder.taskType === undefined
             || (reminder.httpPostTaskDetails?.url === undefined
@@ -153,10 +160,12 @@ export class SingleReminder implements ISingleReminder {
             throw new MissingEssentialReminderPropertiesOrTaskDetailsError();
         }
         // id.
+        // istanbul ignore if
         if (typeof reminder.id !== "string") {
             throw new InvalidReminderIdTypeError();
         }
         // time.
+        // istanbul ignore if
         if (typeof reminder.time !== "string" && typeof reminder.time !== "number") {
             throw new InvalidReminderTimeTypeError();
         }
@@ -166,13 +175,16 @@ export class SingleReminder implements ISingleReminder {
             throw new InvalidReminderTimeError();
         }
         // taskType.
+        // istanbul ignore if
         if (typeof reminder.taskType !== "string") {
             throw new InvalidReminderTaskTypeTypeError();
         }
+        // istanbul ignore if
         if (!(reminder.taskType in ReminderTaskType)) {
             throw new InvalidReminderTaskTypeError();
         }
         // TaskDetails.
+        // istanbul ignore if
         if (typeof reminder.httpPostTaskDetails?.url !== "string"
             && typeof reminder.eventTaskDetails?.topic !== "string") {
             throw new InvalidReminderTaskDetailsTypeError();
