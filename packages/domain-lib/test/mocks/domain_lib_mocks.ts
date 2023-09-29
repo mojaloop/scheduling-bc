@@ -107,7 +107,7 @@ import {ReminderAlreadyExistsError, UnableToStoreReminderError} from "../../src/
      }
  
      release(lockId: string): Promise<boolean> {
-         return Promise.resolve(false);
+         return Promise.resolve(true);
      }
  
  }
