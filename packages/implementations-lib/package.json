@@ -30,7 +30,7 @@
     "dep:update": "npm exec ncu -- -u",
     "lint": "eslint ./src",
     "lint:fix": "eslint ./src --fix",
-    "test:unit": "implementations-lib has no unit tests"
+    "test:unit": "echo \"implementations-lib has no unit tests\""
   },
   "dependencies": {
     "@mojaloop/scheduling-bc-domain-lib": "*",
