@@ -24,9 +24,34 @@
 
  --------------
  ******/
+import {IReminder, ISingleReminder, ReminderTaskType } from "../../src/index"
 
- describe("scheduling-bc: implementation-lib : unit tests", ()=>{
-    test("test mongo",async ()=>{
-        console.log("Test")
+
+
+// Arrange test functions 
+function printReminderId(reminder: IReminder){
+    console.log(reminder.id);
+}
+
+function printSingleReminderId(reminder: ISingleReminder){
+    console.log(reminder.id)
+}
+
+
+ describe("scheduling-bc: public-types-lib : unit tests", ()=>{
+    test("scheduling-bc: public-types-lib : check instance of IReminder and ISingleReminder",async ()=>{
+        // Arrange
+        const reminder: any = {
+            id:"16",
+            time:"* * * * * *",
+            payload:{},
+            taskType:ReminderTaskType.EVENT,
+            httpPostTaskDetails:{"url": "http://localhost:1111/"},
+            eventTaskDetails:{"topic": "test_topic"}
+        };
+        
+        // Act and Assert
+        expect(printReminderId(reminder)).resolves;
+        expect(printSingleReminderId(reminder)).resolves;
     });
  });
