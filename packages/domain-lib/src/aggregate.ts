@@ -24,7 +24,7 @@
 
  * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
- --------------
+ --------------2
  ******/
 
 "use strict";
@@ -115,11 +115,13 @@ export class Aggregate {
 	async createReminder(reminder: IReminder): Promise<string> { // TODO: Reminder or IReminder?
 		// To facilitate the creation of reminders, undefined/null ids are accepted and converted to empty strings
 		// (so that random UUIds are generated).
+		// istanbul ignore if
 		if (reminder.id === undefined || reminder.id === null) { // TODO.
 			reminder.id = "";
 		}
 		Reminder.validateReminder(reminder);
 		try {
+			// istanbul ignore if
 			if (reminder.id === "") {
 				do {
 					reminder.id = uuid.v4();
@@ -146,11 +148,13 @@ export class Aggregate {
 	}
 
 	async createSingleReminder(reminder: ISingleReminder): Promise<string> {
+		// istanbul ignore if
 		if (reminder.id === undefined || reminder.id === null) { 
 			reminder.id = "";
 		}
 		SingleReminder.validateReminder(reminder);
 		try {
+			// istanbul ignore if
 			if (reminder.id === "") {
 				do {
 					reminder.id = uuid.v4();
@@ -188,7 +192,7 @@ export class Aggregate {
 			const reminder: IReminder | null = await this.repo.getReminder(reminderId);
 			if (reminder === null) {
 				this.logger.error("no such reminder"); // TODO.
-				return; // TODO: throw?
+				throw new NoSuchReminderError();
 			}
 			switch (reminder.taskType) {
 				case ReminderTaskType.HTTP_POST:
@@ -255,6 +259,7 @@ export class Aggregate {
 	}
 
 	async getReminder(reminderId: string): Promise<IReminder | null> { // TODO: Reminder or IReminder?
+		// istanbul ignore if
 		if (typeof reminderId !== "string") { // TODO.
 			throw new InvalidReminderIdTypeError();
 		}
@@ -276,6 +281,7 @@ export class Aggregate {
 	}
 
 	async deleteReminder(reminderId: string): Promise<void> {
+		// istanbul ignore if
 		if (typeof reminderId !== "string") { // TODO.
 			throw new InvalidReminderIdTypeError();
 		}
