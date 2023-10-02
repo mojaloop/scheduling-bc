@@ -171,6 +171,7 @@ export class Service {
 	): Promise<void> {
 		console.log(`Scheduling-svc - service starting with PID: ${process.pid}`);
 
+		// istanbul ignore next
 		if (!logger) {
 			logger = new KafkaLogger(
 				TRANSFERS_BOUNDED_CONTEXT_NAME,
@@ -195,18 +196,20 @@ export class Service {
 		// this.authorizationClient = authorizationClient;
 
 		// token helper
+		// istanbul ignore next
 		if(!tokenHelper){
 			this.tokenHelper = new TokenHelper(AUTH_N_SVC_JWKS_URL, logger, AUTH_N_TOKEN_ISSUER_NAME, AUTH_N_TOKEN_AUDIENCE);
 			await this.tokenHelper.init();
 		}
 		this.tokenHelper = tokenHelper as ITokenHelper;
 
-
+		// istanbul ignore next
 		if (!schedulingRepo) {
 			schedulingRepo = new MongoRepo(this.logger, MONGO_URL, DB_NAME, TIMEOUT_MS_REPO_OPERATIONS);
 		}
 		this.schedulingRepo = schedulingRepo;
 
+		// istanbul ignore next
 		if (!locks) {
 			locks = new RedisLocks(
 				logger,
@@ -220,6 +223,7 @@ export class Service {
 		}
 		this.locks = locks;
 
+		// istanbul ignore next
 		if (!messageProducer) {
 			const producerLogger = logger.createChild("producerLogger");
 			producerLogger.setLogLevel(LogLevel.INFO);

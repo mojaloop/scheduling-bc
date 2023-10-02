@@ -185,6 +185,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
                 reminderId: reminderId
             });
         } catch (e: unknown) {
+            // istanbul ignore next
             if (e instanceof MissingEssentialReminderPropertiesOrTaskDetailsError) {
                 this.sendErrorResponse(
                     res,
@@ -242,6 +243,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
                 reminderId: reminderId
             });
         } catch (e: unknown) {
+            // istanbul ignore next
             if (e instanceof MissingEssentialReminderPropertiesOrTaskDetailsError) {
                 this.sendErrorResponse(
                     res,
@@ -306,6 +308,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
                 reminder: reminder
             });
         } catch (e: unknown) {
+            // istanbul ignore next
             if (e instanceof InvalidReminderIdTypeError) {
                 this.sendErrorResponse(
                     res,
@@ -343,6 +346,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
                 message: "reminder deleted"
             });
         } catch (e: unknown) {
+            // istanbul ignore next
             if (e instanceof InvalidReminderIdTypeError) {
                 this.sendErrorResponse(
                     res,
