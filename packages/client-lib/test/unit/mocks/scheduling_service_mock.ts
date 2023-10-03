@@ -29,13 +29,11 @@
 
 "use strict";
 
-import nock from "nock";
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {ILocks, IRepo,} from "@mojaloop/scheduling-bc-domain-lib";
 import { IMessageProducer, IMessage } from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
 import {IAuthorizationClient, ITokenHelper} from "@mojaloop/security-bc-public-types-lib";
-import { isUndefined } from "util";
 
 export class SchedulingRepoMock implements IRepo {
     private reminders = new Map<String, IReminder>();
@@ -101,6 +99,12 @@ export class MessageProducerMock implements IMessageProducer {
 }
 
 export class LockMock implements ILocks {
+    init(): Promise<void> {
+        return Promise.resolve();
+    }
+    destroy(): Promise<void> {
+        return Promise.resolve();
+    }
     acquire(lockId: string, durationMs: number): Promise<boolean> {
         return Promise.resolve(false);
     }

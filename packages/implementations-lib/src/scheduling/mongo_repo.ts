@@ -56,29 +56,21 @@ export class MongoRepo implements IRepo {
         this._connectionString = connectionString;
         this._dbName = dbName;
         this.timeoutRepoOperations = timeoutRepoOperations;
-
-        this.mongoClient = new MongoClient(this._connectionString,
-            {
-                // TODO: are other timeouts required?
-                socketTimeoutMS: this.timeoutRepoOperations
-            });
-        this.mongoClient.connect();
-        this.reminders = this.mongoClient
-            .db(this._dbName)
-            .collection(this._collectionName);
     }
 
     async init(): Promise<void> {
         try {
             this.mongoClient = new MongoClient(this._connectionString);
-            this.mongoClient.connect();
+            await this.mongoClient.connect();
             this.reminders = this.mongoClient
                 .db(this._dbName)
                 .collection(this._collectionName);
         } catch (e: unknown) {
+            // istanbul ignore next
             this._logger.error(
                 `Unable to connect to the database: ${(e as Error).message}`
             );
+            // istanbul ignore next
             throw new UnableToInitRepoError(
                 "Unable to connect to the database"
             );

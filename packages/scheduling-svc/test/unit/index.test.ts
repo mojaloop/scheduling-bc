@@ -53,9 +53,9 @@ DefaultHeaders.append("Content-Type", "application/json");
 const BASE_URL: string = "http://localhost:1234";
 
 describe("scheduling-bc - scheduling-svc tests",()=>{
-    beforeAll(()=>{
+    beforeAll(async ()=>{
         // Start the scheduling service
-        Service.start(
+        await Service.start(
             mockRepo,
             tokenhelperMock,
             logger,
@@ -72,9 +72,9 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         jest.restoreAllMocks();
     });
 
-    afterAll(()=>{
+    afterAll(async ()=>{
         // Stop the service
-        Service.stop().then(()=>{
+        await Service.stop().then(()=>{
             console.log("Service has been stopped.")
         });
     });

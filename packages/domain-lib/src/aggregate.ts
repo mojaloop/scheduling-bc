@@ -98,7 +98,11 @@ export class Aggregate {
 				null,
 				true,
 				this.TIME_ZONE,
-				this /* Context. */));
+				this, /* Context. */
+				false,
+				null,
+				true
+				));
 		});
 	}
 
@@ -110,6 +114,7 @@ export class Aggregate {
 		});
 		await this.messageProducer.destroy();
 		await this.repo.destroy();
+		await this.locks.destroy();
 	}
 
 	async createReminder(reminder: IReminder): Promise<string> { // TODO: Reminder or IReminder?

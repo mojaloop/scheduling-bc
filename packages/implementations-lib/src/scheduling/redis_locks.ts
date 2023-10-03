@@ -44,8 +44,8 @@ export class RedisLocks implements ILocks {
     private readonly DELAY_MS_LOCK_SPINS_JITTER: number;
     private readonly THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION: number;
     // Other properties.
-    private readonly redisClient: Client;
-    private readonly redLock: Redlock;
+    private redisClient: Client;
+    private redLock: Redlock;
     private readonly locks: Map<string, Lock>;
 
     constructor(
@@ -65,6 +65,9 @@ export class RedisLocks implements ILocks {
         this.DELAY_MS_LOCK_SPINS_JITTER = DELAY_MS_LOCK_SPINS_JITTER;
         this.THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION = THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION;
 
+        this.locks = new Map<string, Lock>();
+    }
+    async init(): Promise<void> {
         this.redisClient = new Client({host: this.HOST_LOCKS});
         this.redLock = new Redlock(
             [this.redisClient], // TODO.
@@ -76,7 +79,10 @@ export class RedisLocks implements ILocks {
                 automaticExtensionThreshold: this.THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION
             }
         );
-        this.locks = new Map<string, Lock>();
+    }
+
+    async destroy(): Promise<void> {
+        this.redisClient.disconnect();
     }
 
     async acquire(lockId: string, lockDurationMs: number): Promise<boolean> {
@@ -86,7 +92,9 @@ export class RedisLocks implements ILocks {
             this.locks.set(lockId, lock); // TODO.
             return true;
         } catch (e: unknown) {
+            // istanbul ignore next
             this.logger.debug(e);
+            // istanbul ignore next
             return false;
         }
     }

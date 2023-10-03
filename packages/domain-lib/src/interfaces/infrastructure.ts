@@ -71,6 +71,8 @@ export interface IRepo {
 }
 
 export interface ILocks {
+  init(): Promise<void>;
+  destroy(): Promise<void>;
   acquire(lockId: string, durationMs: number): Promise<boolean>;
   release(lockId: string): Promise<boolean>;
 }

@@ -7,15 +7,16 @@ module.exports = {
     passWithNoTests: true,
     collectCoverage: true,
     collectCoverageFrom: ["**/src/**/*.ts"],
+    coveragePathIgnorePatterns: ["./packages/domain-lib","./packages/public-types-lib"],
     coverageReporters: ["text", ["json", {file: "integration-final.json"}]],
     coverageDirectory: "./coverage/",
     clearMocks: true,
-    // coverageThreshold: {
-    //     "global": {
-    //         "branches": 90,
-    //         "functions": 90,
-    //         "lines": 90,
-    //         "statements": -10
-    //     }
-    // }
+    coverageThreshold: {
+        "global": {
+            "branches": 90,
+            "functions": 90,
+            "lines": 90,
+            "statements": -10
+        }
+    }
 }

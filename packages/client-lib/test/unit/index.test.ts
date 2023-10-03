@@ -67,9 +67,9 @@ const faultySchedulingClient: SchedulingClient = new SchedulingClient(
 );
 
 describe("scheduling client - unit tests", () => {
-    beforeAll(()=>{
+    beforeAll(async ()=>{
         // Start the scheduling service
-        Service.start(
+        await Service.start(
             schedulingRepo,
             tokenhelper,
             logger,
@@ -81,9 +81,9 @@ describe("scheduling client - unit tests", () => {
         });
     });
 
-    afterAll(()=>{
+    afterAll(async ()=>{
         // Stop the service
-        Service.stop().then(()=>{
+        await Service.stop().then(()=>{
             console.log("Service has been stopped.")
         });
     });

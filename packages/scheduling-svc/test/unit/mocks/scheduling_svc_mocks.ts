@@ -105,6 +105,12 @@ export class MessageProducerMock implements IMessageProducer {
 }
  
 export class LockMock implements ILocks {
+     init(): Promise<void> {
+        return Promise.resolve();
+     }
+     destroy(): Promise<void> {
+        return Promise.resolve();
+     }
      acquire(lockId: string, durationMs: number): Promise<boolean> {
          return Promise.resolve(true);
      }

@@ -220,6 +220,7 @@ export class Service {
 				DELAY_MS_LOCK_SPINS_JITTER,
 				THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION
 			);
+			await locks.init();
 		}
 		this.locks = locks;
 
@@ -292,10 +293,16 @@ export class Service {
 		await this.aggregate.destroy();
 		this.logger.debug("Tearing down message producer");
 		await this.messageProducer.destroy();
+		const expressServerCloseProm = new Promise<void>((resolve, reject)=>{
+			this.expressServer.close((err)=>{
+				if(err){
+					return reject(err);
+				}
+				resolve();
+			});
+		});
 		this.logger.debug("Tearing down express server");
-		if (this.expressServer){
-			this.expressServer.close();
-		}
+		await expressServerCloseProm;
 	}
 
 }
