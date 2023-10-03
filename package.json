@@ -24,7 +24,7 @@
         "clean:dist": "rm -Rf dist; npm -ws run clean:dist",
         "lint": "npm -ws run lint",
         "lint:fix": "npm -ws run lint:fix",
-        "test": "npm run test:unit",
+        "test": "npm run test:unit",  
         "test:unit": "npm -ws --if-present run test:unit",
         "posttest": "npm run coverage:merge && npm run coverage:gen-report",
         "coverage:merge": "nyc merge ./coverage/ ./coverage/coverage.json",
