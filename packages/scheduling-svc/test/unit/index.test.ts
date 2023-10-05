@@ -24,206 +24,334 @@
 
  * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
+ * Elijah Okello <elijahokello90@gmail.com>
+
  --------------
  ******/
 
 "use strict";
+import { IRawMessageProducer } from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
+import {Service }from "../../src/application/service"
+import { SchedulingRepoMock, MessageProducerMock, LockMock, TokenHelperMock, AuthorizationClientMock} from "./mocks/scheduling_svc_mocks";
+import { ILocks, IRepo } from "@mojaloop/scheduling-bc-domain-lib";
+import { IAuthorizationClient, ITokenHelper } from "@mojaloop/security-bc-public-types-lib";
+import { ConsoleLogger, ILogger } from "@mojaloop/logging-bc-public-types-lib";
+import { ReminderTaskType } from "@mojaloop/scheduling-bc-public-types-lib";
 
-import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-public-types-lib";
-import { Aggregate, IRepo, ILocks, Reminder, NoSuchReminderError, ReminderAlreadyExistsError } from "@mojaloop/scheduling-bc-domain-lib";
-import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
-import {MemoryRepo} from "./mocks/memory_repo";
-import {MemoryLocks} from "./mocks/memory_locks";
-import {MemoryMessageProducer} from "./mocks/memory_message_producer";
-import {ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
 
-/* Constants. */
-const NAME_SERVICE: string = "scheduling";
-// Repository.
-const HOST_REPO: string = process.env.SCHEDULING_HOST_REPO ?? "localhost";
-const PORT_NO_REPO: number = parseInt(process.env.SCHEDULING_PORT_NO_REPO ?? "") || 27017;
-const URL_REPO: string = `mongodb://${HOST_REPO}:${PORT_NO_REPO}`;
-const NAME_DB: string = "scheduling";
-const NAME_COLLECTION: string = "reminders";
-// Locks.
-const HOST_LOCKS: string = process.env.SCHEDULING_HOST_LOCKS ?? "localhost";
-const MAX_LOCK_SPINS: number = 10; // Max number of attempts to acquire a lock. TODO.
-const CLOCK_DRIFT_FACTOR: number = 0.01;
-// Message producer.
-const HOST_MESSAGE_BROKER: string = process.env.SCHEDULING_HOST_MESSAGE_BROKER ?? "localhost";
-const PORT_NO_MESSAGE_BROKER: number = parseInt(process.env.SCHEDULING_PORT_NO_MESSAGE_BROKER ?? "") || 9092;
-const URL_MESSAGE_BROKER: string = `${HOST_MESSAGE_BROKER}:${PORT_NO_MESSAGE_BROKER}`; // TODO: name.
-const ID_MESSAGE_PRODUCER: string = NAME_SERVICE; // TODO: name.
-// Time.
-const TIME_ZONE: string = "UTC";
-const TIMEOUT_MS_REPO_OPERATIONS: number = 10_000; // TODO.
-const DELAY_MS_LOCK_SPINS: number = 200; // Time between acquire attempts. TODO.
-const DELAY_MS_LOCK_SPINS_JITTER: number = 200; // TODO.
-const THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION: number = 500; // TODO.
-const TIMEOUT_MS_LOCK_ACQUIRED: number = 30_000; // TODO.
-const MIN_DURATION_MS_TASK: number = 2_000; // TODO.
-const TIMEOUT_MS_HTTP_CLIENT: number = 10_000; // TODO.
-const TIMEOUT_MS_EVENT: number = 10_000; // TODO.
-
-// Logger.
+// Create service start params 
 const logger: ILogger = new ConsoleLogger();
-// Infrastructure.
-const repo: IRepo = new MemoryRepo(
-    logger,
-    URL_REPO,
-    NAME_DB,
-    NAME_COLLECTION,
-    TIMEOUT_MS_REPO_OPERATIONS
-);
-const locks: ILocks = new MemoryLocks(
-    logger,
-    HOST_LOCKS,
-    CLOCK_DRIFT_FACTOR,
-    MAX_LOCK_SPINS,
-    DELAY_MS_LOCK_SPINS,
-    DELAY_MS_LOCK_SPINS_JITTER,
-    THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION
-);
-const messageProducer: IMessageProducer = new MemoryMessageProducer( // TODO: timeout.
-    {
-        brokerList: URL_MESSAGE_BROKER,
-        producerClientId: ID_MESSAGE_PRODUCER
-    },
-    logger
-);
-// Domain.
-const aggregate: Aggregate = new Aggregate( // TODO: Aggregate?
-    logger,
-    repo,
-    locks,
-    messageProducer,
-    TIME_ZONE,
-    TIMEOUT_MS_LOCK_ACQUIRED,
-    MIN_DURATION_MS_TASK,
-    TIMEOUT_MS_HTTP_CLIENT
-);
+const mockRepo: IRepo = new SchedulingRepoMock();
+const mockMessageProducer: IRawMessageProducer = new MessageProducerMock();
+const mockLocks: ILocks = new LockMock();
+const tokenhelperMock: ITokenHelper = new TokenHelperMock();
+const authorizationClientMock: IAuthorizationClient = new AuthorizationClientMock();
 
-describe("scheduling client - unit tests", () => {
-    beforeAll(async () => {
-        await aggregate.init();
+// http request settings
+const DefaultHeaders = new Headers();
+DefaultHeaders.append("Content-Type", "application/json");
+const BASE_URL: string = "http://localhost:1234";
+
+describe("scheduling-bc - scheduling-svc tests",()=>{
+    beforeAll(async ()=>{
+        // Start the scheduling service
+        await Service.start(
+            mockRepo,
+            tokenhelperMock,
+            logger,
+            mockMessageProducer,
+            authorizationClientMock,
+            mockLocks
+        ).then(() => {
+            console.log("Started scheduling service");
+        });
     });
 
-    afterAll(async () => {
-        await aggregate.destroy();
+    beforeEach(()=>{
+        // restore all mocks
+        jest.restoreAllMocks();
     });
 
-    test("create non-existent reminder", async () => {
-        const reminderIdExpected: string = Date.now().toString();
-        const reminder: Reminder = new Reminder(
-            reminderIdExpected,
-            "*/15 * * * * *",
-            {},
-            ReminderTaskType.HTTP_POST,
-            {
-                "url": "http://localhost:1111/"
-            },
-            {
-                "topic": "test_topic"
-            }
-        );
-        const reminderIdReceived: string = await aggregate.createReminder(reminder);
-        expect(reminderIdReceived).toBe(reminderIdExpected);
+    afterAll(async ()=>{
+        // Stop the service
+        await Service.stop().then(()=>{
+            console.log("Service has been stopped.")
+        });
     });
 
-    test("create existent reminder", async () => {
-        const reminderIdExpected: string = Date.now().toString();
-        const reminder: Reminder = new Reminder(
-            reminderIdExpected,
-            "*/15 * * * * *",
-            {},
-            ReminderTaskType.HTTP_POST,
-            {
-                "url": "http://localhost:1111/"
-            },
-            {
-                "topic": "test_topic"
-            }
-        );
-        const reminderIdReceived: string = await aggregate.createReminder(reminder);
-        expect(reminderIdReceived).toBe(reminderIdExpected); // TODO: check this?
-        await expect(
-            async () => {
-                await aggregate.createReminder(reminder);
-            }
-        ).rejects.toThrow(ReminderAlreadyExistsError); // TODO.
+    test("scheduling-bc - scheduling-svc : create reminder should pass", async ()=>{
+        // Arrange 
+        const reminder = {            
+            id: "1",
+            time: "* * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {"url": "http://localhost:1000/remind"},
+            eventTaskDetails: {"topic": "test-topic"}
+        }
+
+        const reqInit: RequestInit = {
+            method: "POST",
+            headers: DefaultHeaders,
+            body: JSON.stringify(reminder)
+        }
+
+        // Act
+        const response = await fetch(`${BASE_URL}/reminders/`,reqInit);
+
+        // Assert
+        expect(response.status).toEqual(200);
     });
 
-    test("get non-existent reminder", async () => {
-        const reminderId: string = Date.now().toString();
-        const reminder: Reminder | null = await aggregate.getReminder(reminderId);
-        expect(reminder).toBeNull();
+    test("scheduling-bc - scheduling-svc : get reminder should pass when getting a reminder that exists", async ()=>{
+        // Arrange 
+        const reminderID: number = 1;
+        const reqInit: RequestInit = {
+            method: "GET",
+        }
+
+        // Act
+        const response = await fetch(`${BASE_URL}/reminders/${reminderID}`,reqInit);
+
+        // Assert
+        expect(response.status).toEqual(200);
     });
 
-    test("get existent reminder", async () => {
-        const reminderIdExpected: string = Date.now().toString();
-        const reminderSent: Reminder = new Reminder(
-            reminderIdExpected,
-            "*/15 * * * * *",
-            {},
-            ReminderTaskType.HTTP_POST,
-            {
-                "url": "http://localhost:1111/"
-            },
-            {
-                "topic": "test_topic"
-            }
-        );
-        const reminderIdReceived: string = await aggregate.createReminder(reminderSent);
-        expect(reminderIdReceived).toBe(reminderIdExpected); // TODO: check this?
-        const reminderReceived: Reminder | null = await aggregate.getReminder(reminderIdExpected);
-        expect(reminderReceived?.id).toBe(reminderIdExpected);
+    test("scheduling-bc - scheduling-svc: get health should pass when server is up", async ()=>{
+        // Arrange 
+        const reqInit: RequestInit = {
+            method: "GET"
+        };
+
+        // Act 
+        const response = await fetch(`${BASE_URL}/health`,reqInit);
+
+        // Assert
+        const body = await response.json();
+
+        expect(body.status).toEqual("OK");
     });
 
-    // TODO: what to test for here?
-    test("get reminders", async () => {
-        await expect(
-            async () => {
-                await aggregate.getReminders();
-            }
-        ).resolves; // TODO.
+    test("scheduling-bc - scheduling-svc: get non existent endpoint should return 404", async ()=>{
+        // Arrange 
+        const reqInit: RequestInit = {
+            method: "GET"
+        };
+
+        // Act 
+        const response = await fetch(`${BASE_URL}/healthy`,reqInit); 
+
+        // Assert
+        expect(response.status).toEqual(404);
     });
 
-    test("delete non-existent reminder", async () => {
-        await expect(
-            async () => {
-                await aggregate.deleteReminder(Date.now().toString());
-            }
-        ).rejects.toThrow(NoSuchReminderError);
+    test("scheduling-bc - scheduling-svc: create single reminder with non existent id should pass", async ()=>{
+        // Arrange 
+        const reminder = {            
+            id: "2",
+            time: "* * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {"url": "http://localhost:1000/remind"},
+            eventTaskDetails: {"topic": "test-topic"}
+        }
+
+        const reqInit: RequestInit = {
+            method: "POST",
+            headers: DefaultHeaders,
+            body: JSON.stringify(reminder)
+        }
+        
+        // Act 
+        const response = await fetch(`${BASE_URL}/reminders/single`,reqInit)
+
+        // Assert
+        expect(response.status).toEqual(200);
     });
 
-    test("delete existent reminder", async () => {
-        const reminderIdExpected: string = Date.now().toString();
-        const reminder: Reminder = new Reminder(
-            reminderIdExpected,
-            "*/15 * * * * *",
-            {},
-            ReminderTaskType.HTTP_POST,
-            {
-                "url": "http://localhost:1111/"
-            },
-            {
-                "topic": "test_topic"
-            }
-        );
-        const reminderIdReceived: string = await aggregate.createReminder(reminder);
-        expect(reminderIdReceived).toBe(reminderIdExpected); // TODO: check this?
-        await expect(
-            async () => {
-                await aggregate.deleteReminder(reminderIdExpected);
-            }
-        ).resolves; // TODO.
+    test("scheduling-bc - scheduling-svc: get reminders should pass when reminders have been created", async ()=>{
+        // Arrange
+        const reqInit: RequestInit = {
+            method: "GET"
+        }
+
+        // Act 
+        const response = await fetch(`${BASE_URL}/reminders/`,reqInit);
+
+        // Assert
+        expect(response.status).toEqual(200);
     });
 
-    test("delete reminders", async () => {
-        await expect(
-            async () => {
-                await aggregate.deleteReminders();
-            }
-        ).resolves; // TODO.
+    test("scheduling-bc - scheduling-svc: delete reminder should pass when given an existent id", async ()=>{
+        // Arrange
+        const reminderID = 1;
+        const reqInit: RequestInit = {
+            method: "DELETE"
+        }
+
+        // Act 
+        const response = await fetch(`${BASE_URL}/reminders/${reminderID}/`,reqInit);
+
+        // Assert
+        expect(response.status).toEqual(200);
     });
+    
+    test("scheduling-bc - scheduling-svc: delete reminders should pass when reminders were created prior", async ()=>{
+        // Arrange
+        const reqInit: RequestInit = {
+            method: "DELETE"
+        }
+
+        // Act 
+        const response = await fetch(`${BASE_URL}/reminders/`,reqInit);
+
+        // Assert
+        expect(response.status).toEqual(200);
+    }); 
+
+    // NON HAPPY PATHS
+    test("scheduling-bc - scheduling-svc: create reminder should fail when the aggregate throws an unknown error", async()=>{
+        // Arrange 
+        const reminder = {            
+            id: "3",
+            time: "* * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {"url": "http://localhost:1000/remind"},
+            eventTaskDetails: {"topic": "test-topic"}
+        }
+
+        const reqInit: RequestInit = {
+            method: "POST",
+            headers: DefaultHeaders,
+            body: JSON.stringify(reminder)
+        }
+
+        jest.spyOn(mockRepo,"storeReminder").mockImplementation(()=>{throw new Error("Unknown Error")});
+        
+        // Act 
+        const response = await fetch(`${BASE_URL}/reminders/`,reqInit)
+        const body = await response.json();
+
+        // Assert
+        expect(body.message).toEqual("unknown error");
+    });
+
+    test("scheduling-bc - scheduling-svc: create single reminder should fail when the aggregate throws an unknown error", async()=>{
+        // Arrange 
+        const reminder = {            
+            id: "4",
+            time: "* * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {"url": "http://localhost:1000/remind"},
+            eventTaskDetails: {"topic": "test-topic"}
+        }
+
+        const reqInit: RequestInit = {
+            method: "POST",
+            headers: DefaultHeaders,
+            body: JSON.stringify(reminder)
+        }
+
+        jest.spyOn(mockRepo,"storeReminder").mockImplementation(()=>{throw new Error();});
+        
+        // Act 
+        const response = await fetch(`${BASE_URL}/reminders/single/`,reqInit)
+        const body = await response.json();
+
+        // Assert
+        expect(body.message).toEqual("unknown error");
+    });
+
+    test("scheduling-bc - scheduling-svc : get reminder should fail when repo getReminder fails ", async ()=>{
+        // Arrange 
+        const reminderID: number = 1;
+        const reqInit: RequestInit = {
+            method: "GET",
+        }
+
+        jest.spyOn(mockRepo,"getReminder").mockImplementation(()=>{throw new Error();});
+        // Act
+        const response = await fetch(`${BASE_URL}/reminders/${reminderID}`,reqInit);
+
+        // Assert
+        expect(response.status).toEqual(500);
+    });
+
+    test("scheduling-bc - scheduling-svc : get reminder that does not exist should fail", async ()=>{
+        // Arrange 
+        const reminderID: number = 22;
+        const reqInit: RequestInit = {
+            method: "GET",
+        }
+
+        // Act
+        const response = await fetch(`${BASE_URL}/reminders/${reminderID}`,reqInit);
+
+        // Assert
+        expect(response.status).toEqual(404);
+    });
+
+    test("scheduling-bc - scheduling-svc: get reminders should fail when repo getReminders throws error", async ()=>{
+        // Arrange
+        const reqInit: RequestInit = {
+            method: "GET"
+        }
+
+        jest.spyOn(mockRepo,"getReminders").mockImplementation(()=>{throw new Error();});
+
+        // Act 
+        const response = await fetch(`${BASE_URL}/reminders/`,reqInit);
+
+        // Assert
+        expect(response.status).toEqual(500);
+    });
+
+    test("scheduling-bc - scheduling-svc: delete reminder should fail when repo.delete reminder throws an error", async ()=>{
+        // Arrange
+        const reminderID = 1;
+        const reqInit: RequestInit = {
+            method: "DELETE"
+        }
+
+        jest.spyOn(mockRepo,"deleteReminder").mockImplementation(()=>{throw new Error();});
+
+        // Act 
+        const response = await fetch(`${BASE_URL}/reminders/${reminderID}/`,reqInit);
+
+        // Assert
+        expect(response.status).toEqual(500);
+    });
+
+    test("scheduling-bc - scheduling-svc: delete reminders should fail when repo.deleteReminders throws an error", async ()=>{
+        // Arrange
+        const reminder = {            
+            id: "5",
+            time: "* * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {"url": "http://localhost:1000/remind"},
+            eventTaskDetails: {"topic": "test-topic"}
+        }
+
+       await fetch(`${BASE_URL}/reminders/`,{
+            method: "POST",
+            headers: DefaultHeaders,
+            body: JSON.stringify(reminder)
+        });
+
+        const reqInit: RequestInit = {
+            method: "DELETE"
+        }
+
+        jest.spyOn(mockRepo,"deleteReminder").mockImplementation(()=>{throw new Error();});
+
+        // Act 
+        const response = await fetch(`${BASE_URL}/reminders/`,reqInit);
+
+        // Assert
+        expect(response.status).toEqual(500);
+    });
+    
 });

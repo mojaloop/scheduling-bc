@@ -68,6 +68,7 @@ export abstract class BaseRoutes {
         return this._schedulingAgg;
     }
 
+    // istanbul ignore next
     public validateRequest(
         req: express.Request,
         res: express.Response

@@ -29,13 +29,13 @@
         "lint": "eslint ./src",
         "lint:fix": "eslint ./src --fix",
         "build": "tsc",
-        "test:unit": "echo \"public-types-lib doesn't have unit tests\""
+        "test:unit": "jest --passWithNoTests --testMatch **/test/unit/**/*.test.ts"
     },
     "engines": {
         "node": ">=18.13.0"
     },
     "devDependencies": {},
     "dependencies": {
-        "tslib": "~2.5.2"
+        "tslib": "~2.6.2"
     }
 }

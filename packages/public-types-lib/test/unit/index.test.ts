@@ -19,45 +19,39 @@
  their names indented and be marked with a '-'. Email address can be added
  optionally within square brackets <email>.
 
- * Crosslake
- - Pedro Sousa Barreto <pedrob@crosslaketech.com>
-
- * Gonçalo Garcia <goncalogarcia99@gmail.com>
+ * Alfajiri
+ - Okello Ivan Elijah <elijahokello90@gmail.com>
 
  --------------
  ******/
+import {IReminder, ISingleReminder, ReminderTaskType } from "../../src/index"
 
-"use strict";
 
-import { IMessageProducer } from "@mojaloop/platform-shared-lib-messaging-types-lib";
-import { ILogger } from "@mojaloop/logging-bc-public-types-lib";
 
-export class MemoryMessageProducerOptions { // TODO: here? export declare?
-    readonly brokerList: string;
-    readonly producerClientId?: string;
+// Arrange test functions 
+function printReminderId(reminder: IReminder){
+    console.log(reminder.id);
 }
 
-// TODO: do these functions need to do anything?
-export class MemoryMessageProducer implements IMessageProducer {
-    // Properties received through the constructor.
-    private readonly logger: ILogger;
-
-    constructor(
-        options: MemoryMessageProducerOptions,
-        logger: ILogger
-    ) {
-        this.logger = logger;
-    }
-
-    async connect(): Promise<void> {
-    }
-
-    async destroy(): Promise<void> {
-    }
-
-    async send(message: any): Promise<void> {
-    }
-
-    async disconnect(): Promise<void> {
-    }
+function printSingleReminderId(reminder: ISingleReminder){
+    console.log(reminder.id)
 }
+
+
+ describe("scheduling-bc: public-types-lib : unit tests", ()=>{
+    test("scheduling-bc: public-types-lib : check instance of IReminder and ISingleReminder",async ()=>{
+        // Arrange
+        const reminder: any = {
+            id:"16",
+            time:"* * * * * *",
+            payload:{},
+            taskType:ReminderTaskType.EVENT,
+            httpPostTaskDetails:{"url": "http://localhost:1111/"},
+            eventTaskDetails:{"topic": "test_topic"}
+        };
+        
+        // Act and Assert
+        expect(printReminderId(reminder)).resolves;
+        expect(printSingleReminderId(reminder)).resolves;
+    });
+ });

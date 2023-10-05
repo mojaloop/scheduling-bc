@@ -75,7 +75,7 @@ export class Reminder implements IReminder {
     }
 
     // TODO.
-    static validateReminder(reminder: IReminder): void { // TODO: change type to any?
+    static validateReminder(reminder: any): void { // eslint-disable-line @typescript-eslint/no-explicit-any
         // Check if the essential properties are present.
         if (reminder.time === undefined
             || reminder.taskType === undefined
@@ -100,6 +100,7 @@ export class Reminder implements IReminder {
         if (typeof reminder.taskType !== "string") {
             throw new InvalidReminderTaskTypeTypeError();
         }
+
         if (!(reminder.taskType in ReminderTaskType)) {
             throw new InvalidReminderTaskTypeError();
         }
@@ -144,7 +145,7 @@ export class SingleReminder implements ISingleReminder {
     }
 
     // TODO.
-    static validateReminder(reminder: ISingleReminder): void { // TODO: change type to any?
+    static validateReminder(reminder: any): void { // eslint-disable-line @typescript-eslint/no-explicit-any
         // Check if the essential properties are present.
         if (reminder.time === undefined
             || reminder.taskType === undefined
@@ -169,6 +170,7 @@ export class SingleReminder implements ISingleReminder {
         if (typeof reminder.taskType !== "string") {
             throw new InvalidReminderTaskTypeTypeError();
         }
+
         if (!(reminder.taskType in ReminderTaskType)) {
             throw new InvalidReminderTaskTypeError();
         }

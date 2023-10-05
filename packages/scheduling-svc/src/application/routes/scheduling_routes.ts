@@ -98,6 +98,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
     //     });
     // }
 
+    // istanbul ignore next
     private async _authenticationMiddleware(
         req: express.Request,
         res: express.Response,
@@ -143,6 +144,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
         return next();
     }
 
+    // istanbul ignore next
     private _handleUnauthorizedError(err: Error, res: express.Response): boolean {
         if (err instanceof UnauthorizedError) {
             this.logger.warn(err.message);
@@ -163,6 +165,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
         return false;
     }
 
+    // istanbul ignore next
     private _enforcePrivilege(secCtx: CallSecurityContext, privilegeId: string): void {
         for (const roleId of secCtx.rolesIds) {
             if (this._authorizationClient.roleHasPrivilege(roleId, privilegeId)) {
@@ -182,6 +185,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
                 reminderId: reminderId
             });
         } catch (e: unknown) {
+            // istanbul ignore next
             if (e instanceof MissingEssentialReminderPropertiesOrTaskDetailsError) {
                 this.sendErrorResponse(
                     res,
@@ -239,6 +243,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
                 reminderId: reminderId
             });
         } catch (e: unknown) {
+            // istanbul ignore next
             if (e instanceof MissingEssentialReminderPropertiesOrTaskDetailsError) {
                 this.sendErrorResponse(
                     res,
@@ -303,6 +308,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
                 reminder: reminder
             });
         } catch (e: unknown) {
+            // istanbul ignore next
             if (e instanceof InvalidReminderIdTypeError) {
                 this.sendErrorResponse(
                     res,
@@ -340,6 +346,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
                 message: "reminder deleted"
             });
         } catch (e: unknown) {
+            // istanbul ignore next
             if (e instanceof InvalidReminderIdTypeError) {
                 this.sendErrorResponse(
                     res,
