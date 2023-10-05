@@ -35,8 +35,7 @@
     "npm_publish": "npm version patch && npm publish --tag=latest --access public"
   },
   "dependencies": {
-    "@mojaloop/logging-bc-client-lib": "^0.1.26",
-    "axios": "^1.5.1"
+    "@mojaloop/logging-bc-client-lib": "^0.1.26"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",

@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 /*****
  License
 --------------
@@ -30,8 +31,7 @@ optionally within square brackets <email>.
 "use strict";
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
-import axios, { AxiosError, AxiosInstance } from "axios";
-import { IReminder, ISingleReminder } from "@mojaloop/scheduling-bc-public-types-lib";
+import { IReminder, ISingleReminder } from "../../public-types-lib/";
 import {
 	UnableToCreateReminderError,
 	UnableToDeleteReminderError,
@@ -43,87 +43,89 @@ export class SchedulingClient {
 	// Properties received through the constructor.
 	private readonly logger: ILogger;
 	// Other properties.
-	private readonly httpClient: AxiosInstance;
+	private readonly URL_REMINDERS:string;
+    private defaultHeaders: Headers
 
 	constructor(
 		logger: ILogger,
 		URL_REMINDERS: string,
-		TIMEOUT_MS_HTTP_CLIENT: number
 	) {
 		this.logger = logger;
 
-		this.httpClient = axios.create({
-			baseURL: URL_REMINDERS,
-			timeout: TIMEOUT_MS_HTTP_CLIENT
-		});
+		this.URL_REMINDERS = URL_REMINDERS;
+        this.defaultHeaders = new Headers();
+        this.defaultHeaders.append("Content-Type","application/json")
 	}
 
 	async createReminder(reminder: IReminder): Promise<string> {
 		try {
-			const res = await this.httpClient.post("/", reminder);
-			return res.data.reminderId;
-		} catch (e: unknown) {
-			const serverErrorMessage: string | undefined = (e as AxiosError).message;
-			// istanbul ignore if
-			if (serverErrorMessage === undefined) {
-				this.logger.error(e);
-				throw new UnableToReachServerError(); // TODO.
+			const reqInit: RequestInit = {
+				method:"POST",
+                headers:this.defaultHeaders,
+				body:JSON.stringify(reminder)
 			}
+
+			const res = await fetch(`${this.URL_REMINDERS}/`,reqInit);
+			const data = await res.json();
+            // istanbul ignore if
+			if(!data.reminderId){
+				throw new Error(data.message);
+			}
+			return data.reminderId;
+		} catch (e: any) {
+			const serverErrorMessage: string | undefined = e.message;
 			throw new UnableToCreateReminderError(serverErrorMessage); // TODO: receive a string?
 		}
 	}
 
 	async createSingleReminder(reminder: ISingleReminder): Promise<string> {
 		try {
-			const res = await this.httpClient.post("/single", reminder);
-			return res.data.reminderId;
-		} catch (e: unknown) {
-			const serverErrorMessage: string | undefined = (e as AxiosError).message;
-			// istanbul ignore if
-			if (serverErrorMessage === undefined) {
-				this.logger.error(e);
-				throw new UnableToReachServerError(); // TODO.
-			}
+            const reqInit: RequestInit = {
+                method:"POST",
+                headers:this.defaultHeaders,
+                body:JSON.stringify(reminder)
+            }
+
+            const res = await fetch(`${this.URL_REMINDERS}/single`,reqInit);
+            const data = await res.json();
+            // istanbul ignore if
+            if(!data.reminderId){
+                throw new Error(data.message);
+            }
+            return data.reminderId;
+		} catch (e: any) {
+			const serverErrorMessage: string | undefined = e.message;
 			throw new UnableToCreateReminderError(serverErrorMessage); // TODO: receive a string?
 		}
 	}
 
 	async getReminder(reminderId: string): Promise<IReminder | null> {
 		try {
-			const res = await this.httpClient.get(
-				`/${reminderId}`,
-				{
-					validateStatus: (statusCode: number) => {
-						return statusCode === 200 || statusCode === 404; // Resolve only 200s and 404s.
-					}
-				}
-			);
+            const reqInit: RequestInit = {
+                method:"GET"
+            }
 
-			if (res.status === 404) {
-				return null;
-			}
-			return res.data.reminder;
-		} catch (e: unknown) {
-			const serverErrorMessage: string | undefined = (e as AxiosError).message;
-			// istanbul ignore if
-			if (serverErrorMessage === undefined) {
-				this.logger.error(e);
-				throw new UnableToReachServerError(); // TODO.
-			}
+            const res = await fetch(`${this.URL_REMINDERS}/${reminderId}`,reqInit);
+            if (res.status === 404) {
+                return null;
+            }
+            const data = await res.json();
+			return data.reminder;
+		} catch (e: any) {
+			const serverErrorMessage: string | undefined = e.message;
 			throw new UnableToGetReminderError(serverErrorMessage); // TODO: receive a string?
 		}
 	}
 
 	async deleteReminder(reminderId: string): Promise<void> {
 		try {
-			await this.httpClient.delete(`/${reminderId}`);
-		} catch (e: unknown) {
-			const serverErrorMessage: string | undefined = (e as AxiosError).message;
-			// istanbul ignore if
-			if (serverErrorMessage === undefined) {
-				this.logger.error(e);
-				throw new UnableToReachServerError(); // TODO.
-			}
+            const reqInit:RequestInit = {
+                method:"DELETE"
+            }
+
+            await fetch(`${this.URL_REMINDERS}/${reminderId}`,reqInit);
+		} catch (e: any) {
+			const serverErrorMessage: string | undefined = e.message;
 			throw new UnableToDeleteReminderError(serverErrorMessage); // TODO: receive a string?
 		}
 	}
