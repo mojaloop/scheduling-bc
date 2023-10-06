@@ -121,9 +121,14 @@ export class SchedulingClient {
 		try {
             const reqInit:RequestInit = {
                 method:"DELETE"
-            }
+            };
 
-            await fetch(`${this.URL_REMINDERS}/${reminderId}`,reqInit);
+            const res = await fetch(`${this.URL_REMINDERS}/${reminderId}`,reqInit);
+            console.log(res.status);
+            const data = await res.json();
+            if(res.status != 200){
+                throw new Error(data.message);
+            }
 		} catch (e: any) {
 			const serverErrorMessage: string | undefined = e.message;
 			throw new UnableToDeleteReminderError(serverErrorMessage); // TODO: receive a string?

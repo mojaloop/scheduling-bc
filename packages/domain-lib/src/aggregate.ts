@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 /*****
  License
  --------------
@@ -51,7 +52,7 @@ export class Aggregate {
 	private readonly TIMEOUT_MS_LOCK_ACQUIRED: number;
 	private readonly MIN_DURATION_MS_TASK: number;
 	// Other properties.
-	private readonly httpClient: AxiosInstance;
+    private httpHeaders: Headers;
 	private readonly cronJobs: Map<string, CronJob>;
 
 	constructor(
@@ -62,7 +63,6 @@ export class Aggregate {
 		TIME_ZONE: string,
 		TIMEOUT_MS_LOCK_ACQUIRED: number,
 		MIN_DURATION_MS_TASK: number,
-		timeoutMsHttpClient: number
 	) {
 		this.logger = logger;
 		this.repo = repo;
@@ -72,9 +72,9 @@ export class Aggregate {
 		this.TIMEOUT_MS_LOCK_ACQUIRED = TIMEOUT_MS_LOCK_ACQUIRED;
 		this.MIN_DURATION_MS_TASK = MIN_DURATION_MS_TASK;
 
-		this.httpClient = axios.create({
-			timeout: timeoutMsHttpClient
-		});
+        this.httpHeaders = new Headers();
+        this.httpHeaders.append("Content-Type","application/json");
+
 		this.cronJobs = new Map<string, CronJob>();
 	}
 
@@ -154,7 +154,7 @@ export class Aggregate {
 
 	async createSingleReminder(reminder: ISingleReminder): Promise<string> {
 		// istanbul ignore if
-		if (reminder.id === undefined || reminder.id === null) { 
+		if (reminder.id === undefined || reminder.id === null) {
 			reminder.id = "";
 		}
 		SingleReminder.validateReminder(reminder);
@@ -226,10 +226,13 @@ export class Aggregate {
 		 * - the status code falls out of the 2xx range.
 		 */
 		try {
-			await this.httpClient.post(
-				reminder.httpPostTaskDetails?.url ?? "",
-				reminder.payload
-			);
+            const reqInit:RequestInit = {
+                method:"POST",
+                headers: this.httpHeaders,
+                body: JSON.stringify(reminder.payload)
+            }
+
+            await fetch(reminder.httpPostTaskDetails?.url as string,reqInit);
 		} catch (e: unknown) {
 			this.logger.error(e); // TODO: necessary?
 			// TODO: throw?
@@ -251,7 +254,7 @@ export class Aggregate {
 		}
 
 		timeoutEvent.fspiopOpaqueState = reminder.payload.fspiopOpaqueState,
-		
+
 		await this.messageProducer.send(timeoutEvent);
 
 		// Delete the reminder if it's a valid date, since we use it to schedule a one-time task

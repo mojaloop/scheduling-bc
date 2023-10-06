@@ -39,24 +39,29 @@ export class SchedulingClientMock { // TODO: name.
     // Properties received through the constructor.
     private readonly logger: ILogger;
     // Other properties.
-    private readonly httpClient: AxiosInstance;
+    private readonly URL_REMINDERS:string;
+    private defaultHeaders:Headers;
 
     constructor(
         logger: ILogger,
         URL_REMINDERS: string,
-        TIMEOUT_MS_HTTP_CLIENT: number
     ) {
         this.logger = logger;
 
-        this.httpClient = axios.create({
-            baseURL: URL_REMINDERS,
-            timeout: TIMEOUT_MS_HTTP_CLIENT
-        });
+        this.URL_REMINDERS = URL_REMINDERS;
+        this.defaultHeaders = new Headers();
+        this.defaultHeaders.append("Content-Type","application/json");
     }
 
     async createReminder(reminder: IReminder): Promise<number> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.post("/", reminder);
+            const reqInit: RequestInit = {
+                method:"POST",
+                headers:this.defaultHeaders,
+                body:JSON.stringify(reminder)
+            };
+
+            const res = await fetch(`${this.URL_REMINDERS}/`,reqInit);
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
@@ -66,41 +71,57 @@ export class SchedulingClientMock { // TODO: name.
 
     async getReminder(reminderId: string): Promise<number> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.get(`/${reminderId}`);
+            const reqInit:RequestInit = {
+                method: "GET"
+            };
+
+            const res = await fetch(`${this.URL_REMINDERS}/${reminderId}`,reqInit);
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
-            return (e as AxiosError).response?.status ?? -1;
+            throw new Error();
         }
     }
 
     async getReminders(): Promise<number> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.get("/");
+            const reqInit:RequestInit = {
+                method:"GET"
+            };
+
+            const res = await fetch(`${this.URL_REMINDERS}/`,reqInit);
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
-            return (e as AxiosError).response?.status ?? -1;
+            throw new Error();
         }
     }
 
     async deleteReminder(reminderId: string): Promise<number> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.delete(`/${reminderId}`);
+            const reqInit:RequestInit = {
+                method:"DELETE"
+            };
+
+            const res = await fetch(`${this.URL_REMINDERS}/${reminderId}`,reqInit);
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
-            return (e as AxiosError).response?.status ?? -1;
+            throw new Error();
         }
     }
 
     async deleteReminders(): Promise<number> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.delete("/");
+            const reqInit:RequestInit = {
+                method:"DELETE"
+            };
+
+            const res = await fetch(`${this.URL_REMINDERS}/`,reqInit);
             return res.status;
         } catch (e: unknown) {
             this.logger.debug(e);
-            return (e as AxiosError).response?.status ?? -1;
+            throw new Error();
         }
     }
 }

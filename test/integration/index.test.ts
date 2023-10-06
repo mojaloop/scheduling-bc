@@ -47,35 +47,32 @@ const logger: ILogger = new ConsoleLogger();
 const schedulingClient: SchedulingClient = new SchedulingClient(
     logger,
     URL_REMINDERS,
-    TIMEOUT_MS_HTTP_CLIENT
 );
 
 const invalidSchedulingClient: SchedulingClient = new SchedulingClient(
     logger,
     INVALID_URL_REMINDERS,
-    TIMEOUT_MS_HTTP_CLIENT
 );
 
 const schedulingClientMock: SchedulingClientMock = new SchedulingClientMock(
     logger,
     URL_REMINDERS,
-    TIMEOUT_MS_HTTP_CLIENT
 );
 
 // CONFIG FOR MONGO
 const MONGO_URL = process.env["MONGO_URL"] || "mongodb://root:mongoDbPas42@localhost:27017/";
 const DB_NAME = process.env.SCHEDULING_DB_NAME ?? "scheduling";
-const TIMEOUT_MS_REPO_OPERATIONS = 10_000; 
+const TIMEOUT_MS_REPO_OPERATIONS = 10_000;
 const mongoRepo = new MongoRepo(logger, MONGO_URL, DB_NAME, TIMEOUT_MS_REPO_OPERATIONS);
 
 
 //CONFIG FOR REDIS
 const HOST_LOCKS: string = process.env.SCHEDULING_HOST_LOCKS ?? "localhost";
-const MAX_LOCK_SPINS = 10; 
+const MAX_LOCK_SPINS = 10;
 const CLOCK_DRIFT_FACTOR = 0.01;
 const DELAY_MS_LOCK_SPINS = 200;
 const DELAY_MS_LOCK_SPINS_JITTER = 200;
-const THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION = 500; 
+const THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION = 500;
 const redislocks = new RedisLocks(
     logger,
     HOST_LOCKS,
@@ -98,7 +95,7 @@ describe("scheduling client - integration tests", () => {
         await mongoRepo.destroy();
         await redislocks.destroy();
     });
-    
+
     test("scheduling client - integration tests : create non-existent reminder should pass ", async () => {
         const reminderIdExpected: string = Date.now().toString();
         const reminder: IReminder = { // TODO.
@@ -264,7 +261,7 @@ describe("scheduling client - integration tests", () => {
     });
 
     test("scheduling-svc - integration tests:  get non-existent endpoint should return 404", async () => {
-        // Arrange 
+        // Arrange
         const reqInit: RequestInit = {
             method: "GET"
         }
@@ -392,7 +389,7 @@ describe("scheduling client - integration tests", () => {
     });
 
     test("implementation-lib :Redis lock - integration tests: acquire lock should pass",async ()=>{
-        // Act 
+        // Act
         const lockStatus = await redislocks.acquire("transfer",1000);
 
         // Assert
@@ -400,7 +397,7 @@ describe("scheduling client - integration tests", () => {
     });
 
     test("implementation-lib :Redis lock - integration tests: release existent lock should pass",async ()=>{
-         // Act 
+         // Act
          const lockStatus = await redislocks.release("transfer");
 
          // Assert
@@ -408,7 +405,7 @@ describe("scheduling client - integration tests", () => {
     });
 
     test("implementation-lib :Redis lock - integration tests: release non existent lock should return false",async ()=>{
-        // Act 
+        // Act
         const lockStatus = await redislocks.release("foo");
 
         // Assert
