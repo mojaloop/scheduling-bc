@@ -39,6 +39,7 @@ import * as uuid from "uuid";
 import {InvalidReminderIdTypeError, NoSuchReminderError, ReminderAlreadyExistsError} from "./errors";
 import { ILocks, IRepo } from "./interfaces/infrastructure";
 import { TransferTimeoutEvt, TransfersBCTopics } from "@mojaloop/platform-shared-lib-public-messages-lib";
+import {fetchWithTimeOut} from "./utils";
 
 // TODO: check error handling.
 export class Aggregate {
@@ -219,20 +220,13 @@ export class Aggregate {
 
 	private async sendHttpPost(reminder: IReminder): Promise<void> { // TODO: Reminder or IReminder?
 		try {
-            const controller = new AbortController();
-
-            const reqInit:RequestInit = {
-                method:"POST",
-                headers: this.httpHeaders,
-                body: JSON.stringify(reminder.payload),
-                signal:controller.signal
-            };
-
-            const timeoutId = setTimeout(()=> controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
-
-            await fetch(reminder.httpPostTaskDetails?.url as string,reqInit);
-
-            clearTimeout(timeoutId);
+            await fetchWithTimeOut(this.logger,
+                reminder.httpPostTaskDetails?.url as string,
+                "POST",
+                JSON.stringify(reminder.payload),
+                this.TIMEOUT_MS_HTTP_CLIENT,
+                this.httpHeaders
+            );
 		} catch (e: unknown) {
             const errorMessage: string | undefined = (e as Error).message;
 			this.logger.error(e); // TODO: necessary?

@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 /*****
  License
  --------------
@@ -31,6 +32,7 @@
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
+import {fetchWithTimeOut} from "@mojaloop/scheduling-bc-domain-lib/dist/utils";
 
 
 // TODO: change name - might be confused with the actual scheduling client.
@@ -56,20 +58,15 @@ export class SchedulingClientMock { // TODO: name.
 
     async createReminder(reminder: IReminder): Promise<number> {
         try {
-            const controller = new AbortController();
+            const res = await fetchWithTimeOut(
+                this.logger,
+                `${this.URL_REMINDERS}/`,
+                "POST",
+                JSON.stringify(reminder),
+                this.TIMEOUT_MS_HTTP_CLIENT,
+                this.defaultHeaders
+                );
 
-            const reqInit: RequestInit = {
-                method:"POST",
-                headers:this.defaultHeaders,
-                body:JSON.stringify(reminder),
-                signal:controller.signal
-            };
-
-            const timeoutId = setTimeout(()=> controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
-
-            const res = await fetch(`${this.URL_REMINDERS}/`,reqInit);
-
-            clearTimeout(timeoutId);
             return res.status;
         } catch (e: unknown) {
             const errorMessage: string | undefined = (e as Error).message
@@ -80,18 +77,15 @@ export class SchedulingClientMock { // TODO: name.
 
     async getReminder(reminderId: string): Promise<number> {
         try {
-            const controller = new AbortController();
+            const res = await fetchWithTimeOut(
+                this.logger,
+                `${this.URL_REMINDERS}/${reminderId}`,
+                "GET",
+                undefined,
+                this.TIMEOUT_MS_HTTP_CLIENT,
+                this.defaultHeaders
+                );
 
-            const reqInit:RequestInit = {
-                method: "GET",
-                signal:controller.signal
-            };
-
-            const timeoutId = setTimeout(()=> controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
-
-            const res = await fetch(`${this.URL_REMINDERS}/${reminderId}`,reqInit);
-
-            clearTimeout(timeoutId);
             return res.status;
         } catch (e: unknown) {
             const errorMessage: string | undefined = (e as Error).message
@@ -102,18 +96,15 @@ export class SchedulingClientMock { // TODO: name.
 
     async getReminders(): Promise<number> {
         try {
-            const controller = new AbortController();
+            const res = await fetchWithTimeOut(
+                this.logger,
+                `${this.URL_REMINDERS}/`,
+                "GET",
+                undefined,
+                this.TIMEOUT_MS_HTTP_CLIENT,
+                this.defaultHeaders
+            );
 
-            const reqInit:RequestInit = {
-                method:"GET",
-                signal:controller.signal
-            };
-
-            const timeoutId = setTimeout(()=> controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
-
-            const res = await fetch(`${this.URL_REMINDERS}/`,reqInit);
-
-            clearTimeout(timeoutId);
             return res.status;
         } catch (e: unknown) {
             const errorMessage: string | undefined = (e as Error).message
@@ -124,18 +115,14 @@ export class SchedulingClientMock { // TODO: name.
 
     async deleteReminder(reminderId: string): Promise<number> {
         try {
-            const controller = new AbortController();
-
-            const reqInit:RequestInit = {
-                method:"DELETE",
-                signal: controller.signal
-            };
-
-            const timeoutId = setTimeout(()=>controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
-
-            const res = await fetch(`${this.URL_REMINDERS}/${reminderId}`,reqInit);
-
-            clearTimeout(timeoutId);
+            const res = await fetchWithTimeOut(
+                this.logger,
+                `${this.URL_REMINDERS}/${reminderId}`,
+                "DELETE",
+                undefined,
+                this.TIMEOUT_MS_HTTP_CLIENT,
+                this.defaultHeaders
+                );
 
             return res.status;
         } catch (e: unknown) {
@@ -147,18 +134,15 @@ export class SchedulingClientMock { // TODO: name.
 
     async deleteReminders(): Promise<number> {
         try {
-            const controller = new AbortController();
+            const res = await fetchWithTimeOut(
+                this.logger,
+                `${this.URL_REMINDERS}/`,
+                "DELETE",
+                undefined,
+                this.TIMEOUT_MS_HTTP_CLIENT,
+                this.defaultHeaders
+            );
 
-            const reqInit:RequestInit = {
-                method:"DELETE",
-                signal:controller.signal
-            };
-
-            const timeoutId = setTimeout(()=>controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
-
-            const res = await fetch(`${this.URL_REMINDERS}/`,reqInit);
-
-            clearTimeout(timeoutId);
             return res.status;
         } catch (e: unknown) {
             const errorMessage: string | undefined = (e as Error).message

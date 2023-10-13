@@ -32,6 +32,7 @@ optionally within square brackets <email>.
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import { IReminder, ISingleReminder } from "../../public-types-lib/";
+import {fetchWithTimeOut} from "@mojaloop/scheduling-bc-domain-lib/dist/utils";
 import {
 	UnableToCreateReminderError,
 	UnableToDeleteReminderError,
@@ -62,21 +63,15 @@ export class SchedulingClient {
 
 	async createReminder(reminder: IReminder): Promise<string> {
 		try {
-            const controller = new AbortController();
-
-			const reqInit: RequestInit = {
-				method:"POST",
-                headers:this.defaultHeaders,
-				body:JSON.stringify(reminder),
-                signal:controller.signal
-			};
-
-            const timeoutId = setTimeout(()=> controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
-
-			const res = await fetch(`${this.URL_REMINDERS}/`,reqInit);
+			const res = await fetchWithTimeOut(
+                this.logger,
+                `${this.URL_REMINDERS}/`,
+                "POST",
+                JSON.stringify(reminder),
+                this.TIMEOUT_MS_HTTP_CLIENT,
+                this.defaultHeaders
+            );
 			const data = await res.json();
-
-            clearTimeout(timeoutId);
 
             // istanbul ignore if
 			if(!data.reminderId){
@@ -97,21 +92,16 @@ export class SchedulingClient {
 
 	async createSingleReminder(reminder: ISingleReminder): Promise<string> {
 		try {
-            const controller = new AbortController();
-
-            const reqInit: RequestInit = {
-                method:"POST",
-                headers:this.defaultHeaders,
-                body:JSON.stringify(reminder),
-                signal:controller.signal
-            };
-
-            const timeoutId = setTimeout(()=> controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
-
-            const res = await fetch(`${this.URL_REMINDERS}/single`,reqInit);
+            const res = await fetchWithTimeOut(
+                this.logger,
+                `${this.URL_REMINDERS}/single`,
+                "POST",
+                JSON.stringify(reminder),
+                this.TIMEOUT_MS_HTTP_CLIENT,
+                this.defaultHeaders
+            );
             const data = await res.json();
 
-            clearTimeout(timeoutId);
             // istanbul ignore if
             if(!data.reminderId){
                 throw new UnableToCreateReminderError(data.message);
@@ -131,17 +121,14 @@ export class SchedulingClient {
 
 	async getReminder(reminderId: string): Promise<IReminder | null> {
 		try {
-            const controller = new AbortController();
-
-            const reqInit: RequestInit = {
-                method:"GET",
-                signal:controller.signal
-            };
-
-            const timeoutId = setTimeout(()=> controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
-
-            const res = await fetch(`${this.URL_REMINDERS}/${reminderId}`,reqInit);
-            clearTimeout(timeoutId);
+            const res = await fetchWithTimeOut(
+                this.logger,
+                `${this.URL_REMINDERS}/${reminderId}`,
+                "GET",
+                undefined,
+                this.TIMEOUT_MS_HTTP_CLIENT,
+                this.defaultHeaders
+            );
 
             if (res.status === 404) {
                 return null;
@@ -156,20 +143,15 @@ export class SchedulingClient {
 
 	async deleteReminder(reminderId: string): Promise<void> {
 		try {
-            const controller = new AbortController();
-
-            const reqInit:RequestInit = {
-                method:"DELETE",
-                signal:controller.signal
-            };
-
-            const timeoutId = setTimeout(()=> controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
-
-            const res = await fetch(`${this.URL_REMINDERS}/${reminderId}`,reqInit);
-            console.log(res.status);
+            const res = await fetchWithTimeOut(
+                this.logger,
+                `${this.URL_REMINDERS}/${reminderId}`,
+                "DELETE",
+                undefined,
+                this.TIMEOUT_MS_HTTP_CLIENT,
+                this.defaultHeaders
+                );
             const data = await res.json();
-
-            clearTimeout(timeoutId);
 
             if(res.status != 200){
                 throw new UnableToDeleteReminderError(data.message);

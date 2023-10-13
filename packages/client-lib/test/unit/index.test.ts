@@ -47,7 +47,7 @@ import { IReminder, ISingleReminder, ReminderTaskType } from "@mojaloop/scheduli
 const URL_REMINDERS: string = "http://localhost:1234/reminders";
 const FAULTY_URL_REMINDERS: string = "http://localhost:1000/reminders";
 const TIMEOUT_MS_HTTP_CLIENT: number = 10_000;
-const SHORT_TIMEOUT_MS_HTTP_CLIENT: number = 0.1;
+const SHORT_TIMEOUT_MS_HTTP_CLIENT: number = 1;
 
 const logger: ILogger = new ConsoleLogger();
 const schedulingRepo: IRepo = new SchedulingRepoMock();
