@@ -249,6 +249,7 @@ export class Service {
 			TIME_ZONE,
 			TIMEOUT_MS_LOCK_ACQUIRED,
 			MIN_DURATION_MS_TASK,
+			TIMEOUT_MS_HTTP_CLIENT
 		);
 
 		await this.aggregate.init();

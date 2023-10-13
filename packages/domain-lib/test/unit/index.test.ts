@@ -41,8 +41,9 @@ const logger: ILogger = new ConsoleLogger();
 const repo: IRepo = new SchedulingRepoMock();
 const locks: ILocks = new LockMock();
 const messageProducer: IMessageProducer = new MessageProducerMock();
+const TIMEOUT_MS_HTTP_CLIENT: number = 10_000;
 
-const aggregate = new Aggregate(logger,repo,locks,messageProducer,"UTC",10000,10000);
+const aggregate = new Aggregate(logger,repo,locks,messageProducer,"UTC",10000,10000,TIMEOUT_MS_HTTP_CLIENT);
 
 describe("scheduling-bc domain lib tests", ()=>{
 

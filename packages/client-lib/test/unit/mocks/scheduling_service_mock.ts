@@ -30,7 +30,7 @@
 "use strict";
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
-import {ILocks, IRepo, NoSuchReminderError,} from "@mojaloop/scheduling-bc-domain-lib";
+import {ILocks, IRepo, NoSuchReminderError, ReminderAlreadyExistsError,} from "@mojaloop/scheduling-bc-domain-lib";
 import { IMessageProducer, IMessage } from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
 import {IAuthorizationClient, ITokenHelper} from "@mojaloop/security-bc-public-types-lib";
@@ -76,6 +76,9 @@ export class SchedulingRepoMock implements IRepo {
     }
 
     storeReminder(reminder: IReminder): Promise<void> {
+        if(this.reminders.has(reminder.id)){
+            throw new ReminderAlreadyExistsError();
+        }
         this.reminders.set(reminder.id,reminder);
         return Promise.resolve(undefined);
     }

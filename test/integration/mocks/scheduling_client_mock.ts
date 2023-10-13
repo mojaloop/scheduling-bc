@@ -29,7 +29,6 @@
 
 "use strict";
 
-import axios, {AxiosError, AxiosInstance, AxiosResponse} from "axios";
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
 
@@ -40,14 +39,16 @@ export class SchedulingClientMock { // TODO: name.
     private readonly logger: ILogger;
     // Other properties.
     private readonly URL_REMINDERS:string;
-    private defaultHeaders:Headers;
-
+    private readonly defaultHeaders:Headers;
+    private readonly TIMEOUT_MS_HTTP_CLIENT: number;
     constructor(
         logger: ILogger,
         URL_REMINDERS: string,
+        TIMEOUT_MS_HTTP_CLIENT: number,
     ) {
         this.logger = logger;
 
+        this.TIMEOUT_MS_HTTP_CLIENT = TIMEOUT_MS_HTTP_CLIENT;
         this.URL_REMINDERS = URL_REMINDERS;
         this.defaultHeaders = new Headers();
         this.defaultHeaders.append("Content-Type","application/json");
@@ -55,73 +56,114 @@ export class SchedulingClientMock { // TODO: name.
 
     async createReminder(reminder: IReminder): Promise<number> {
         try {
+            const controller = new AbortController();
+
             const reqInit: RequestInit = {
                 method:"POST",
                 headers:this.defaultHeaders,
-                body:JSON.stringify(reminder)
+                body:JSON.stringify(reminder),
+                signal:controller.signal
             };
 
+            const timeoutId = setTimeout(()=> controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
+
             const res = await fetch(`${this.URL_REMINDERS}/`,reqInit);
+
+            clearTimeout(timeoutId);
             return res.status;
         } catch (e: unknown) {
-            this.logger.debug(e);
-            return (e as AxiosError).response?.status ?? -1;
+            const errorMessage: string | undefined = (e as Error).message
+            this.logger.error(e);
+            throw new Error(errorMessage);
         }
     }
 
     async getReminder(reminderId: string): Promise<number> {
         try {
+            const controller = new AbortController();
+
             const reqInit:RequestInit = {
-                method: "GET"
+                method: "GET",
+                signal:controller.signal
             };
 
+            const timeoutId = setTimeout(()=> controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
+
             const res = await fetch(`${this.URL_REMINDERS}/${reminderId}`,reqInit);
+
+            clearTimeout(timeoutId);
             return res.status;
         } catch (e: unknown) {
-            this.logger.debug(e);
-            throw new Error();
+            const errorMessage: string | undefined = (e as Error).message
+            this.logger.error(e);
+            throw new Error(errorMessage);
         }
     }
 
     async getReminders(): Promise<number> {
         try {
+            const controller = new AbortController();
+
             const reqInit:RequestInit = {
-                method:"GET"
+                method:"GET",
+                signal:controller.signal
             };
 
+            const timeoutId = setTimeout(()=> controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
+
             const res = await fetch(`${this.URL_REMINDERS}/`,reqInit);
+
+            clearTimeout(timeoutId);
             return res.status;
         } catch (e: unknown) {
-            this.logger.debug(e);
-            throw new Error();
+            const errorMessage: string | undefined = (e as Error).message
+            this.logger.error(e);
+            throw new Error(errorMessage);
         }
     }
 
     async deleteReminder(reminderId: string): Promise<number> {
         try {
+            const controller = new AbortController();
+
             const reqInit:RequestInit = {
-                method:"DELETE"
+                method:"DELETE",
+                signal: controller.signal
             };
 
+            const timeoutId = setTimeout(()=>controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
+
             const res = await fetch(`${this.URL_REMINDERS}/${reminderId}`,reqInit);
+
+            clearTimeout(timeoutId);
+
             return res.status;
         } catch (e: unknown) {
-            this.logger.debug(e);
-            throw new Error();
+            const errorMessage: string | undefined = (e as Error).message
+            this.logger.error(e);
+            throw new Error(errorMessage);
         }
     }
 
     async deleteReminders(): Promise<number> {
         try {
+            const controller = new AbortController();
+
             const reqInit:RequestInit = {
-                method:"DELETE"
+                method:"DELETE",
+                signal:controller.signal
             };
 
+            const timeoutId = setTimeout(()=>controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
+
             const res = await fetch(`${this.URL_REMINDERS}/`,reqInit);
+
+            clearTimeout(timeoutId);
             return res.status;
         } catch (e: unknown) {
-            this.logger.debug(e);
-            throw new Error();
+            const errorMessage: string | undefined = (e as Error).message
+            this.logger.error(e);
+            throw new Error(errorMessage);
         }
     }
 }

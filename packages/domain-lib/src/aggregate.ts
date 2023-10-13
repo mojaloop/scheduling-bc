@@ -36,7 +36,6 @@ import { IReminder, ISingleReminder, ReminderTaskType} from "@mojaloop/schedulin
 import { Reminder, SingleReminder } from "./types";
 import {CronJob} from "cron";
 import * as uuid from "uuid";
-import axios, {AxiosInstance} from "axios";
 import {InvalidReminderIdTypeError, NoSuchReminderError, ReminderAlreadyExistsError} from "./errors";
 import { ILocks, IRepo } from "./interfaces/infrastructure";
 import { TransferTimeoutEvt, TransfersBCTopics } from "@mojaloop/platform-shared-lib-public-messages-lib";
@@ -52,7 +51,8 @@ export class Aggregate {
 	private readonly TIMEOUT_MS_LOCK_ACQUIRED: number;
 	private readonly MIN_DURATION_MS_TASK: number;
 	// Other properties.
-    private httpHeaders: Headers;
+    private readonly httpHeaders: Headers;
+    private readonly TIMEOUT_MS_HTTP_CLIENT: number;
 	private readonly cronJobs: Map<string, CronJob>;
 
 	constructor(
@@ -63,6 +63,7 @@ export class Aggregate {
 		TIME_ZONE: string,
 		TIMEOUT_MS_LOCK_ACQUIRED: number,
 		MIN_DURATION_MS_TASK: number,
+        TIMEOUT_MS_HTTP_CLIENT: number,
 	) {
 		this.logger = logger;
 		this.repo = repo;
@@ -72,6 +73,7 @@ export class Aggregate {
 		this.TIMEOUT_MS_LOCK_ACQUIRED = TIMEOUT_MS_LOCK_ACQUIRED;
 		this.MIN_DURATION_MS_TASK = MIN_DURATION_MS_TASK;
 
+        this.TIMEOUT_MS_HTTP_CLIENT = TIMEOUT_MS_HTTP_CLIENT;
         this.httpHeaders = new Headers();
         this.httpHeaders.append("Content-Type","application/json");
 
@@ -97,11 +99,7 @@ export class Aggregate {
 				},
 				null,
 				true,
-				this.TIME_ZONE,
-				this, /* Context. */
-				false,
-				null,
-				true
+				this.TIME_ZONE
 				));
 		});
 	}
@@ -148,7 +146,7 @@ export class Aggregate {
 			null,
 			true,
 			this.TIME_ZONE,
-			this /* Context. */));
+			));
 		return reminder.id;
 	}
 
@@ -181,7 +179,7 @@ export class Aggregate {
 			null,
 			true,
 			this.TIME_ZONE,
-			this /* Context. */));
+			));
 		return reminder.id;
 	}
 
@@ -220,22 +218,25 @@ export class Aggregate {
 	}
 
 	private async sendHttpPost(reminder: IReminder): Promise<void> { // TODO: Reminder or IReminder?
-		/**
-		 * By default, Axios throws if:
-		 * - the server is unreachable;
-		 * - the status code falls out of the 2xx range.
-		 */
 		try {
+            const controller = new AbortController();
+
             const reqInit:RequestInit = {
                 method:"POST",
                 headers: this.httpHeaders,
-                body: JSON.stringify(reminder.payload)
-            }
+                body: JSON.stringify(reminder.payload),
+                signal:controller.signal
+            };
+
+            const timeoutId = setTimeout(()=> controller.abort(),this.TIMEOUT_MS_HTTP_CLIENT);
 
             await fetch(reminder.httpPostTaskDetails?.url as string,reqInit);
+
+            clearTimeout(timeoutId);
 		} catch (e: unknown) {
+            const errorMessage: string | undefined = (e as Error).message;
 			this.logger.error(e); // TODO: necessary?
-			// TODO: throw?
+            throw new Error(errorMessage);
 		}
 	}
 
