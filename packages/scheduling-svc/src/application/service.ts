@@ -300,6 +300,8 @@ export class Service {
 		await this.aggregate.destroy();
 		this.logger.debug("Tearing down message producer");
 		await this.messageProducer.destroy();
+        this.logger.debug("Destroying HTTP Post Client");
+        await this.httpPostClient.destroy();
 		const expressServerCloseProm = new Promise<void>((resolve, reject)=>{
 			this.expressServer.close((err)=>{
 				if(err){

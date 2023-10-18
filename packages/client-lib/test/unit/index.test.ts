@@ -59,7 +59,6 @@ const tokenhelper: ITokenHelper = new TokenHelperMock();
 const schedulingClient: SchedulingClient = new SchedulingClient(
     logger,
     URL_REMINDERS,
-    TIMEOUT_MS_HTTP_CLIENT
 );
 
 const faultySchedulingClient: SchedulingClient = new SchedulingClient(

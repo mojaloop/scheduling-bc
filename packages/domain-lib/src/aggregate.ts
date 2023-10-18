@@ -36,7 +36,12 @@ import { IReminder, ISingleReminder, ReminderTaskType} from "@mojaloop/schedulin
 import { Reminder, SingleReminder } from "./types";
 import {CronJob} from "cron";
 import * as uuid from "uuid";
-import {InvalidReminderIdTypeError, NoSuchReminderError, ReminderAlreadyExistsError} from "./errors";
+import {
+    InvalidReminderIdTypeError,
+    InvalidReminderTaskDetailsTypeError,
+    NoSuchReminderError,
+    ReminderAlreadyExistsError
+} from "./errors";
 import {IHttpPostClient, ILocks, IRepo} from "./interfaces/infrastructure";
 import { TransferTimeoutEvt, TransfersBCTopics } from "@mojaloop/platform-shared-lib-public-messages-lib";
 
@@ -217,9 +222,13 @@ export class Aggregate {
 	}
 
 	private async sendHttpPost(reminder: IReminder): Promise<void> { // TODO: Reminder or IReminder?
-		try {
+        if(!reminder.httpPostTaskDetails || !reminder.httpPostTaskDetails.url){
+            throw new InvalidReminderTaskDetailsTypeError("Invalid HTTP Task details or URL");
+        }
+
+        try {
             await this.httpPostClient.send(
-				reminder.httpPostTaskDetails?.url as string,
+				reminder.httpPostTaskDetails.url,
 				reminder.payload,
 				this.TIMEOUT_MS_HTTP_CLIENT
 			);

@@ -39,6 +39,8 @@ import {
 	UnableToReachServerError
 } from "./errors";
 
+const DEFAULT_TIMEOUT_MS = 10_000;
+
 export class SchedulingClient {
 	// Properties received through the constructor.
 	private readonly logger: ILogger;
@@ -49,7 +51,7 @@ export class SchedulingClient {
 	constructor(
 		logger: ILogger,
 		URL_REMINDERS: string,
-        TIMEOUT_MS_HTTP_CLIENT: number
+        TIMEOUT_MS_HTTP_CLIENT = DEFAULT_TIMEOUT_MS
 	) {
 		this.logger = logger;
 
