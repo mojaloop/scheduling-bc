@@ -37,9 +37,8 @@ import { Reminder, SingleReminder } from "./types";
 import {CronJob} from "cron";
 import * as uuid from "uuid";
 import {InvalidReminderIdTypeError, NoSuchReminderError, ReminderAlreadyExistsError} from "./errors";
-import { ILocks, IRepo } from "./interfaces/infrastructure";
+import {IHttpPostClient, ILocks, IRepo} from "./interfaces/infrastructure";
 import { TransferTimeoutEvt, TransfersBCTopics } from "@mojaloop/platform-shared-lib-public-messages-lib";
-import {fetchWithTimeOut} from "./utils";
 
 // TODO: check error handling.
 export class Aggregate {
@@ -52,7 +51,7 @@ export class Aggregate {
 	private readonly TIMEOUT_MS_LOCK_ACQUIRED: number;
 	private readonly MIN_DURATION_MS_TASK: number;
 	// Other properties.
-    private readonly httpHeaders: Headers;
+	private readonly httpPostClient: IHttpPostClient;
     private readonly TIMEOUT_MS_HTTP_CLIENT: number;
 	private readonly cronJobs: Map<string, CronJob>;
 
@@ -60,6 +59,7 @@ export class Aggregate {
 		logger: ILogger,
 		repo: IRepo,
 		locks: ILocks,
+		httpPostClient: IHttpPostClient,
 		messageProducer: IMessageProducer,
 		TIME_ZONE: string,
 		TIMEOUT_MS_LOCK_ACQUIRED: number,
@@ -73,10 +73,8 @@ export class Aggregate {
 		this.TIME_ZONE = TIME_ZONE;
 		this.TIMEOUT_MS_LOCK_ACQUIRED = TIMEOUT_MS_LOCK_ACQUIRED;
 		this.MIN_DURATION_MS_TASK = MIN_DURATION_MS_TASK;
-
+		this.httpPostClient = httpPostClient;
         this.TIMEOUT_MS_HTTP_CLIENT = TIMEOUT_MS_HTTP_CLIENT;
-        this.httpHeaders = new Headers();
-        this.httpHeaders.append("Content-Type","application/json");
 
 		this.cronJobs = new Map<string, CronJob>();
 	}
@@ -220,13 +218,11 @@ export class Aggregate {
 
 	private async sendHttpPost(reminder: IReminder): Promise<void> { // TODO: Reminder or IReminder?
 		try {
-            await fetchWithTimeOut(this.logger,
-                reminder.httpPostTaskDetails?.url as string,
-                "POST",
-                JSON.stringify(reminder.payload),
-                this.TIMEOUT_MS_HTTP_CLIENT,
-                this.httpHeaders
-            );
+            await this.httpPostClient.send(
+				reminder.httpPostTaskDetails?.url as string,
+				reminder.payload,
+				this.TIMEOUT_MS_HTTP_CLIENT
+			);
 		} catch (e: unknown) {
             const errorMessage: string | undefined = (e as Error).message;
 			this.logger.error(e); // TODO: necessary?

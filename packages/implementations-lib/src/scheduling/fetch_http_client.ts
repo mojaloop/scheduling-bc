@@ -20,47 +20,57 @@
  their names indented and be marked with a '-'. Email address can be added
  optionally within square brackets <email>.
 
- * Gates Foundation
- - Name Surname <name.surname@gatesfoundation.com>
+ * Crosslake
+ - Pedro Sousa Barreto <pedrob@crosslaketech.com>
 
- * Afajiri
- - Elijah Okello elijahokello90@gmail.com
+ * Elijah Okello <elijahokello90@gmail.com>
 
  --------------
  ******/
 
 "use strict";
 
+import {IHttpPostClient} from "@mojaloop/scheduling-bc-domain-lib";
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 
-export async function fetchWithTimeOut(
-    logger: ILogger,
-    url: string,
-    method: string,
-    body: BodyInit | undefined,
-    timeout_http_ms: number,
-    headers: Headers
-): Promise<Response>{
-    try{
-        const controller = new AbortController();
+export class FetchPostClient implements IHttpPostClient {
+    private _defaultHeaders: Headers;
+    private _logger:ILogger;
+    private _controller: AbortController;
 
-        const reqInit: RequestInit = {
-            method:method,
-            headers: headers,
-            body: body,
-            signal:controller.signal
-        };
-
-        const timeoutId = setTimeout(()=> controller.abort(),timeout_http_ms);
-
-        const res = await fetch(url,reqInit);
-
-        clearTimeout(timeoutId);
-
-        return res;
-    }catch (e:unknown) {
-        const errorMessage: string | undefined = (e as Error ).message;
-        logger.error(errorMessage);
-        throw e;
+    constructor(logger:ILogger) {
+        this._logger = logger.createChild(this.constructor.name);
+        this._controller = new AbortController();
+        this._defaultHeaders = new Headers();
+        this._defaultHeaders.append("Content-Type","application/json");
     }
+
+    async destroy(): Promise<void> {
+        this._controller.abort();
+        return Promise.resolve(undefined);
+    }
+
+    async init(): Promise<void> {
+        return Promise.resolve(undefined);
+    }
+
+    async send( url: string, payload:unknown, timeout_ms: number): Promise<void> {
+        try {
+            const reqInit: RequestInit = {
+                method:"POST",
+                headers:this._defaultHeaders,
+                body: JSON.stringify(payload),
+                signal:this._controller.signal
+            };
+            const timeoutId =  setTimeout(()=>this._controller.abort(),timeout_ms);
+
+            await fetch(url,reqInit);
+
+            clearTimeout(timeoutId);
+        }catch (e) {
+            this._logger.error(e);
+            throw e;
+        }
+    }
+
 }

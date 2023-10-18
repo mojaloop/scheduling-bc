@@ -26,7 +26,7 @@
  ******/
 
 import { ConsoleLogger, ILogger } from "@mojaloop/logging-bc-public-types-lib";
-import {Aggregate, IRepo} from "../../src/index"
+import {Aggregate, IHttpPostClient, IRepo} from "../../src/index";
 import { LockMock, MessageProducerMock, SchedulingRepoMock } from "../mocks/domain_lib_mocks";
 import { ILocks } from "../../src/index";
 import { Reminder, SingleReminder } from "../../src/types";
@@ -34,16 +34,17 @@ import { IMessageProducer } from "@mojaloop/platform-shared-lib-messaging-types-
 import { IReminder, ISingleReminder, ReminderTaskType } from "@mojaloop/scheduling-bc-public-types-lib";
 import { TransfersBCTopics } from "@mojaloop/platform-shared-lib-public-messages-lib";
 import { InvalidReminderTimeTypeError, InvalidReminderTimeError, ReminderAlreadyExistsError, NoSuchReminderError} from "../../src/errors";
-
+import {FetchPostClient} from "@mojaloop/scheduling-bc-implementations-lib";
 
 // Aggregate constructor arguments
 const logger: ILogger = new ConsoleLogger();
 const repo: IRepo = new SchedulingRepoMock();
 const locks: ILocks = new LockMock();
 const messageProducer: IMessageProducer = new MessageProducerMock();
+const httpPostClient: IHttpPostClient = new FetchPostClient(logger);
 const TIMEOUT_MS_HTTP_CLIENT: number = 10_000;
 
-const aggregate = new Aggregate(logger,repo,locks,messageProducer,"UTC",10000,10000,TIMEOUT_MS_HTTP_CLIENT);
+const aggregate = new Aggregate(logger,repo,locks,httpPostClient,messageProducer,"UTC",10000,10000,TIMEOUT_MS_HTTP_CLIENT);
 
 describe("scheduling-bc domain lib tests", ()=>{
 

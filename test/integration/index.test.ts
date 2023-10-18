@@ -31,12 +31,12 @@
 
 import { SchedulingClient } from "../../packages/client-lib/src";
 import { ConsoleLogger, ILogger } from "@mojaloop/logging-bc-public-types-lib";
-import { MongoRepo, RedisLocks } from "../../packages/implementations-lib/src/index";
+import { MongoRepo, RedisLocks,FetchPostClient} from "../../packages/implementations-lib/src/index";
 import { UnableToCreateReminderError, UnableToDeleteReminderError } from "../../packages/client-lib/src/errors";
 import { IReminder, ISingleReminder, ReminderTaskType } from "@mojaloop/scheduling-bc-public-types-lib";
 import { Service } from "../../packages/scheduling-svc/src/application/service";
-import {SchedulingClientMock} from "./mocks//scheduling_client_mock";
-import {Reminder} from "@mojaloop/scheduling-bc-domain-lib";
+import {SchedulingClientMock} from "./mocks/scheduling_client_mock";
+import {IHttpPostClient, Reminder} from "@mojaloop/scheduling-bc-domain-lib";
 
 // TODO: here or inside the describe function?
 const URL_REMINDERS: string = "http://localhost:1234/reminders";
@@ -45,6 +45,7 @@ const TIMEOUT_MS_HTTP_CLIENT: number = 10_000;
 const SHORT_TIMEOUT_MS_HTTP_CLIENT: number = 0.1;
 
 const logger: ILogger = new ConsoleLogger();
+const httpPostClient: IHttpPostClient = new  FetchPostClient(logger);
 const schedulingClient: SchedulingClient = new SchedulingClient(
     logger,
     URL_REMINDERS,
@@ -97,6 +98,7 @@ describe("scheduling client - integration tests", () => {
         await Service.start();
         await mongoRepo.init();
         await redislocks.init();
+        await httpPostClient.init();
 
     });
 
@@ -104,6 +106,7 @@ describe("scheduling client - integration tests", () => {
         await Service.stop();
         await mongoRepo.destroy();
         await redislocks.destroy();
+        await httpPostClient.destroy();
     });
 
     test("scheduling client - integration tests : create non-existent reminder should pass ", async () => {
@@ -502,5 +505,15 @@ describe("scheduling client - integration tests", () => {
         // Assert
         expect(lockStatus).toEqual(false);
    });
+
+    test("implementation-lib : FetchPostClient - integration tests: send should fail because server is not up",async ()=>{
+        // Act and Assert
+        await expect(httpPostClient.send("http://localhost:1111",{name:"TestName"},3000)).rejects.toThrowError();
+    });
+
+    test("implementation-lib : FetchPostClient - integration tests: send should pass",async ()=>{
+        // Act and Assert
+        await expect(httpPostClient.send("http://localhost:1234",{name:"TestName"},3000)).resolves;
+    });
 
 });

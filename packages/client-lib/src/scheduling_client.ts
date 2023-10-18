@@ -1,4 +1,3 @@
-/// <reference lib="dom" />
 /*****
  License
 --------------
@@ -32,7 +31,7 @@ optionally within square brackets <email>.
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import { IReminder, ISingleReminder } from "../../public-types-lib/";
-import {fetchWithTimeOut} from "@mojaloop/scheduling-bc-domain-lib/dist/utils";
+import {fetchWithTimeOut} from "./utils";
 import {
 	UnableToCreateReminderError,
 	UnableToDeleteReminderError,
@@ -45,7 +44,6 @@ export class SchedulingClient {
 	private readonly logger: ILogger;
 	// Other properties.
 	private readonly URL_REMINDERS:string;
-    private readonly defaultHeaders: Headers;
     private readonly TIMEOUT_MS_HTTP_CLIENT: number;
 
 	constructor(
@@ -57,22 +55,24 @@ export class SchedulingClient {
 
 		this.URL_REMINDERS = URL_REMINDERS;
         this.TIMEOUT_MS_HTTP_CLIENT = TIMEOUT_MS_HTTP_CLIENT;
-        this.defaultHeaders = new Headers();
-        this.defaultHeaders.append("Content-Type","application/json");
 	}
 
 	async createReminder(reminder: IReminder): Promise<string> {
 		try {
-			const res = await fetchWithTimeOut(
-                this.logger,
-                `${this.URL_REMINDERS}/`,
-                "POST",
-                JSON.stringify(reminder),
-                this.TIMEOUT_MS_HTTP_CLIENT,
-                this.defaultHeaders
-            );
-			const data = await res.json();
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
 
+			const res = await fetchWithTimeOut(
+                `${this.URL_REMINDERS}/`,
+                {
+                    method:"POST",
+                    headers: headers,
+                    body:JSON.stringify(reminder)
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
+            );
+
+			const data = await res.json();
             // istanbul ignore if
 			if(!data.reminderId){
 				throw new UnableToCreateReminderError(data.message);
@@ -92,14 +92,19 @@ export class SchedulingClient {
 
 	async createSingleReminder(reminder: ISingleReminder): Promise<string> {
 		try {
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
             const res = await fetchWithTimeOut(
-                this.logger,
                 `${this.URL_REMINDERS}/single`,
-                "POST",
-                JSON.stringify(reminder),
-                this.TIMEOUT_MS_HTTP_CLIENT,
-                this.defaultHeaders
+                {
+                    method:"POST",
+                    headers: headers,
+                    body:JSON.stringify(reminder)
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
             );
+
             const data = await res.json();
 
             // istanbul ignore if
@@ -121,13 +126,16 @@ export class SchedulingClient {
 
 	async getReminder(reminderId: string): Promise<IReminder | null> {
 		try {
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
             const res = await fetchWithTimeOut(
-                this.logger,
                 `${this.URL_REMINDERS}/${reminderId}`,
-                "GET",
-                undefined,
-                this.TIMEOUT_MS_HTTP_CLIENT,
-                this.defaultHeaders
+                {
+                    method:"GET",
+                    headers: headers,
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
             );
 
             if (res.status === 404) {
@@ -143,14 +151,18 @@ export class SchedulingClient {
 
 	async deleteReminder(reminderId: string): Promise<void> {
 		try {
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
             const res = await fetchWithTimeOut(
-                this.logger,
                 `${this.URL_REMINDERS}/${reminderId}`,
-                "DELETE",
-                undefined,
-                this.TIMEOUT_MS_HTTP_CLIENT,
-                this.defaultHeaders
-                );
+                {
+                    method:"DELETE",
+                    headers: headers,
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
+            );
+
             const data = await res.json();
 
             if(res.status != 200){

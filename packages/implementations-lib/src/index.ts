@@ -30,7 +30,7 @@
  - Pedro Sousa Barreto <pedrob@crosslaketech.com>
 
  * Gonçalo Garcia <goncalogarcia99@gmail.com>
- 
+
  * Arg Software
  - José Antunes <jose.antunes@arg.software>
  - Rui Rocha <rui.rocha@arg.software>
@@ -42,3 +42,4 @@
 
 export * from "./scheduling/mongo_repo";
 export * from "./scheduling/redis_locks";
+export * from "./scheduling/fetch_http_client";

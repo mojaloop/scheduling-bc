@@ -32,7 +32,7 @@
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
-import {fetchWithTimeOut} from "@mojaloop/scheduling-bc-domain-lib/dist/utils";
+import {fetchWithTimeOut} from "@mojaloop/scheduling-bc-client-lib";
 
 
 // TODO: change name - might be confused with the actual scheduling client.
@@ -41,7 +41,6 @@ export class SchedulingClientMock { // TODO: name.
     private readonly logger: ILogger;
     // Other properties.
     private readonly URL_REMINDERS:string;
-    private readonly defaultHeaders:Headers;
     private readonly TIMEOUT_MS_HTTP_CLIENT: number;
     constructor(
         logger: ILogger,
@@ -52,20 +51,22 @@ export class SchedulingClientMock { // TODO: name.
 
         this.TIMEOUT_MS_HTTP_CLIENT = TIMEOUT_MS_HTTP_CLIENT;
         this.URL_REMINDERS = URL_REMINDERS;
-        this.defaultHeaders = new Headers();
-        this.defaultHeaders.append("Content-Type","application/json");
     }
 
     async createReminder(reminder: IReminder): Promise<number> {
         try {
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
             const res = await fetchWithTimeOut(
-                this.logger,
                 `${this.URL_REMINDERS}/`,
-                "POST",
-                JSON.stringify(reminder),
-                this.TIMEOUT_MS_HTTP_CLIENT,
-                this.defaultHeaders
-                );
+                {
+                    method:"POST",
+                    headers: headers,
+                    body:JSON.stringify(reminder)
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
+            );
 
             return res.status;
         } catch (e: unknown) {
@@ -77,14 +78,17 @@ export class SchedulingClientMock { // TODO: name.
 
     async getReminder(reminderId: string): Promise<number> {
         try {
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
             const res = await fetchWithTimeOut(
-                this.logger,
                 `${this.URL_REMINDERS}/${reminderId}`,
-                "GET",
-                undefined,
-                this.TIMEOUT_MS_HTTP_CLIENT,
-                this.defaultHeaders
-                );
+                {
+                    method:"GET",
+                    headers: headers,
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
+            );
 
             return res.status;
         } catch (e: unknown) {
@@ -96,13 +100,16 @@ export class SchedulingClientMock { // TODO: name.
 
     async getReminders(): Promise<number> {
         try {
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
             const res = await fetchWithTimeOut(
-                this.logger,
                 `${this.URL_REMINDERS}/`,
-                "GET",
-                undefined,
-                this.TIMEOUT_MS_HTTP_CLIENT,
-                this.defaultHeaders
+                {
+                    method:"GET",
+                    headers: headers,
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
             );
 
             return res.status;
@@ -115,14 +122,17 @@ export class SchedulingClientMock { // TODO: name.
 
     async deleteReminder(reminderId: string): Promise<number> {
         try {
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
             const res = await fetchWithTimeOut(
-                this.logger,
                 `${this.URL_REMINDERS}/${reminderId}`,
-                "DELETE",
-                undefined,
-                this.TIMEOUT_MS_HTTP_CLIENT,
-                this.defaultHeaders
-                );
+                {
+                    method:"DELETE",
+                    headers: headers,
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
+            );
 
             return res.status;
         } catch (e: unknown) {
@@ -134,13 +144,16 @@ export class SchedulingClientMock { // TODO: name.
 
     async deleteReminders(): Promise<number> {
         try {
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
             const res = await fetchWithTimeOut(
-                this.logger,
                 `${this.URL_REMINDERS}/`,
-                "DELETE",
-                undefined,
-                this.TIMEOUT_MS_HTTP_CLIENT,
-                this.defaultHeaders
+                {
+                    method:"DELETE",
+                    headers: headers,
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
             );
 
             return res.status;

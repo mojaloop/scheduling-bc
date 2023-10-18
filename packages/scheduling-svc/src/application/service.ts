@@ -44,7 +44,7 @@ import { TRANSFERS_BOUNDED_CONTEXT_NAME } from "@mojaloop/platform-shared-lib-pu
 //TODO re-enable configs
 //import appConfigs from "./config";
 import {
-	Aggregate, ILocks, IRepo,
+	Aggregate, IHttpPostClient, ILocks, IRepo,
 } from "@mojaloop/scheduling-bc-domain-lib";
 // import { AuditClient, KafkaAuditClientDispatcher, LocalAuditClientCryptoProvider } from "@mojaloop/auditing-bc-client-lib";
 // import {
@@ -61,7 +61,7 @@ import {
 	MLKafkaJsonProducer,
 	MLKafkaJsonProducerOptions
 } from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
-import { MongoRepo, RedisLocks } from "@mojaloop/scheduling-bc-implementations-lib";
+import {FetchPostClient, MongoRepo, RedisLocks} from "@mojaloop/scheduling-bc-implementations-lib";
 import express, { Express } from "express";
 
 import { SchedulingExpressRoutes } from "./routes/scheduling_routes";
@@ -160,6 +160,7 @@ export class Service {
 	static tokenHelper: ITokenHelper;
     static authorizationClient: IAuthorizationClient;
 	static locks: ILocks;
+	static httpPostClient: IHttpPostClient;
 
 	static async start(
 		schedulingRepo?: IRepo,
@@ -168,6 +169,7 @@ export class Service {
 		messageProducer?: IMessageProducer,
         authorizationClient?: IAuthorizationClient,
 		locks?: ILocks,
+		httpPostClient?:IHttpPostClient
 	): Promise<void> {
 		console.log(`Scheduling-svc - service starting with PID: ${process.pid}`);
 
@@ -232,6 +234,10 @@ export class Service {
 		}
 		this.messageProducer = messageProducer;
 
+		if(!httpPostClient){
+			httpPostClient = new FetchPostClient(logger);
+		}
+		this.httpPostClient = httpPostClient;
 
 
 		// all inits done
@@ -245,6 +251,7 @@ export class Service {
 			this.logger,
 			this.schedulingRepo,
 			this.locks,
+			this.httpPostClient,
 			this.messageProducer,
 			TIME_ZONE,
 			TIMEOUT_MS_LOCK_ACQUIRED,
