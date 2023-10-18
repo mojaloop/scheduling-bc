@@ -24,7 +24,7 @@
         "clean:dist": "rm -Rf dist; npm -ws run clean:dist",
         "lint": "npm -ws run lint",
         "lint:fix": "npm -ws run lint:fix",
-        "test": "npm run test:unit",  
+        "test": "npm run test:unit",
         "test:unit": "npm -ws --if-present run test:unit",
         "posttest": "npm run coverage:merge && npm run coverage:gen-report",
         "coverage:merge": "nyc merge ./coverage/ ./coverage/coverage.json",
@@ -37,7 +37,7 @@
         "publish:public-types-lib": "npm -w @mojaloop/scheduling-bc-public-types-lib run pub"
     },
     "devDependencies": {
-        "@types/jest": "^29.5.5",
+        "@types/jest": "^29.5.6",
         "@types/node": "^18.11.19",
         "@typescript-eslint/eslint-plugin": "^5.50.0",
         "@typescript-eslint/parser": "^5.50.0",

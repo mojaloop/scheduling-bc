@@ -31,23 +31,31 @@
 
 import { SchedulingClient } from "../../packages/client-lib/src";
 import { ConsoleLogger, ILogger } from "@mojaloop/logging-bc-public-types-lib";
-import { MongoRepo, RedisLocks } from "../../packages/implementations-lib/src/index";
+import { MongoRepo, RedisLocks,FetchPostClient} from "../../packages/implementations-lib/src/index";
 import { UnableToCreateReminderError, UnableToDeleteReminderError } from "../../packages/client-lib/src/errors";
 import { IReminder, ISingleReminder, ReminderTaskType } from "@mojaloop/scheduling-bc-public-types-lib";
 import { Service } from "../../packages/scheduling-svc/src/application/service";
-import {SchedulingClientMock} from "./mocks//scheduling_client_mock";
-import {Reminder} from "@mojaloop/scheduling-bc-domain-lib";
+import {SchedulingClientMock} from "./mocks/scheduling_client_mock";
+import {IHttpPostClient, Reminder} from "@mojaloop/scheduling-bc-domain-lib";
 
 // TODO: here or inside the describe function?
 const URL_REMINDERS: string = "http://localhost:1234/reminders";
 const INVALID_URL_REMINDERS: string = "http://localhost:1000/reminders";
 const TIMEOUT_MS_HTTP_CLIENT: number = 10_000;
+const SHORT_TIMEOUT_MS_HTTP_CLIENT: number = 0.1;
 
 const logger: ILogger = new ConsoleLogger();
+const httpPostClient: IHttpPostClient = new  FetchPostClient(logger);
 const schedulingClient: SchedulingClient = new SchedulingClient(
     logger,
     URL_REMINDERS,
     TIMEOUT_MS_HTTP_CLIENT
+);
+
+const shortSchedulingClient: SchedulingClient = new SchedulingClient(
+    logger,
+    URL_REMINDERS,
+    SHORT_TIMEOUT_MS_HTTP_CLIENT
 );
 
 const invalidSchedulingClient: SchedulingClient = new SchedulingClient(
@@ -65,17 +73,17 @@ const schedulingClientMock: SchedulingClientMock = new SchedulingClientMock(
 // CONFIG FOR MONGO
 const MONGO_URL = process.env["MONGO_URL"] || "mongodb://root:mongoDbPas42@localhost:27017/";
 const DB_NAME = process.env.SCHEDULING_DB_NAME ?? "scheduling";
-const TIMEOUT_MS_REPO_OPERATIONS = 10_000; 
+const TIMEOUT_MS_REPO_OPERATIONS = 10_000;
 const mongoRepo = new MongoRepo(logger, MONGO_URL, DB_NAME, TIMEOUT_MS_REPO_OPERATIONS);
 
 
 //CONFIG FOR REDIS
 const HOST_LOCKS: string = process.env.SCHEDULING_HOST_LOCKS ?? "localhost";
-const MAX_LOCK_SPINS = 10; 
+const MAX_LOCK_SPINS = 10;
 const CLOCK_DRIFT_FACTOR = 0.01;
 const DELAY_MS_LOCK_SPINS = 200;
 const DELAY_MS_LOCK_SPINS_JITTER = 200;
-const THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION = 500; 
+const THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION = 500;
 const redislocks = new RedisLocks(
     logger,
     HOST_LOCKS,
@@ -90,6 +98,7 @@ describe("scheduling client - integration tests", () => {
         await Service.start();
         await mongoRepo.init();
         await redislocks.init();
+        await httpPostClient.init();
 
     });
 
@@ -97,8 +106,9 @@ describe("scheduling client - integration tests", () => {
         await Service.stop();
         await mongoRepo.destroy();
         await redislocks.destroy();
+        await httpPostClient.destroy();
     });
-    
+
     test("scheduling client - integration tests : create non-existent reminder should pass ", async () => {
         const reminderIdExpected: string = Date.now().toString();
         const reminder: IReminder = { // TODO.
@@ -133,6 +143,59 @@ describe("scheduling client - integration tests", () => {
         }
         const reminderIdReceived: string = await schedulingClient.createSingleReminder(reminder);
         expect(reminderIdReceived).toBe(reminderIdExpected);
+    });
+
+    test("scheduling client - integration tests : create existent single reminder should throw Error ", async () => {
+        const reminderIdExpected: string = Date.now().toString();
+        const reminder: ISingleReminder = { // TODO.
+            id: reminderIdExpected,
+            time: "*/15 * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": "test_topic"
+            }
+        }
+        await schedulingClient.createSingleReminder(reminder);
+        await expect(schedulingClient.createSingleReminder(reminder)).rejects.toThrowError();
+    });
+
+
+    test("scheduling client - integration tests : create non-existent reminder with short timeout client should fail ", async () => {
+        const reminderIdExpected: string = Date.now().toString();
+        const reminder: IReminder = { // TODO.
+            id: reminderIdExpected,
+            time: "*/15 * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": "test_topic"
+            }
+        }
+        await expect(shortSchedulingClient.createReminder(reminder)).rejects.toThrowError();
+    });
+
+    test("scheduling client - integration tests : create non-existent single reminder with short timeout client should fail ", async () => {
+        const reminderIdExpected: string = Date.now().toString();
+        const reminder: ISingleReminder = { // TODO.
+            id: reminderIdExpected,
+            time: "*/15 * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": "test_topic"
+            }
+        }
+        await expect(shortSchedulingClient.createSingleReminder(reminder)).rejects.toThrowError();
     });
 
     test("scheduling client - integration tests : create non-existent single reminder with invalid client should fail", async () => {
@@ -179,6 +242,11 @@ describe("scheduling client - integration tests", () => {
         const reminderId: string = Date.now().toString();
         const reminder: IReminder | null = await schedulingClient.getReminder(reminderId);
         expect(reminder).toBeNull();
+    });
+
+    test("scheduling client - integration tests: get non-existent reminder with short timeout client should throw error", async () => {
+        const reminderId: string = Date.now().toString();
+        await expect(shortSchedulingClient.getReminder(reminderId)).rejects.toThrowError();
     });
 
     test("scheduling client - integration tests: get reminder with invalid client should fail", async () => {
@@ -239,6 +307,29 @@ describe("scheduling client - integration tests", () => {
         ).resolves; // TODO.
     });
 
+    test("scheduling client - integration tests: delete existent reminder with short timeout client should throw error", async () => {
+        const reminderIdExpected: string = Date.now().toString();
+        const reminder: IReminder = { // TODO.
+            id: reminderIdExpected,
+            time: "*/15 * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": "test_topic"
+            }
+        }
+        const reminderIdReceived: string = await schedulingClient.createReminder(reminder);
+        expect(reminderIdReceived).toBe(reminderIdExpected);
+        await expect(
+            async () => {
+                await shortSchedulingClient.deleteReminder(reminderIdExpected);
+            }
+        ).rejects.toThrowError();
+    });
+
     test("scheduling-svc - integration tests: create non-existent reminder should pass", async () => {
         const reminderId: string = Date.now().toString();
         const reminder: Reminder = new Reminder(
@@ -264,7 +355,7 @@ describe("scheduling client - integration tests", () => {
     });
 
     test("scheduling-svc - integration tests:  get non-existent endpoint should return 404", async () => {
-        // Arrange 
+        // Arrange
         const reqInit: RequestInit = {
             method: "GET"
         }
@@ -392,7 +483,7 @@ describe("scheduling client - integration tests", () => {
     });
 
     test("implementation-lib :Redis lock - integration tests: acquire lock should pass",async ()=>{
-        // Act 
+        // Act
         const lockStatus = await redislocks.acquire("transfer",1000);
 
         // Assert
@@ -400,7 +491,7 @@ describe("scheduling client - integration tests", () => {
     });
 
     test("implementation-lib :Redis lock - integration tests: release existent lock should pass",async ()=>{
-         // Act 
+         // Act
          const lockStatus = await redislocks.release("transfer");
 
          // Assert
@@ -408,11 +499,21 @@ describe("scheduling client - integration tests", () => {
     });
 
     test("implementation-lib :Redis lock - integration tests: release non existent lock should return false",async ()=>{
-        // Act 
+        // Act
         const lockStatus = await redislocks.release("foo");
 
         // Assert
         expect(lockStatus).toEqual(false);
    });
+
+    test("implementation-lib : FetchPostClient - integration tests: send should fail because server is not up",async ()=>{
+        // Act and Assert
+        await expect(httpPostClient.send("http://localhost:1111",{name:"TestName"},3000)).rejects.toThrowError();
+    });
+
+    test("implementation-lib : FetchPostClient - integration tests: send should pass",async ()=>{
+        // Act and Assert
+        await expect(httpPostClient.send("http://localhost:1234",{name:"TestName"},3000)).resolves;
+    });
 
 });

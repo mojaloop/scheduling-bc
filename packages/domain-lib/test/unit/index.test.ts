@@ -26,7 +26,7 @@
  ******/
 
 import { ConsoleLogger, ILogger } from "@mojaloop/logging-bc-public-types-lib";
-import {Aggregate, IRepo} from "../../src/index"
+import {Aggregate, IHttpPostClient, IRepo} from "../../src/index";
 import { LockMock, MessageProducerMock, SchedulingRepoMock } from "../mocks/domain_lib_mocks";
 import { ILocks } from "../../src/index";
 import { Reminder, SingleReminder } from "../../src/types";
@@ -34,15 +34,17 @@ import { IMessageProducer } from "@mojaloop/platform-shared-lib-messaging-types-
 import { IReminder, ISingleReminder, ReminderTaskType } from "@mojaloop/scheduling-bc-public-types-lib";
 import { TransfersBCTopics } from "@mojaloop/platform-shared-lib-public-messages-lib";
 import { InvalidReminderTimeTypeError, InvalidReminderTimeError, ReminderAlreadyExistsError, NoSuchReminderError} from "../../src/errors";
+import {FetchPostClient} from "@mojaloop/scheduling-bc-implementations-lib";
 
-
-// Aggregate constructor arguments 
+// Aggregate constructor arguments
 const logger: ILogger = new ConsoleLogger();
 const repo: IRepo = new SchedulingRepoMock();
 const locks: ILocks = new LockMock();
 const messageProducer: IMessageProducer = new MessageProducerMock();
+const httpPostClient: IHttpPostClient = new FetchPostClient(logger);
+const TIMEOUT_MS_HTTP_CLIENT: number = 10_000;
 
-const aggregate = new Aggregate(logger,repo,locks,messageProducer,"UTC",10000,10000,10000);
+const aggregate = new Aggregate(logger,repo,locks,httpPostClient,messageProducer,"UTC",10000,10000,TIMEOUT_MS_HTTP_CLIENT);
 
 describe("scheduling-bc domain lib tests", ()=>{
 
@@ -89,7 +91,7 @@ describe("scheduling-bc domain lib tests", ()=>{
     });
 
     test("scheduling bc- domain-lib: create reminder :should pass when you get the created reminder", async ()=>{
-        // Arrange 
+        // Arrange
         const reminder: IReminder = {
             id: "2",
             time: "*/1 * * * * *",
@@ -116,7 +118,7 @@ describe("scheduling-bc domain lib tests", ()=>{
     });
 
     test("scheduling bc- domain-lib: create reminder :should send event message through cronjob of reminder of type Event", async () => {
-        // Arrange 
+        // Arrange
         const reminder: IReminder = {
             id: "3",
             time: "*/1 * * * * *",
@@ -148,7 +150,7 @@ describe("scheduling-bc domain lib tests", ()=>{
     });
 
     test("scheduling bc- domain-lib: create reminder :should throw Error because of non existent topic", async () => {
-        // Arrange 
+        // Arrange
         const reminder: IReminder = {
             id: "10",
             time: "*/1 * * * * *",
@@ -177,8 +179,8 @@ describe("scheduling-bc domain lib tests", ()=>{
         expect(messageProducer.send).not.toHaveBeenCalled();
     });
 
-    test("scheduling bc- domain-lib: create reminder :should send http post message through cronjob of reminder of type Event", async () => {
-        // Arrange 
+    test("scheduling bc- domain-lib: create reminder :should send http post message through cronjob of reminder of type post", async () => {
+        // Arrange
         const reminder: IReminder = {
             id: "8",
             time: "*/1 * * * * *",
@@ -196,16 +198,18 @@ describe("scheduling-bc domain lib tests", ()=>{
             }
         }
 
+        jest.spyOn(logger,"error");
+
         // Act
         await aggregate.createReminder(reminder);
         await new Promise((resolve)=>{setTimeout(resolve, 1000)}); // wait for reminder to be triggered
 
         // Assert
-        expect(true);
+        expect(logger.error).toHaveBeenCalled(); //this ensures logger.error was called since fetch will fail
     });
 
     test("scheduling bc- domain-lib: create reminder :should fail when storeReminder throws an error", async ()=>{
-        // Arrange 
+        // Arrange
         const reminder: IReminder = {
             id: "3",
             time: "*/1 * * * * *",
@@ -230,7 +234,7 @@ describe("scheduling-bc domain lib tests", ()=>{
     });
 
     test("scheduling bc- domain-lib: create reminder :should fail when storeReminder throws an error", async ()=>{
-        // Arrange 
+        // Arrange
         const reminder: IReminder = {
             id: "3",
             time: "*/1 * * * * *",
@@ -255,7 +259,7 @@ describe("scheduling-bc domain lib tests", ()=>{
     });
 
     test("scheduling bc- domain-lib: create single reminder :should fail when storeReminder throws an error", async ()=>{
-        // Arrange 
+        // Arrange
         const reminder: ISingleReminder = {
             id: "3",
             time: "*/1 * * * * *",
@@ -280,7 +284,7 @@ describe("scheduling-bc domain lib tests", ()=>{
     });
 
     test("scheduling bc- domain-lib: create single reminder :should fail when storeReminder throws an error", async ()=>{
-        // Arrange 
+        // Arrange
         const reminder: ISingleReminder = {
             id: "3",
             time: "*/1 * * * * *",
@@ -305,7 +309,7 @@ describe("scheduling-bc domain lib tests", ()=>{
     });
 
     test("scheduling-bc: domain-lib: create reminder should fail with return when getReminder returns null", async ()=>{
-        // Arrange 
+        // Arrange
         const reminder: IReminder = {
             id: "7",
             time: "*/1 * * * * *",
@@ -337,7 +341,7 @@ describe("scheduling-bc domain lib tests", ()=>{
     });
 
     test("scheduling bc- domain-lib: create reminder :should not be able to send reminder due to reminder being locked", async () => {
-        // Arrange 
+        // Arrange
         const reminder: IReminder = {
             id: "5",
             time: "*/1 * * * * *",
@@ -369,7 +373,7 @@ describe("scheduling-bc domain lib tests", ()=>{
         expect(messageProducer.send).not.toBeCalled();
         expect(returnedReminder).toEqual(reminder);
     });
-    
+
     test("scheduling bc- domain-lib: get reminders :returned reminders should be greater than zero",async ()=>{
         // Act
         const reminders: IReminder[] = await aggregate.getReminders();
@@ -379,7 +383,7 @@ describe("scheduling-bc domain lib tests", ()=>{
     });
 
     test("scheduling-bc - domain-lib: get reminder with id should fail when repo.getReminder fails", async ()=>{
-        // Arrange 
+        // Arrange
         jest.spyOn(repo,"getReminder").mockImplementation(async ()=>{throw new Error()});
 
         // Act and Asser
@@ -387,7 +391,7 @@ describe("scheduling-bc domain lib tests", ()=>{
     });
 
     test("scheduling-bc - domain-lib: get reminders should fail when repo.getReminders fails", async ()=>{
-        // Arrange 
+        // Arrange
         jest.spyOn(repo,"getReminders").mockImplementation(async ()=>{throw new Error()});
 
         // Act and Asser
@@ -406,7 +410,7 @@ describe("scheduling-bc domain lib tests", ()=>{
             },
             eventTaskDetails: {
                 "topic": "test_topic"
-            }   
+            }
         }
 
         // Act
@@ -430,7 +434,7 @@ describe("scheduling-bc domain lib tests", ()=>{
         // Arrange
         jest.spyOn(repo, "deleteReminder").mockImplementation(async ()=>{throw new NoSuchReminderError()});
 
-        // Act & Assert 
+        // Act & Assert
         await expect(aggregate.deleteReminder("3")).rejects.toThrowError(NoSuchReminderError);
     });
 
@@ -438,14 +442,14 @@ describe("scheduling-bc domain lib tests", ()=>{
         // Arrange
         jest.spyOn(repo, "deleteReminder").mockImplementation(async ()=>{throw new Error()});
 
-        // Act & Assert 
+        // Act & Assert
         await expect(aggregate.deleteReminder("3")).rejects.toThrowError(Error);
     });
 
     test("scheduling bc- domain-lib: delete reminders : should delete all reminders ",async ()=>{
         // Arrange
         await aggregate.deleteReminders();
-        
+
         //Act
         const reminders: IReminder[] = await aggregate.getReminders();
 
@@ -467,7 +471,7 @@ describe("scheduling-bc domain lib tests", ()=>{
 
         jest.spyOn(repo, "deleteReminder").mockImplementation(async ()=>{throw new NoSuchReminderError()});
 
-        // Act & Assert 
+        // Act & Assert
         await expect(aggregate.deleteReminders()).rejects.toThrowError(NoSuchReminderError);
     });
 
@@ -490,7 +494,7 @@ describe("scheduling-bc domain lib tests", ()=>{
             undefined,
             undefined
         )).resolves;
-        
+
     });
 
     test("scheduling-bc - domain-lib: delete reminders should fail when repo.deleteReminder fails", async ()=>{
@@ -507,12 +511,12 @@ describe("scheduling-bc domain lib tests", ()=>{
 
         jest.spyOn(repo, "deleteReminder").mockImplementation(async ()=>{throw new Error()});
 
-        // Act & Assert 
+        // Act & Assert
         await expect(aggregate.deleteReminders()).rejects.toThrowError(Error);
     });
 
     test("scheduling-bc - domain-lib: create and validate reminder should pass", async ()=>{
-        // Arrange 
+        // Arrange
         const reminder: IReminder = new Reminder(
             "3",
             "* * * * * *",
@@ -527,7 +531,7 @@ describe("scheduling-bc domain lib tests", ()=>{
     });
 
     test("scheduling-bc - domain-lib: create and validate single reminder should pass", async ()=>{
-        // Arrange 
+        // Arrange
         const reminder: ISingleReminder = new SingleReminder(
             "3",
             "* * * * * *",
@@ -619,7 +623,7 @@ describe("scheduling-bc domain lib tests", ()=>{
         // Act and Assert
         expect(()=>{Reminder.validateReminder(invalidReminder)}).toThrowError(InvalidReminderTimeError);
     });
-    
+
     test("scheduling-bc - domain-lib: validate a reminder and a single reminder with an invalid task type should throw an exception", async ()=>{
         //Arrange
         const invalidReminder: any = {
@@ -653,7 +657,7 @@ describe("scheduling-bc domain lib tests", ()=>{
     });
 
     test("scheduling-bc - domain-lib: validate a reminder and a single reminder with an invalid httpPostUrl should throw an exception", async ()=>{
-        // Arrange 
+        // Arrange
         const invalidReminder: any = {
             id: "3",
             time: "* * * * * *",
@@ -667,5 +671,5 @@ describe("scheduling-bc domain lib tests", ()=>{
         expect(()=>{Reminder.validateReminder(invalidReminder)}).toThrowError();
         expect(()=>{SingleReminder.validateReminder(invalidReminder)}).toThrowError();
     });
-    
+
 });

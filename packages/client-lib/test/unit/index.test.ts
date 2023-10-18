@@ -47,6 +47,7 @@ import { IReminder, ISingleReminder, ReminderTaskType } from "@mojaloop/scheduli
 const URL_REMINDERS: string = "http://localhost:1234/reminders";
 const FAULTY_URL_REMINDERS: string = "http://localhost:1000/reminders";
 const TIMEOUT_MS_HTTP_CLIENT: number = 10_000;
+const SHORT_TIMEOUT_MS_HTTP_CLIENT: number = 1;
 
 const logger: ILogger = new ConsoleLogger();
 const schedulingRepo: IRepo = new SchedulingRepoMock();
@@ -58,12 +59,18 @@ const tokenhelper: ITokenHelper = new TokenHelperMock();
 const schedulingClient: SchedulingClient = new SchedulingClient(
     logger,
     URL_REMINDERS,
-    TIMEOUT_MS_HTTP_CLIENT
 );
+
 const faultySchedulingClient: SchedulingClient = new SchedulingClient(
     logger,
     FAULTY_URL_REMINDERS,
     TIMEOUT_MS_HTTP_CLIENT
+);
+
+const shortSchedulingClient: SchedulingClient = new SchedulingClient(
+    logger,
+    URL_REMINDERS,
+    SHORT_TIMEOUT_MS_HTTP_CLIENT
 );
 
 describe("scheduling client - unit tests", () => {
@@ -88,7 +95,7 @@ describe("scheduling client - unit tests", () => {
         });
     });
 
-    test("scheduling-bc: client-lib: create reminder - should pass with correct arguments", async () => {
+    test("scheduling-bc: client-lib: create single reminder - should pass with correct arguments", async () => {
         // Arrange
         const reminder: ISingleReminder = {
             id: "1",
@@ -108,6 +115,78 @@ describe("scheduling client - unit tests", () => {
         // Assert
         const returnedReminder = await schedulingClient.getReminder(reminderID);
         await expect(reminderID).toEqual(returnedReminder?.id);
+    });
+
+    test("scheduling-bc: client-lib: create single reminder with short time client- should pass with correct arguments", async () => {
+        // Arrange
+        const reminder: ISingleReminder = {
+            id: "1",
+            time: "*/15 * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": "test_topic"
+            }
+        }
+        // Act and Assert
+        await expect(shortSchedulingClient.createSingleReminder(reminder)).rejects.toThrowError(); //request should be aborted
+    });
+
+    test("scheduling-bc: client-lib: create reminder that already exists - should fail with correct arguments", async () => {
+        // Arrange
+        const reminder: IReminder = {
+            id: "1",
+            time: "*/15 * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": "test_topic"
+            }
+        }
+        // Act and Assert
+        expect(schedulingClient.createReminder(reminder)).rejects.toThrowError();
+    });
+
+    test("scheduling-bc: client-lib: create reminder with short timeout client - should fail with correct arguments", async () => {
+        // Arrange
+        const reminder: IReminder = {
+            id: "3",
+            time: "*/15 * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": "test_topic"
+            }
+        }
+        // Act and Assert
+        expect(shortSchedulingClient.createReminder(reminder)).rejects.toThrowError(); //request should be aborted
+    });
+
+    test("scheduling-bc: client-lib: create single reminder that already exists - should fail with correct arguments", async () => {
+        // Arrange
+        const reminder: ISingleReminder = {
+            id: "1",
+            time: "*/15 * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": "test_topic"
+            }
+        }
+        // Act and Assert
+        expect(schedulingClient.createSingleReminder(reminder)).rejects.toThrowError();
     });
 
     test("scheduling-bc: client-lib: get reminder - should return null when given non existent ID", async ()=>{
@@ -130,8 +209,8 @@ describe("scheduling client - unit tests", () => {
 
     });
 
-    test("scheduling-bc: client-lib: create single reminder - should return a single reminder on getReminder after creating a single reminder", async ()=>{
-        // Arrange 
+    test("scheduling-bc: client-lib: create reminder - should return a reminder on getReminder after creating a reminder", async ()=>{
+        // Arrange
         const singleReminder: IReminder = {
             id: "3",
             time: "*/15 * * * * *",
@@ -145,9 +224,9 @@ describe("scheduling client - unit tests", () => {
             }
         };
 
-        schedulingClient.createReminder(singleReminder);
+        await schedulingClient.createReminder(singleReminder);
 
-        // Act 
+        // Act
         const returnedReminder = await schedulingClient.getReminder("3");
 
         // Assert
@@ -178,15 +257,31 @@ describe("scheduling client - unit tests", () => {
         await expect(faultySchedulingClient.getReminder("2")).rejects.toThrow();
     });
 
+    test("scheduling-bc: client-lib: get reminder with short timeout client - should fail even when passed an ID", async ()=>{
+        //Assert
+        await expect(shortSchedulingClient.getReminder("2")).rejects.toThrow();
+    });
+
     test("scheduling-bc: client-lib: delete reminder with faulty client - should fail to delete", async ()=>{
         // Assert
         await expect(faultySchedulingClient.deleteReminder("1")).rejects.toThrow();
+    });
+
+    test("scheduling-bc: client-lib: delete reminder with short timeout client - should fail to delete", async ()=>{
+        // Assert
+        await expect(shortSchedulingClient.deleteReminder("1")).rejects.toThrow();
 
     });
 
-    test("scheduling-bc: client-lib: create single reminder with faulty client - should fail to create reminder", async ()=>{
-        // Arrange 
-        const singleReminder: IReminder = {
+    test("scheduling-bc: client-lib: delete reminder that does not exist - should fail to delete", async ()=>{
+        // Assert
+        await expect(schedulingClient.deleteReminder("200")).rejects.toThrow();
+
+    });
+
+    test("scheduling-bc: client-lib: create reminder with faulty client - should fail to create reminder", async ()=>{
+        // Arrange
+        const reminder: IReminder = {
             id: "3",
             time: "*/15 * * * * *",
             payload: {},
@@ -199,7 +294,7 @@ describe("scheduling client - unit tests", () => {
             }
         };
         // Assert
-        await expect(faultySchedulingClient.createReminder(singleReminder)).rejects.toThrow();
+        await expect(faultySchedulingClient.createReminder(reminder)).rejects.toThrow();
     });
 
 });

@@ -30,8 +30,8 @@ optionally within square brackets <email>.
 "use strict";
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
-import axios, { AxiosError, AxiosInstance } from "axios";
-import { IReminder, ISingleReminder } from "@mojaloop/scheduling-bc-public-types-lib";
+import { IReminder, ISingleReminder } from "../../public-types-lib/";
+import {fetchWithTimeOut} from "./utils";
 import {
 	UnableToCreateReminderError,
 	UnableToDeleteReminderError,
@@ -39,92 +39,145 @@ import {
 	UnableToReachServerError
 } from "./errors";
 
+const DEFAULT_TIMEOUT_MS = 10_000;
+
 export class SchedulingClient {
 	// Properties received through the constructor.
 	private readonly logger: ILogger;
 	// Other properties.
-	private readonly httpClient: AxiosInstance;
+	private readonly URL_REMINDERS:string;
+    private readonly TIMEOUT_MS_HTTP_CLIENT: number;
 
 	constructor(
 		logger: ILogger,
 		URL_REMINDERS: string,
-		TIMEOUT_MS_HTTP_CLIENT: number
+        TIMEOUT_MS_HTTP_CLIENT = DEFAULT_TIMEOUT_MS
 	) {
 		this.logger = logger;
 
-		this.httpClient = axios.create({
-			baseURL: URL_REMINDERS,
-			timeout: TIMEOUT_MS_HTTP_CLIENT
-		});
+		this.URL_REMINDERS = URL_REMINDERS;
+        this.TIMEOUT_MS_HTTP_CLIENT = TIMEOUT_MS_HTTP_CLIENT;
 	}
 
 	async createReminder(reminder: IReminder): Promise<string> {
 		try {
-			const res = await this.httpClient.post("/", reminder);
-			return res.data.reminderId;
-		} catch (e: unknown) {
-			const serverErrorMessage: string | undefined = (e as AxiosError).message;
-			// istanbul ignore if
-			if (serverErrorMessage === undefined) {
-				this.logger.error(e);
-				throw new UnableToReachServerError(); // TODO.
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
+			const res = await fetchWithTimeOut(
+                `${this.URL_REMINDERS}/`,
+                {
+                    method:"POST",
+                    headers: headers,
+                    body:JSON.stringify(reminder)
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
+            );
+
+			const data = await res.json();
+            // istanbul ignore if
+			if(!data.reminderId){
+				throw new UnableToCreateReminderError(data.message);
 			}
-			throw new UnableToCreateReminderError(serverErrorMessage); // TODO: receive a string?
+			return data.reminderId;
+		} catch (e: unknown) {
+			const serverMessage: string | undefined = (e as Error).message;
+			if( e instanceof UnableToCreateReminderError){
+				this.logger.error(e);
+				throw new UnableToCreateReminderError(serverMessage);
+			}else{
+				this.logger.error(e);
+				throw new UnableToReachServerError();
+			}
 		}
 	}
 
 	async createSingleReminder(reminder: ISingleReminder): Promise<string> {
 		try {
-			const res = await this.httpClient.post("/single", reminder);
-			return res.data.reminderId;
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
+            const res = await fetchWithTimeOut(
+                `${this.URL_REMINDERS}/single`,
+                {
+                    method:"POST",
+                    headers: headers,
+                    body:JSON.stringify(reminder)
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
+            );
+
+            const data = await res.json();
+
+            // istanbul ignore if
+            if(!data.reminderId){
+                throw new UnableToCreateReminderError(data.message);
+            }
+            return data.reminderId;
 		} catch (e: unknown) {
-			const serverErrorMessage: string | undefined = (e as AxiosError).message;
-			// istanbul ignore if
-			if (serverErrorMessage === undefined) {
-				this.logger.error(e);
-				throw new UnableToReachServerError(); // TODO.
-			}
-			throw new UnableToCreateReminderError(serverErrorMessage); // TODO: receive a string?
+			const serverErrorMessage: string | undefined = (e as Error).message;
+            if(e instanceof UnableToCreateReminderError){
+                this.logger.error(e);
+                throw new UnableToCreateReminderError(serverErrorMessage);
+            }else{
+                this.logger.error(e);
+                throw new UnableToReachServerError(serverErrorMessage);
+            }
 		}
 	}
 
 	async getReminder(reminderId: string): Promise<IReminder | null> {
 		try {
-			const res = await this.httpClient.get(
-				`/${reminderId}`,
-				{
-					validateStatus: (statusCode: number) => {
-						return statusCode === 200 || statusCode === 404; // Resolve only 200s and 404s.
-					}
-				}
-			);
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
 
-			if (res.status === 404) {
-				return null;
-			}
-			return res.data.reminder;
+            const res = await fetchWithTimeOut(
+                `${this.URL_REMINDERS}/${reminderId}`,
+                {
+                    method:"GET",
+                    headers: headers,
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
+            );
+
+            if (res.status === 404) {
+                return null;
+            }
+            const data = await res.json();
+			return data.reminder;
 		} catch (e: unknown) {
-			const serverErrorMessage: string | undefined = (e as AxiosError).message;
-			// istanbul ignore if
-			if (serverErrorMessage === undefined) {
-				this.logger.error(e);
-				throw new UnableToReachServerError(); // TODO.
-			}
+			const serverErrorMessage: string | undefined = (e as Error).message;
 			throw new UnableToGetReminderError(serverErrorMessage); // TODO: receive a string?
 		}
 	}
 
 	async deleteReminder(reminderId: string): Promise<void> {
 		try {
-			await this.httpClient.delete(`/${reminderId}`);
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
+            const res = await fetchWithTimeOut(
+                `${this.URL_REMINDERS}/${reminderId}`,
+                {
+                    method:"DELETE",
+                    headers: headers,
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
+            );
+
+            const data = await res.json();
+
+            if(res.status != 200){
+                throw new UnableToDeleteReminderError(data.message);
+            }
 		} catch (e: unknown) {
-			const serverErrorMessage: string | undefined = (e as AxiosError).message;
-			// istanbul ignore if
-			if (serverErrorMessage === undefined) {
-				this.logger.error(e);
-				throw new UnableToReachServerError(); // TODO.
-			}
-			throw new UnableToDeleteReminderError(serverErrorMessage); // TODO: receive a string?
+			const serverErrorMessage: string | undefined = (e as Error).message;
+
+            if(e instanceof UnableToDeleteReminderError){
+                this.logger.error(e);
+                throw new UnableToDeleteReminderError(serverErrorMessage);
+            }
+			throw new UnableToReachServerError(serverErrorMessage); // TODO: receive a string?
 		}
 	}
 }

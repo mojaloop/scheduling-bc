@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 /*****
  License
  --------------
@@ -29,9 +30,9 @@
 
 "use strict";
 
-import axios, {AxiosError, AxiosInstance, AxiosResponse} from "axios";
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
+import {fetchWithTimeOut} from "@mojaloop/scheduling-bc-client-lib";
 
 
 // TODO: change name - might be confused with the actual scheduling client.
@@ -39,68 +40,127 @@ export class SchedulingClientMock { // TODO: name.
     // Properties received through the constructor.
     private readonly logger: ILogger;
     // Other properties.
-    private readonly httpClient: AxiosInstance;
-
+    private readonly URL_REMINDERS:string;
+    private readonly TIMEOUT_MS_HTTP_CLIENT: number;
     constructor(
         logger: ILogger,
         URL_REMINDERS: string,
-        TIMEOUT_MS_HTTP_CLIENT: number
+        TIMEOUT_MS_HTTP_CLIENT: number,
     ) {
         this.logger = logger;
 
-        this.httpClient = axios.create({
-            baseURL: URL_REMINDERS,
-            timeout: TIMEOUT_MS_HTTP_CLIENT
-        });
+        this.TIMEOUT_MS_HTTP_CLIENT = TIMEOUT_MS_HTTP_CLIENT;
+        this.URL_REMINDERS = URL_REMINDERS;
     }
 
     async createReminder(reminder: IReminder): Promise<number> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.post("/", reminder);
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
+            const res = await fetchWithTimeOut(
+                `${this.URL_REMINDERS}/`,
+                {
+                    method:"POST",
+                    headers: headers,
+                    body:JSON.stringify(reminder)
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
+            );
+
             return res.status;
         } catch (e: unknown) {
-            this.logger.debug(e);
-            return (e as AxiosError).response?.status ?? -1;
+            const errorMessage: string | undefined = (e as Error).message
+            this.logger.error(e);
+            throw new Error(errorMessage);
         }
     }
 
     async getReminder(reminderId: string): Promise<number> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.get(`/${reminderId}`);
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
+            const res = await fetchWithTimeOut(
+                `${this.URL_REMINDERS}/${reminderId}`,
+                {
+                    method:"GET",
+                    headers: headers,
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
+            );
+
             return res.status;
         } catch (e: unknown) {
-            this.logger.debug(e);
-            return (e as AxiosError).response?.status ?? -1;
+            const errorMessage: string | undefined = (e as Error).message
+            this.logger.error(e);
+            throw new Error(errorMessage);
         }
     }
 
     async getReminders(): Promise<number> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.get("/");
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
+            const res = await fetchWithTimeOut(
+                `${this.URL_REMINDERS}/`,
+                {
+                    method:"GET",
+                    headers: headers,
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
+            );
+
             return res.status;
         } catch (e: unknown) {
-            this.logger.debug(e);
-            return (e as AxiosError).response?.status ?? -1;
+            const errorMessage: string | undefined = (e as Error).message
+            this.logger.error(e);
+            throw new Error(errorMessage);
         }
     }
 
     async deleteReminder(reminderId: string): Promise<number> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.delete(`/${reminderId}`);
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
+            const res = await fetchWithTimeOut(
+                `${this.URL_REMINDERS}/${reminderId}`,
+                {
+                    method:"DELETE",
+                    headers: headers,
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
+            );
+
             return res.status;
         } catch (e: unknown) {
-            this.logger.debug(e);
-            return (e as AxiosError).response?.status ?? -1;
+            const errorMessage: string | undefined = (e as Error).message
+            this.logger.error(e);
+            throw new Error(errorMessage);
         }
     }
 
     async deleteReminders(): Promise<number> {
         try {
-            const res: AxiosResponse<any> = await this.httpClient.delete("/");
+            const headers = new Headers();
+            headers.append("Content-Type","application/json");
+
+            const res = await fetchWithTimeOut(
+                `${this.URL_REMINDERS}/`,
+                {
+                    method:"DELETE",
+                    headers: headers,
+                },
+                this.TIMEOUT_MS_HTTP_CLIENT
+            );
+
             return res.status;
         } catch (e: unknown) {
-            this.logger.debug(e);
-            return (e as AxiosError).response?.status ?? -1;
+            const errorMessage: string | undefined = (e as Error).message
+            this.logger.error(e);
+            throw new Error(errorMessage);
         }
     }
 }

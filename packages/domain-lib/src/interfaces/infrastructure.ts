@@ -76,3 +76,10 @@ export interface ILocks {
   acquire(lockId: string, durationMs: number): Promise<boolean>;
   release(lockId: string): Promise<boolean>;
 }
+
+
+export interface IHttpPostClient {
+    init(): Promise<void>;
+    destroy(): Promise<void>;
+    send(url:string,payload:unknown, timeout_ms:number):Promise<void>;
+}

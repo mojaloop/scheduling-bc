@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 /*****
  License
  --------------
@@ -35,9 +36,13 @@ import { IReminder, ISingleReminder, ReminderTaskType} from "@mojaloop/schedulin
 import { Reminder, SingleReminder } from "./types";
 import {CronJob} from "cron";
 import * as uuid from "uuid";
-import axios, {AxiosInstance} from "axios";
-import {InvalidReminderIdTypeError, NoSuchReminderError, ReminderAlreadyExistsError} from "./errors";
-import { ILocks, IRepo } from "./interfaces/infrastructure";
+import {
+    InvalidReminderIdTypeError,
+    InvalidReminderTaskDetailsTypeError,
+    NoSuchReminderError,
+    ReminderAlreadyExistsError
+} from "./errors";
+import {IHttpPostClient, ILocks, IRepo} from "./interfaces/infrastructure";
 import { TransferTimeoutEvt, TransfersBCTopics } from "@mojaloop/platform-shared-lib-public-messages-lib";
 
 // TODO: check error handling.
@@ -51,18 +56,20 @@ export class Aggregate {
 	private readonly TIMEOUT_MS_LOCK_ACQUIRED: number;
 	private readonly MIN_DURATION_MS_TASK: number;
 	// Other properties.
-	private readonly httpClient: AxiosInstance;
+	private readonly httpPostClient: IHttpPostClient;
+    private readonly TIMEOUT_MS_HTTP_CLIENT: number;
 	private readonly cronJobs: Map<string, CronJob>;
 
 	constructor(
 		logger: ILogger,
 		repo: IRepo,
 		locks: ILocks,
+		httpPostClient: IHttpPostClient,
 		messageProducer: IMessageProducer,
 		TIME_ZONE: string,
 		TIMEOUT_MS_LOCK_ACQUIRED: number,
 		MIN_DURATION_MS_TASK: number,
-		timeoutMsHttpClient: number
+        TIMEOUT_MS_HTTP_CLIENT: number,
 	) {
 		this.logger = logger;
 		this.repo = repo;
@@ -71,10 +78,9 @@ export class Aggregate {
 		this.TIME_ZONE = TIME_ZONE;
 		this.TIMEOUT_MS_LOCK_ACQUIRED = TIMEOUT_MS_LOCK_ACQUIRED;
 		this.MIN_DURATION_MS_TASK = MIN_DURATION_MS_TASK;
+		this.httpPostClient = httpPostClient;
+        this.TIMEOUT_MS_HTTP_CLIENT = TIMEOUT_MS_HTTP_CLIENT;
 
-		this.httpClient = axios.create({
-			timeout: timeoutMsHttpClient
-		});
 		this.cronJobs = new Map<string, CronJob>();
 	}
 
@@ -97,11 +103,7 @@ export class Aggregate {
 				},
 				null,
 				true,
-				this.TIME_ZONE,
-				this, /* Context. */
-				false,
-				null,
-				true
+				this.TIME_ZONE
 				));
 		});
 	}
@@ -148,13 +150,13 @@ export class Aggregate {
 			null,
 			true,
 			this.TIME_ZONE,
-			this /* Context. */));
+			));
 		return reminder.id;
 	}
 
 	async createSingleReminder(reminder: ISingleReminder): Promise<string> {
 		// istanbul ignore if
-		if (reminder.id === undefined || reminder.id === null) { 
+		if (reminder.id === undefined || reminder.id === null) {
 			reminder.id = "";
 		}
 		SingleReminder.validateReminder(reminder);
@@ -181,7 +183,7 @@ export class Aggregate {
 			null,
 			true,
 			this.TIME_ZONE,
-			this /* Context. */));
+			));
 		return reminder.id;
 	}
 
@@ -220,19 +222,20 @@ export class Aggregate {
 	}
 
 	private async sendHttpPost(reminder: IReminder): Promise<void> { // TODO: Reminder or IReminder?
-		/**
-		 * By default, Axios throws if:
-		 * - the server is unreachable;
-		 * - the status code falls out of the 2xx range.
-		 */
-		try {
-			await this.httpClient.post(
-				reminder.httpPostTaskDetails?.url ?? "",
-				reminder.payload
+        if(!reminder.httpPostTaskDetails || !reminder.httpPostTaskDetails.url){
+            throw new InvalidReminderTaskDetailsTypeError("Invalid HTTP Task details or URL");
+        }
+
+        try {
+            await this.httpPostClient.send(
+				reminder.httpPostTaskDetails.url,
+				reminder.payload,
+				this.TIMEOUT_MS_HTTP_CLIENT
 			);
 		} catch (e: unknown) {
+            const errorMessage: string | undefined = (e as Error).message;
 			this.logger.error(e); // TODO: necessary?
-			// TODO: throw?
+            throw new Error(errorMessage);
 		}
 	}
 
@@ -251,7 +254,7 @@ export class Aggregate {
 		}
 
 		timeoutEvent.fspiopOpaqueState = reminder.payload.fspiopOpaqueState,
-		
+
 		await this.messageProducer.send(timeoutEvent);
 
 		// Delete the reminder if it's a valid date, since we use it to schedule a one-time task

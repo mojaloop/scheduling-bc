@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 /*****
  License
  --------------
@@ -22,15 +23,29 @@
  * Gates Foundation
  - Name Surname <name.surname@gatesfoundation.com>
 
- * Arg Software
- - José Antunes <jose.antunes@arg.software>
- - Rui Rocha <rui.rocha@arg.software>
+ * Afajiri
+ - Elijah Okello elijahokello90@gmail.com
 
  --------------
  ******/
 
 "use strict";
 
-export * from "./scheduling_client";
-export * from "./errors";
-export * from "./utils";
+export async function fetchWithTimeOut (input : RequestInfo | URL, init: RequestInit, timeout_http_ms:number):Promise<Response>{
+    try {
+        const controller = new AbortController();
+
+        const timeoutId = setTimeout(()=> controller.abort(),timeout_http_ms);
+
+        const res = await fetch(input,{...init,signal:controller.signal});
+
+        clearTimeout(timeoutId);
+
+        return res;
+    }catch (e:unknown) {
+        console.error(e);
+        throw e;
+    }
+
+}
+
