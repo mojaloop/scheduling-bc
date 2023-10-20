@@ -19,9 +19,6 @@
  their names indented and be marked with a '-'. Email address can be added
  optionally within square brackets <email>.
 
- * Gates Foundation
- - Name Surname <name.surname@gatesfoundation.com>
-
  * Alfajiri
  - Elijah Okello <elijahokello90@gmail.com>
 
@@ -30,8 +27,19 @@
 
 "use strict";
 
-import {Service} from "./service";
+import {Service} from "../../src/service";
 
-Service.start().then(() => {
-    console.log("Service start complete");
+describe("scheduling-bc command-handler-svc unit tests", ()=>{
+    beforeAll(async ()=>{
+        await Service.start()
+    });
+
+    afterAll(async ()=>{
+        await Service.stop();
+    });
+
+    test("log to the console",async ()=>{
+        console.log("Test Log");
+    });
 });
+

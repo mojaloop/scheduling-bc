@@ -38,7 +38,7 @@ import {Reminder, SingleReminder} from "../types";
 const SCHEDULING_BOUNDED_CONTEXT_NAME = "scheduling-bc";
 const SCHEDULING_AGGREGATE_NAME = "scheduling-bc-domain-lib";
 
-export declare enum SchedulingBcTopics{
+export enum SchedulingBcTopics{
  "Commands" = "SchedulingBcCommands",
  "DomainEvents" = "SchedulingBcEvents"
 }

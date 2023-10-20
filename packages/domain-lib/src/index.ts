@@ -45,4 +45,4 @@ export * from "./aggregate";
 export * from "./types";
 export * from "./interfaces/infrastructure";
 export * from "./errors";
-export * from "./commands/index"
+export * from "./commands/index";

@@ -34,33 +34,29 @@ import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IAuditClient} from "@mojaloop/auditing-bc-public-types-lib";
 import {IMessage,IMessageConsumer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import {Aggregate as SchedulingAggregate, Reminder, SingleReminder,} from "@mojaloop/scheduling-bc-domain-lib";
-import {ILoginHelper,CallSecurityContext,UnauthorizedError} from "@mojaloop/security-bc-public-types-lib";
 import {
     SchedulingBcTopics,
     CreateReminderCmd,
     CreateSingleReminderCmd,
     DeleteReminderCmd,
-    DeleteRemindersCmd} from "@mojaloop/scheduling-bc-domain-lib/dist/commands";
+    DeleteRemindersCmd} from "@mojaloop/scheduling-bc-domain-lib";
 
 export class SchedulingCommandHandler {
     private _logger: ILogger;
     private _auditClient: IAuditClient;
     private _messageConsumer: IMessageConsumer;
     private _schedulingAgg: SchedulingAggregate;
-    private _loginHelper: ILoginHelper;
 
     constructor(
         logger: ILogger,
         auditClient:IAuditClient,
         messageConsumer:IMessageConsumer,
         agg:SchedulingAggregate,
-        loginHelper:ILoginHelper
     ){
         this._logger = logger.createChild(this.constructor.name);
         this._auditClient = auditClient;
         this._messageConsumer = messageConsumer;
         this._schedulingAgg = agg;
-        this._loginHelper = loginHelper;
     }
 
     async start ():Promise<void>{
@@ -75,7 +71,6 @@ export class SchedulingCommandHandler {
         return await new Promise<void>(async (resolve)=>{
             this._logger.debug(`Got message in SchedulingCommandHandler with name: ${message.msgName}`);
             try{
-                const sectCtx = await this._getServiceSecContext();
 
                 switch(message.msgName){
                     case CreateReminderCmd.name:
@@ -89,7 +84,7 @@ export class SchedulingCommandHandler {
                         break;
                     case DeleteRemindersCmd.name:
                         await this._schedulingAgg.deleteReminders();
-                        break
+                        break;
                 }
             }catch(err: unknown){
                 this._logger.error(err, `SchedulingCommandHandler - processing command - ${message?.msgName}:${message?.msgKey}:${message?.msgId} - Error: ${(err as Error)?.message?.toString()}`);
@@ -99,20 +94,7 @@ export class SchedulingCommandHandler {
         });
     }
 
-    private async _getServiceSecContext():Promise<CallSecurityContext>{
-        // this will only fetch a new token when the current one is expired or null
-        const token = await this._loginHelper.getToken();
-        if(!token){
-            throw new UnauthorizedError("Could not get a token for SettlementsCommandHandler");
-        }
-
-        // TODO producing a CallSecurityContext from a token should be from the security client lib, not here
-        const secCts: CallSecurityContext = {
-            clientId: token.payload.azp,
-            accessToken: token.accessToken,
-            rolesIds:token.payload.roles,
-            username: null
-        };
-        return secCts;
+    async stop():Promise<void>{
+        await this._messageConsumer.stop();
     }
 }
