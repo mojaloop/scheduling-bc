@@ -57,7 +57,6 @@ export class MongoRepo implements IRepo {
         this._dbName = dbName;
         this.timeoutRepoOperations = timeoutRepoOperations;
     }
-
     async init(): Promise<void> {
         try {
             this.mongoClient = new MongoClient(this._connectionString);
