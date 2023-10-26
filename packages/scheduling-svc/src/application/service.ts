@@ -279,7 +279,9 @@ export class Service {
 			this.app.use("/reminders", schedulingClientRoutes.mainRouter);
 
 			// Add health and metrics http routes
-			this.app.get("/health", (req: express.Request, res: express.Response) => {return res.send({ status: "OK" }); });
+			this.app.get("/health", (req: express.Request, res: express.Response) => {
+                return res.send({ status: "OK" });
+            });
 
 			this.app.use((req, res) => {
 				// catch all
