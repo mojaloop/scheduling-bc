@@ -77,7 +77,12 @@ export class MongoRepo implements IRepo {
     }
 
     async destroy(): Promise<void> {
-        await this.mongoClient.close(); // Doesn't throw if the repo is unreachable.
+		try {
+			await this.mongoClient.close();
+		} catch(e: unknown) {
+			this._logger.error(`Unable to close the database connection: ${(e as Error).message}`);
+			throw new Error();
+		}
     }
 
     async reminderExists(reminderId: string): Promise<boolean> {

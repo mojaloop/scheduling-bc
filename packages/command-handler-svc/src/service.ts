@@ -166,6 +166,9 @@ export class Service {
 
   if(!repo){
       repo = new MongoRepo(logger,MONGO_URL, DB_NAME, TIMEOUT_MS_REPO_OPERATIONS);
+
+      await repo.init();
+      logger.info("Scheduling Registry Repo Initialized");
   }
   this.repo = repo;
 
@@ -216,6 +219,10 @@ export class Service {
     if(this.handler) await this.handler.stop();
     this.logger.debug("Tearing down aggregate");
     if(this.aggregate) await this.aggregate.destroy();
+    this.logger.debug("Tearing down locks");
+    if(this.locks) await this.locks.destroy();
+    this.logger.debug("Tearing down repo");
+    if(this.repo) await this.repo.destroy();
     this.logger.debug("Tearing down message producer");
     if(this.messageProducer) await this.messageProducer.destroy();
     this.logger.debug("Tearing down message consumer");
