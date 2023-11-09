@@ -57,6 +57,6 @@ RUN apk add librdkafka
 COPY --from=builder /app .
 
 # expose correct service oprt
-EXPOSE 1234
+EXPOSE 3150
 
 CMD [ "npm", "run", "start:scheduling-svc" ]
