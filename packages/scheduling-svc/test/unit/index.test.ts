@@ -39,7 +39,7 @@ import { ConsoleLogger, ILogger } from "@mojaloop/logging-bc-public-types-lib";
 import { ReminderTaskType } from "@mojaloop/scheduling-bc-public-types-lib";
 
 
-// Create service start params 
+// Create service start params
 const logger: ILogger = new ConsoleLogger();
 const mockRepo: IRepo = new SchedulingRepoMock();
 const mockMessageProducer: IRawMessageProducer = new MessageProducerMock();
@@ -50,7 +50,7 @@ const authorizationClientMock: IAuthorizationClient = new AuthorizationClientMoc
 // http request settings
 const DefaultHeaders = new Headers();
 DefaultHeaders.append("Content-Type", "application/json");
-const BASE_URL: string = "http://localhost:1234";
+const BASE_URL: string = "http://localhost:3150";
 
 describe("scheduling-bc - scheduling-svc tests",()=>{
     beforeAll(async ()=>{
@@ -80,8 +80,8 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
     });
 
     test("scheduling-bc - scheduling-svc : create reminder should pass", async ()=>{
-        // Arrange 
-        const reminder = {            
+        // Arrange
+        const reminder = {
             id: "1",
             time: "* * * * * *",
             payload: {},
@@ -104,7 +104,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
     });
 
     test("scheduling-bc - scheduling-svc : get reminder should pass when getting a reminder that exists", async ()=>{
-        // Arrange 
+        // Arrange
         const reminderID: number = 1;
         const reqInit: RequestInit = {
             method: "GET",
@@ -118,12 +118,12 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
     });
 
     test("scheduling-bc - scheduling-svc: get health should pass when server is up", async ()=>{
-        // Arrange 
+        // Arrange
         const reqInit: RequestInit = {
             method: "GET"
         };
 
-        // Act 
+        // Act
         const response = await fetch(`${BASE_URL}/health`,reqInit);
 
         // Assert
@@ -133,21 +133,21 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
     });
 
     test("scheduling-bc - scheduling-svc: get non existent endpoint should return 404", async ()=>{
-        // Arrange 
+        // Arrange
         const reqInit: RequestInit = {
             method: "GET"
         };
 
-        // Act 
-        const response = await fetch(`${BASE_URL}/healthy`,reqInit); 
+        // Act
+        const response = await fetch(`${BASE_URL}/healthy`,reqInit);
 
         // Assert
         expect(response.status).toEqual(404);
     });
 
     test("scheduling-bc - scheduling-svc: create single reminder with non existent id should pass", async ()=>{
-        // Arrange 
-        const reminder = {            
+        // Arrange
+        const reminder = {
             id: "2",
             time: "* * * * * *",
             payload: {},
@@ -161,8 +161,8 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
             headers: DefaultHeaders,
             body: JSON.stringify(reminder)
         }
-        
-        // Act 
+
+        // Act
         const response = await fetch(`${BASE_URL}/reminders/single`,reqInit)
 
         // Assert
@@ -175,7 +175,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
             method: "GET"
         }
 
-        // Act 
+        // Act
         const response = await fetch(`${BASE_URL}/reminders/`,reqInit);
 
         // Assert
@@ -189,30 +189,30 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
             method: "DELETE"
         }
 
-        // Act 
+        // Act
         const response = await fetch(`${BASE_URL}/reminders/${reminderID}/`,reqInit);
 
         // Assert
         expect(response.status).toEqual(200);
     });
-    
+
     test("scheduling-bc - scheduling-svc: delete reminders should pass when reminders were created prior", async ()=>{
         // Arrange
         const reqInit: RequestInit = {
             method: "DELETE"
         }
 
-        // Act 
+        // Act
         const response = await fetch(`${BASE_URL}/reminders/`,reqInit);
 
         // Assert
         expect(response.status).toEqual(200);
-    }); 
+    });
 
     // NON HAPPY PATHS
     test("scheduling-bc - scheduling-svc: create reminder should fail when the aggregate throws an unknown error", async()=>{
-        // Arrange 
-        const reminder = {            
+        // Arrange
+        const reminder = {
             id: "3",
             time: "* * * * * *",
             payload: {},
@@ -228,8 +228,8 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         }
 
         jest.spyOn(mockRepo,"storeReminder").mockImplementation(()=>{throw new Error("Unknown Error")});
-        
-        // Act 
+
+        // Act
         const response = await fetch(`${BASE_URL}/reminders/`,reqInit)
         const body = await response.json();
 
@@ -238,8 +238,8 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
     });
 
     test("scheduling-bc - scheduling-svc: create single reminder should fail when the aggregate throws an unknown error", async()=>{
-        // Arrange 
-        const reminder = {            
+        // Arrange
+        const reminder = {
             id: "4",
             time: "* * * * * *",
             payload: {},
@@ -255,8 +255,8 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         }
 
         jest.spyOn(mockRepo,"storeReminder").mockImplementation(()=>{throw new Error();});
-        
-        // Act 
+
+        // Act
         const response = await fetch(`${BASE_URL}/reminders/single/`,reqInit)
         const body = await response.json();
 
@@ -265,7 +265,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
     });
 
     test("scheduling-bc - scheduling-svc : get reminder should fail when repo getReminder fails ", async ()=>{
-        // Arrange 
+        // Arrange
         const reminderID: number = 1;
         const reqInit: RequestInit = {
             method: "GET",
@@ -280,7 +280,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
     });
 
     test("scheduling-bc - scheduling-svc : get reminder that does not exist should fail", async ()=>{
-        // Arrange 
+        // Arrange
         const reminderID: number = 22;
         const reqInit: RequestInit = {
             method: "GET",
@@ -301,7 +301,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
 
         jest.spyOn(mockRepo,"getReminders").mockImplementation(()=>{throw new Error();});
 
-        // Act 
+        // Act
         const response = await fetch(`${BASE_URL}/reminders/`,reqInit);
 
         // Assert
@@ -317,7 +317,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
 
         jest.spyOn(mockRepo,"deleteReminder").mockImplementation(()=>{throw new Error();});
 
-        // Act 
+        // Act
         const response = await fetch(`${BASE_URL}/reminders/${reminderID}/`,reqInit);
 
         // Assert
@@ -326,7 +326,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
 
     test("scheduling-bc - scheduling-svc: delete reminders should fail when repo.deleteReminders throws an error", async ()=>{
         // Arrange
-        const reminder = {            
+        const reminder = {
             id: "5",
             time: "* * * * * *",
             payload: {},
@@ -347,11 +347,11 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
 
         jest.spyOn(mockRepo,"deleteReminder").mockImplementation(()=>{throw new Error();});
 
-        // Act 
+        // Act
         const response = await fetch(`${BASE_URL}/reminders/`,reqInit);
 
         // Assert
         expect(response.status).toEqual(500);
     });
-    
+
 });

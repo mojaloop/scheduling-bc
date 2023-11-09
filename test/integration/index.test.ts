@@ -39,7 +39,7 @@ import {SchedulingClientMock} from "./mocks/scheduling_client_mock";
 import {IHttpPostClient, Reminder} from "@mojaloop/scheduling-bc-domain-lib";
 
 // TODO: here or inside the describe function?
-const URL_REMINDERS: string = "http://localhost:1234/reminders";
+const URL_REMINDERS: string = "http://localhost:3150/reminders";
 const INVALID_URL_REMINDERS: string = "http://localhost:1000/reminders";
 const TIMEOUT_MS_HTTP_CLIENT: number = 10_000;
 const SHORT_TIMEOUT_MS_HTTP_CLIENT: number = 0.1;
@@ -361,7 +361,7 @@ describe("scheduling client - integration tests", () => {
         }
 
         // Act
-        const response = await fetch("http://localhost:1234/foo",reqInit);
+        const response = await fetch("http://localhost:3150/foo",reqInit);
 
         // Assert
         expect(response.status).toBe(404);
@@ -513,7 +513,7 @@ describe("scheduling client - integration tests", () => {
 
     test("implementation-lib : FetchPostClient - integration tests: send should pass",async ()=>{
         // Act and Assert
-        await expect(httpPostClient.send("http://localhost:1234",{name:"TestName"},3000)).resolves;
+        await expect(httpPostClient.send("http://localhost:3150",{name:"TestName"},3000)).resolves;
     });
 
 });
