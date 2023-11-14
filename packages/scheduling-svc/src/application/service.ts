@@ -200,14 +200,15 @@ export class Service {
 		// token helper
 		// istanbul ignore next
 		if(!tokenHelper){
-			this.tokenHelper = new TokenHelper(AUTH_N_SVC_JWKS_URL, logger, AUTH_N_TOKEN_ISSUER_NAME, AUTH_N_TOKEN_AUDIENCE);
-			await this.tokenHelper.init();
+			tokenHelper = new TokenHelper(AUTH_N_SVC_JWKS_URL, logger, AUTH_N_TOKEN_ISSUER_NAME, AUTH_N_TOKEN_AUDIENCE);
+			await tokenHelper.init();
 		}
-		this.tokenHelper = tokenHelper as ITokenHelper;
+		this.tokenHelper = tokenHelper;
 
 		// istanbul ignore next
 		if (!schedulingRepo) {
 			schedulingRepo = new MongoRepo(this.logger, MONGO_URL, DB_NAME, TIMEOUT_MS_REPO_OPERATIONS);
+            await schedulingRepo.init();
 		}
 		this.schedulingRepo = schedulingRepo;
 
@@ -231,6 +232,7 @@ export class Service {
 			const producerLogger = logger.createChild("producerLogger");
 			producerLogger.setLogLevel(LogLevel.INFO);
 			messageProducer = new MLKafkaJsonProducer(producerOptions, producerLogger);
+			await messageProducer.connect();
 		}
 		this.messageProducer = messageProducer;
 
@@ -275,7 +277,14 @@ export class Service {
 			this.app.use(express.urlencoded({extended: true})); // for parsing application/x-www-form-urlencoded
 
 			// Add client http routes
-			const schedulingClientRoutes = new SchedulingExpressRoutes(this.logger, this.aggregate, this.tokenHelper as TokenHelper, this.authorizationClient);
+			const schedulingClientRoutes = new SchedulingExpressRoutes(
+                this.logger,
+                this.aggregate,
+                this.tokenHelper as TokenHelper,
+                this.authorizationClient,
+                this.messageProducer,
+                this.schedulingRepo
+            );
 			this.app.use("/reminders", schedulingClientRoutes.mainRouter);
 
 			// Add health and metrics http routes

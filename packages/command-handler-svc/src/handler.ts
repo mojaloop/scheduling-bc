@@ -33,13 +33,9 @@
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IAuditClient} from "@mojaloop/auditing-bc-public-types-lib";
 import {IMessage,IMessageConsumer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
-import {Aggregate as SchedulingAggregate, Reminder, SingleReminder,} from "@mojaloop/scheduling-bc-domain-lib";
-import {
-    SchedulingBcTopics,
-    CreateReminderCmd,
-    CreateSingleReminderCmd,
-    DeleteReminderCmd,
-    DeleteRemindersCmd} from "@mojaloop/scheduling-bc-domain-lib";
+import {MessageTypes} from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import { Aggregate as SchedulingAggregate } from "@mojaloop/scheduling-bc-domain-lib";
+import {SchedulingBcTopics} from "@mojaloop/platform-shared-lib-public-messages-lib";
 
 export class SchedulingCommandHandler {
     private _logger: ILogger;
@@ -71,21 +67,10 @@ export class SchedulingCommandHandler {
         return await new Promise<void>(async (resolve)=>{
             this._logger.debug(`Got message in SchedulingCommandHandler with name: ${message.msgName}`);
             try{
-
-                switch(message.msgName){
-                    case CreateReminderCmd.name:
-                        await this._schedulingAgg.createReminder(message.payload as Reminder);
-                        break;
-                    case CreateSingleReminderCmd.name:
-                        await this._schedulingAgg.createSingleReminder(message.payload as SingleReminder);
-                        break;
-                    case DeleteReminderCmd.name:
-                        await this._schedulingAgg.deleteReminder(message.payload.id);
-                        break;
-                    case DeleteRemindersCmd.name:
-                        await this._schedulingAgg.deleteReminders();
-                        break;
+                if(message.msgType !== MessageTypes.COMMAND){
+                    return resolve();
                 }
+                await this._schedulingAgg.processCmd(message);
             }catch(err: unknown){
                 this._logger.error(err, `SchedulingCommandHandler - processing command - ${message?.msgName}:${message?.msgKey}:${message?.msgId} - Error: ${(err as Error)?.message?.toString()}`);
             }finally {

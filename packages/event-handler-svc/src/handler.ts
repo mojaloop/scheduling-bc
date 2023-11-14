@@ -33,14 +33,13 @@
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IAuditClient} from "@mojaloop/auditing-bc-public-types-lib";
 import {IMessageConsumer,IMessageProducer,IMessage,CommandMsg } from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import {SchedulingBcTopics} from "@mojaloop/platform-shared-lib-public-messages-lib";
 import {
     CreateReminderCmd, CreateReminderCmdPayload,
     CreateSingleReminderCmd, CreateSingleReminderCmdPayload,
     DeleteReminderCmd, DeleteReminderCmdPayload, DeleteRemindersCmd, DeleteRemindersCmdPayload,
-    SchedulingBcTopics
 } from "@mojaloop/scheduling-bc-domain-lib";
-import {CreateReminderEvt, CreateSingleReminderEvt, DeleteReminderEvt, DeleteRemindersEvt} from "./events";
-
+import {CreatedReminderEvt, CreatedSingleReminderEvt, DeletedReminderEvt, DeletedRemindersEvt} from "@mojaloop/platform-shared-lib-public-messages-lib";
 
 export class SchedulingEventHandler {
     private _logger: ILogger;
@@ -75,16 +74,16 @@ export class SchedulingEventHandler {
                 let schedulingCmd: CommandMsg | null = null;
 
                 switch (message.msgName) {
-                    case CreateReminderEvt.name:
+                    case CreatedReminderEvt.name:
                         schedulingCmd = new CreateReminderCmd(message.payload as CreateReminderCmdPayload);
                         break;
-                    case CreateSingleReminderEvt.name:
+                    case CreatedSingleReminderEvt.name:
                         schedulingCmd = new CreateSingleReminderCmd(message.payload as CreateSingleReminderCmdPayload);
                         break;
-                    case DeleteReminderEvt.name:
+                    case DeletedReminderEvt.name:
                         schedulingCmd = new DeleteReminderCmd(message.payload as DeleteReminderCmdPayload);
                         break;
-                    case DeleteRemindersEvt.name:
+                    case DeletedRemindersEvt.name:
                         schedulingCmd = new DeleteRemindersCmd(message.payload as DeleteRemindersCmdPayload);
                         break;
                     default: {

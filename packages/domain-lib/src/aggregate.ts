@@ -31,7 +31,7 @@
 "use strict";
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
-import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import {CommandMsg, IMessage, IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import { IReminder, ISingleReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
 import { Reminder, SingleReminder } from "./types";
 import {CronJob} from "cron";
@@ -44,6 +44,7 @@ import {
 } from "./errors";
 import {IHttpPostClient, ILocks, IRepo} from "./interfaces/infrastructure";
 import { TransferTimeoutEvt, TransfersBCTopics } from "@mojaloop/platform-shared-lib-public-messages-lib";
+import {CreateReminderCmd, CreateSingleReminderCmd, DeleteReminderCmd, DeleteRemindersCmd} from "./commands";
 
 // TODO: check error handling.
 export class Aggregate {
@@ -107,6 +108,25 @@ export class Aggregate {
 				));
 		});
 	}
+
+    async processCmd(msg: IMessage): Promise<void> {
+        // try catch not needed because it is already wrapped in the _msgHandler method in the command handler svc
+        switch (msg.msgName) {
+            case CreateReminderCmd.name:
+                // this cast is ok because createReminder validates the payload
+                await this.createReminder(msg.payload as Reminder);
+                break;
+            case CreateSingleReminderCmd.name:
+                await this.createSingleReminder(msg.payload as SingleReminder);
+                break;
+            case DeleteReminderCmd.name:
+                await this.deleteReminder(msg.payload.id);
+                break;
+            case DeleteRemindersCmd.name:
+                await this.deleteReminders();
+                break;
+        }
+    }
 
 	async destroy(): Promise<void> {
 		this.cronJobs.forEach((cronJob: CronJob) => {

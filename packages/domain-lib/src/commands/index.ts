@@ -30,18 +30,17 @@
 
 "use strict";
 
+
 import {randomUUID} from "crypto";
 import {ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
 import {CommandMsg} from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import {
+    SCHEDULING_BOUNDED_CONTEXT_NAME,
+    SCHEDULING_AGGREGATE_NAME,
+    SchedulingBcTopics,
+} from "@mojaloop/platform-shared-lib-public-messages-lib";
 import {Reminder, SingleReminder} from "../types";
 
-const SCHEDULING_BOUNDED_CONTEXT_NAME = "scheduling-bc";
-const SCHEDULING_AGGREGATE_NAME = "scheduling-bc-domain-lib";
-
-export enum SchedulingBcTopics{
- "Commands" = "SchedulingBcCommands",
- "DomainEvents" = "SchedulingBcEvents"
-}
 
 
 export type CreateReminderCmdPayload = {
@@ -120,7 +119,7 @@ export class DeleteReminderCmd extends CommandMsg {
  boundedContextName: string = SCHEDULING_BOUNDED_CONTEXT_NAME;
  msgKey: string;
  msgTopic: string = SchedulingBcTopics.Commands;
- payload: any;
+ payload: DeleteReminderCmdPayload;
 
  constructor(payload: DeleteReminderCmdPayload) {
   super();
@@ -134,9 +133,6 @@ export class DeleteReminderCmd extends CommandMsg {
 
 }
 
-export type DeleteRemindersCmdPayload = {
-    id: string
-}
 
 export class DeleteRemindersCmd extends CommandMsg {
  aggregateId: string;
@@ -144,12 +140,11 @@ export class DeleteRemindersCmd extends CommandMsg {
  boundedContextName: string = SCHEDULING_BOUNDED_CONTEXT_NAME;
  msgKey: string;
  msgTopic: string = SchedulingBcTopics.Commands;
- payload: DeleteRemindersCmdPayload;
+ payload: any;
 
- constructor(payload: DeleteRemindersCmdPayload) {
+ constructor() {
   super();
-  this.aggregateId = this.msgKey = payload.id;
-  this.payload = payload;
+  this.aggregateId = this.msgKey = randomUUID();
  }
 
  validatePayload(): void {
