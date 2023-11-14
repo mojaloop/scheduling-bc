@@ -50,12 +50,13 @@ RUN npm run build
 ########################################
 FROM node:18.13-alpine
 WORKDIR /app
+RUN mkdir /app/data
 
 RUN apk add librdkafka
 
 COPY --from=builder /app .
 
 # expose correct service oprt
-EXPOSE 1234
+EXPOSE 3150
 
 CMD [ "npm", "run", "start:scheduling-svc" ]

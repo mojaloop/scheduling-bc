@@ -96,9 +96,11 @@ export class Aggregate {
 			this.logger.error(e);
 			throw e;
 		}
+
+
 		reminders.forEach((reminder: IReminder) => {
 			this.cronJobs.set(reminder.id, new CronJob(
-				reminder.time,
+				!isNaN(Date.parse(reminder.time)) ? new Date(reminder.time) : reminder.time,
 				() => {
 					this.runReminderTask(reminder.id);
 				},
