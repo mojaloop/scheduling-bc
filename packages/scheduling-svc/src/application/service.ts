@@ -173,6 +173,7 @@ export class Service {
 	): Promise<void> {
 		console.log(`Scheduling-svc - service starting with PID: ${process.pid}`);
 
+
 		// istanbul ignore next
 		if (!logger) {
 			logger = new KafkaLogger(
