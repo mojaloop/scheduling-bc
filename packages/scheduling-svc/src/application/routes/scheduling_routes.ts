@@ -48,9 +48,8 @@ import {
     ForbiddenError,
     // MakerCheckerViolationError,
     UnauthorizedError,
-    CallSecurityContext, IAuthorizationClient,
+    CallSecurityContext, IAuthorizationClient, ITokenHelper,
 } from "@mojaloop/security-bc-public-types-lib";
-import {TokenHelper} from "@mojaloop/security-bc-client-lib";
 
 // Extend express request to include our security fields
 declare module "express-serve-static-core" {
@@ -60,11 +59,11 @@ declare module "express-serve-static-core" {
 }
 
 export class SchedulingExpressRoutes extends BaseRoutes {
-    private readonly _tokenHelper: TokenHelper;
+    private readonly _tokenHelper: ITokenHelper;
     private readonly _authorizationClient: IAuthorizationClient;
 
 
-    constructor(logger: ILogger, schedulingAgg: Aggregate, tokenHelper: TokenHelper, authorizationClient: IAuthorizationClient) {
+    constructor(logger: ILogger, schedulingAgg: Aggregate, tokenHelper: ITokenHelper, authorizationClient: IAuthorizationClient) {
         super(logger, schedulingAgg);
 
         this._tokenHelper = tokenHelper;
@@ -72,7 +71,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
 
         // inject authentication - all request below this require a valid token
         // this.mainRouter.use(this._authenticationMiddleware.bind(this));
-        
+
         // endpoints
         // this.mainRouter.get("/version", this.getVersion.bind(this));
 
@@ -114,38 +113,17 @@ export class SchedulingExpressRoutes extends BaseRoutes {
         }
 
         const bearerToken = bearer[1];
-        let verified;
-        try {
-            verified = await this._tokenHelper.verifyToken(bearerToken);
-        } catch (err) {
-            this.logger.error(err, "unable to verify token");
-            return res.sendStatus(401);
-        }
-        if (!verified) {
+        const callSecCtx:  CallSecurityContext | null = await this._tokenHelper.getCallSecurityContextFromAccessToken(bearerToken);
+
+        if(!callSecCtx){
             return res.sendStatus(401);
         }
 
-        const decoded = this._tokenHelper.decodeToken(bearerToken);
-        if (!decoded.sub || decoded.sub.indexOf("::") == -1) {
-            return res.sendStatus(401);
-        }
-
-        const subSplit = decoded.sub.split("::");
-        const subjectType = subSplit[0];
-        const subject = subSplit[1];
-
-        req.securityContext = {
-            accessToken: bearerToken,
-            clientId: subjectType.toUpperCase().startsWith("APP") ? subject : null,
-            username: subjectType.toUpperCase().startsWith("USER") ? subject : null,
-            rolesIds: decoded.roles,
-        };
-
+        req.securityContext = callSecCtx;
         return next();
     }
 
-    // istanbul ignore next
-    private _handleUnauthorizedError(err: Error, res: express.Response): boolean {
+   /* private _handleUnauthorizedError(err: Error, res: express.Response): boolean {
         if (err instanceof UnauthorizedError) {
             this.logger.warn(err.message);
             res.status(401).json({
@@ -165,9 +143,8 @@ export class SchedulingExpressRoutes extends BaseRoutes {
         return false;
     }
 
-    // istanbul ignore next
     private _enforcePrivilege(secCtx: CallSecurityContext, privilegeId: string): void {
-        for (const roleId of secCtx.rolesIds) {
+        for (const roleId of secCtx.platformRoleIds) {
             if (this._authorizationClient.roleHasPrivilege(roleId, privilegeId)) {
                 return;
             }
@@ -175,7 +152,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
         const error = new ForbiddenError("Caller is missing role with privilegeId: " + privilegeId);
         this.logger.isWarnEnabled() && this.logger.warn(error.message);
         throw error;
-    }
+    }*/
 
     private async postReminder(req: express.Request, res: express.Response): Promise<void> {
         try {

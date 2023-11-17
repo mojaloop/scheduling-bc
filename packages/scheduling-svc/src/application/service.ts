@@ -149,6 +149,8 @@ const MIN_DURATION_MS_TASK = 2_000; // TODO.
 const TIMEOUT_MS_HTTP_CLIENT = 10_000; // TODO.
 // const TIMEOUT_MS_EVENT = 10_000; // TODO.
 
+const SERVICE_START_TIMEOUT_MS= (process.env["SERVICE_START_TIMEOUT_MS"] && parseInt(process.env["SERVICE_START_TIMEOUT_MS"])) || 60_000;
+
 // kafka logger
 export class Service {
 	static aggregate: Aggregate;
@@ -161,6 +163,7 @@ export class Service {
     static authorizationClient: IAuthorizationClient;
 	static locks: ILocks;
 	static httpPostClient: IHttpPostClient;
+    static startupTimer: NodeJS.Timeout;
 
 	static async start(
 		schedulingRepo?: IRepo,
@@ -171,7 +174,11 @@ export class Service {
 		locks?: ILocks,
 		httpPostClient?:IHttpPostClient
 	): Promise<void> {
-		console.log(`Scheduling-svc - service starting with PID: ${process.pid}`);
+        console.log(`Service starting with PID: ${process.pid}`);
+
+        this.startupTimer = setTimeout(()=>{
+            throw new Error("Service start timed-out");
+        }, SERVICE_START_TIMEOUT_MS);
 
 
 		// istanbul ignore next
@@ -201,8 +208,8 @@ export class Service {
 		// token helper
 		// istanbul ignore next
 		if(!tokenHelper){
-			this.tokenHelper = new TokenHelper(AUTH_N_SVC_JWKS_URL, logger, AUTH_N_TOKEN_ISSUER_NAME, AUTH_N_TOKEN_AUDIENCE);
-			await this.tokenHelper.init();
+            this.tokenHelper = new TokenHelper(AUTH_N_SVC_JWKS_URL, logger, AUTH_N_TOKEN_ISSUER_NAME, AUTH_N_TOKEN_AUDIENCE);
+            await this.tokenHelper.init();
 		}
 		this.tokenHelper = tokenHelper as ITokenHelper;
 
@@ -265,6 +272,9 @@ export class Service {
 		await this.setupAndStartExpress();
 
 		this.logger.info("Aggregate Initialized");
+
+        // remove startup timeout
+        clearTimeout(this.startupTimer);
 	}
 
 
