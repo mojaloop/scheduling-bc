@@ -111,22 +111,26 @@ export class Aggregate {
 		});
 	}
 
-    async processCmd(msg: IMessage): Promise<void> {
-        // try catch not needed because it is already wrapped in the _msgHandler method in the command handler svc
-        switch (msg.msgName) {
-            case CreateReminderCmd.name:
-                // this cast is ok because createReminder validates the payload
-                await this.createReminder(msg.payload as Reminder);
-                break;
-            case CreateSingleReminderCmd.name:
-                await this.createSingleReminder(msg.payload as SingleReminder);
-                break;
-            case DeleteReminderCmd.name:
-                await this.deleteReminder(msg.payload.id);
-                break;
-            case DeleteRemindersCmd.name:
-                await this.deleteReminders();
-                break;
+    async processCmd(cmd: CommandMsg): Promise<void> {
+        try{
+            switch (cmd.msgName) {
+                case CreateReminderCmd.name:
+                    // this cast is ok because createReminder validates the payload
+                    await this._createReminder(cmd.payload as Reminder);
+                    break;
+                case CreateSingleReminderCmd.name:
+                    await this._createSingleReminder(cmd.payload as SingleReminder);
+                    break;
+                case DeleteReminderCmd.name:
+                    await this._deleteReminder(cmd.payload.id);
+                    break;
+                case DeleteRemindersCmd.name:
+                    await this._deleteReminders();
+                    break;
+            }
+        }catch (e:unknown) {
+            this.logger.error(e);
+            throw e;
         }
     }
 
@@ -138,7 +142,7 @@ export class Aggregate {
 		});
 	}
 
-	async createReminder(reminder: IReminder): Promise<string> { // TODO: Reminder or IReminder?
+	private async _createReminder(reminder: IReminder): Promise<string> { // TODO: Reminder or IReminder?
 		// To facilitate the creation of reminders, undefined/null ids are accepted and converted to empty strings
 		// (so that random UUIds are generated).
 		// istanbul ignore if
@@ -173,7 +177,7 @@ export class Aggregate {
 		return reminder.id;
 	}
 
-	async createSingleReminder(reminder: ISingleReminder): Promise<string> {
+	private async _createSingleReminder(reminder: ISingleReminder): Promise<string> {
 		// istanbul ignore if
 		if (reminder.id === undefined || reminder.id === null) {
 			reminder.id = "";
@@ -272,14 +276,14 @@ export class Aggregate {
 			throw Error(errorMessage);
 		}
 
-		timeoutEvent.fspiopOpaqueState = reminder.payload.fspiopOpaqueState,
+		timeoutEvent.fspiopOpaqueState = reminder.payload.fspiopOpaqueState;
 
 		await this.messageProducer.send(timeoutEvent);
 
 		// Delete the reminder if it's a valid date, since we use it to schedule a one-time task
 		const timestamp = Date.parse(reminder.time);
 		if (!isNaN(timestamp)) {
-			await this.deleteReminder(reminder.id);
+			await this._deleteReminder(reminder.id);
 		}
 
 		return;
@@ -307,7 +311,7 @@ export class Aggregate {
 		}
 	}
 
-	async deleteReminder(reminderId: string): Promise<void> {
+	private async _deleteReminder(reminderId: string): Promise<void> {
 		// istanbul ignore if
 		if (typeof reminderId !== "string") { // TODO.
 			throw new InvalidReminderIdTypeError();
@@ -330,7 +334,7 @@ export class Aggregate {
 		this.cronJobs.delete(reminderId);
 	}
 
-	async deleteReminders(): Promise<void> {
+	private async _deleteReminders(): Promise<void> {
 		for (const reminderId of this.cronJobs.keys()) { // TODO: const? of?
 			try {
 				// TODO: place everything here or just the deleteReminder() call?

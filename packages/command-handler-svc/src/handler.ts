@@ -32,8 +32,7 @@
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IAuditClient} from "@mojaloop/auditing-bc-public-types-lib";
-import {IMessage,IMessageConsumer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
-import {MessageTypes} from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import {IMessage,IMessageConsumer,MessageTypes} from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import { Aggregate as SchedulingAggregate } from "@mojaloop/scheduling-bc-domain-lib";
 import {SchedulingBcTopics} from "@mojaloop/platform-shared-lib-public-messages-lib";
 

@@ -32,14 +32,8 @@
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IAuditClient} from "@mojaloop/auditing-bc-public-types-lib";
-import {IMessageConsumer,IMessageProducer,IMessage,CommandMsg } from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import {IMessageConsumer,IMessageProducer,IMessage} from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import {SchedulingBcTopics} from "@mojaloop/platform-shared-lib-public-messages-lib";
-import {
-    CreateReminderCmd, CreateReminderCmdPayload,
-    CreateSingleReminderCmd, CreateSingleReminderCmdPayload,
-    DeleteReminderCmd, DeleteReminderCmdPayload, DeleteRemindersCmd, DeleteRemindersCmdPayload,
-} from "@mojaloop/scheduling-bc-domain-lib";
-import {CreatedReminderEvt, CreatedSingleReminderEvt, DeletedReminderEvt, DeletedRemindersEvt} from "@mojaloop/platform-shared-lib-public-messages-lib";
 
 export class SchedulingEventHandler {
     private _logger: ILogger;
@@ -71,31 +65,20 @@ export class SchedulingEventHandler {
         return await new Promise<void>(async (resolve) => {
             this._logger.debug(`Got message in SchedulingEventHandler with name: ${message.msgName}`);
             try {
-                let schedulingCmd: CommandMsg | null = null;
-
-                switch (message.msgName) {
-                    case CreatedReminderEvt.name:
-                        schedulingCmd = new CreateReminderCmd(message.payload as CreateReminderCmdPayload);
-                        break;
-                    case CreatedSingleReminderEvt.name:
-                        schedulingCmd = new CreateSingleReminderCmd(message.payload as CreateSingleReminderCmdPayload);
-                        break;
-                    case DeletedReminderEvt.name:
-                        schedulingCmd = new DeleteReminderCmd(message.payload as DeleteReminderCmdPayload);
-                        break;
-                    case DeletedRemindersEvt.name:
-                        schedulingCmd = new DeleteRemindersCmd(message.payload as DeleteRemindersCmdPayload);
-                        break;
-                    default: {
-                        this._logger.isWarnEnabled() && this._logger.warn(`SchedulingEventHandler - Skipping unknown event - msgName: ${message?.msgName} msgKey: ${message?.msgKey} msgId: ${message?.msgId}`);
-                    }
-                }
-
-                if (schedulingCmd) {
-                    this._logger.info(`SchedulingEventHandler - publishing cmd - ${message?.msgName}:${message?.msgKey}:${message?.msgId} - Cmd: ${schedulingCmd.msgName}:${schedulingCmd.msgId}`);
-                    await this._messageProducer.send(schedulingCmd);
-                    this._logger.info(`SchedulingEventHandler - publishing cmd Finished - ${message?.msgName}:${message?.msgKey}:${message?.msgId}`);
-                }
+                // const schedulingCmd: CommandMsg | null = null;
+                //
+                // switch (message.msgName) {
+                //     // event handler will be used in the future when transfers needs to send events
+                //     default: {
+                //         this._logger.isWarnEnabled() && this._logger.warn(`SchedulingEventHandler - Skipping unknown event - msgName: ${message?.msgName} msgKey: ${message?.msgKey} msgId: ${message?.msgId}`);
+                //     }
+                // }
+                //
+                // if (schedulingCmd) {
+                //     // this._logger.info(`SchedulingEventHandler - publishing cmd - ${message?.msgName}:${message?.msgKey}:${message?.msgId} - Cmd: ${schedulingCmd.msgName}:${schedulingCmd.msgId}`);
+                //     await this._messageProducer.send(schedulingCmd);
+                //     this._logger.info(`SchedulingEventHandler - publishing cmd Finished - ${message?.msgName}:${message?.msgKey}:${message?.msgId}`);
+                // }
             }catch(err: unknown){
                 this._logger.error(err, `SchedulingEventHandler - processing event - ${message?.msgName}:${message?.msgKey}:${message?.msgId} - Error: ${(err as Error)?.message?.toString()}`);
             }finally {
