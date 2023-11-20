@@ -35,10 +35,10 @@
     "npm_publish": "npm version patch && npm publish --tag=latest --access public"
   },
   "dependencies": {
-    "@mojaloop/logging-bc-client-lib": "^0.1.29"
+    "@mojaloop/logging-bc-client-lib": "~0.1.30"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.7",
-    "nock": "^13.3.7"
+    "@types/jest": "^29.5.8",
+    "nock": "^13.3.8"
   }
 }

@@ -34,24 +34,25 @@ import {ReminderAlreadyExistsError, UnableToStoreReminderError} from "../../../.
 import { IAuthorizationClient } from "@mojaloop/security-bc-public-types-lib/dist/authorization";
 import { ITokenHelper } from "@mojaloop/security-bc-public-types-lib/dist/authentication";
 import { ILogger } from "@mojaloop/logging-bc-public-types-lib";
+import {CallSecurityContext} from "@mojaloop/security-bc-public-types-lib";
 
- 
+
 export class SchedulingRepoMock implements IRepo {
      private reminders = new Map<string, IReminder>();
- 
+
      deleteReminder(reminderId: string): Promise<void> {
          this.reminders.delete(reminderId);
          return Promise.resolve(undefined);
      }
- 
+
      destroy(): Promise<void> {
          return Promise.resolve(undefined);
      }
- 
+
      getReminder(reminderId: string): Promise<IReminder | null> {
          return Promise.resolve(this.reminders.get(reminderId) || null);
      }
- 
+
      getReminders(): Promise<IReminder[]> {
          var remindersList: IReminder [] = [];
          this.reminders.forEach(reminder=>{
@@ -59,19 +60,19 @@ export class SchedulingRepoMock implements IRepo {
          });
          return Promise.resolve(remindersList);
      }
- 
+
      init(): Promise<void> {
          return Promise.resolve(undefined);
      }
- 
+
      reminderExists(reminderId: string): Promise<boolean> {
          return Promise.resolve(this.reminders.has(reminderId ));
      }
- 
+
      async storeReminder(reminder: IReminder): Promise<void> {
         try {
-            if (await this.reminderExists(reminder.id)) { 
-                throw new ReminderAlreadyExistsError(); 
+            if (await this.reminderExists(reminder.id)) {
+                throw new ReminderAlreadyExistsError();
             }
             this.reminders.set(reminder.id,reminder);
         } catch (e: unknown) {
@@ -82,28 +83,28 @@ export class SchedulingRepoMock implements IRepo {
         }
          return Promise.resolve(undefined);
      }
- 
+
 }
- 
+
 export class MessageProducerMock implements IMessageProducer {
      connect(): Promise<void> {
          return Promise.resolve(undefined);
      }
- 
+
      destroy(): Promise<void> {
          return Promise.resolve(undefined);
      }
- 
+
      disconnect(): Promise<void> {
          return Promise.resolve(undefined);
      }
- 
+
      send(message: IMessage | IMessage[]): Promise<void> {
          return Promise.resolve(undefined);
      }
- 
+
 }
- 
+
 export class LockMock implements ILocks {
      init(): Promise<void> {
         return Promise.resolve();
@@ -114,13 +115,13 @@ export class LockMock implements ILocks {
      acquire(lockId: string, durationMs: number): Promise<boolean> {
          return Promise.resolve(true);
      }
- 
+
      release(lockId: string): Promise<boolean> {
          return Promise.resolve(true);
      }
- 
+
 }
- 
+
 
 export class AuthorizationClientMock implements IAuthorizationClient {
     addPrivilege(privId: string, labelName: string, description: string): void {
@@ -149,5 +150,9 @@ export class TokenHelperMock  implements ITokenHelper {
     }
     verifyToken(accessToken: string): Promise<boolean> {
         return Promise.resolve(true);
+    }
+
+    getCallSecurityContextFromAccessToken(accessToken: string): Promise<CallSecurityContext | null> {
+        throw new Error("Method not implemented.");
     }
 }

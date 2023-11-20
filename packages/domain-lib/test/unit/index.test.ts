@@ -123,8 +123,12 @@ describe("scheduling-bc domain lib tests", ()=>{
 
         const createReminderCmd = new CreateReminderCmd(reminder);
 
-        // Act and Assert
-        await expect(aggregate.processCmd(createReminderCmd)).resolves;
+        // Act
+        await aggregate.processCmd(createReminderCmd);
+
+        // Assert
+        const returnedReminder = await aggregate.getReminder("2");
+        expect(returnedReminder).toEqual(reminder);
     });
 
     test("scheduling bc- domain-lib: create reminder :should send event message through cronjob of reminder of type Event", async () => {
@@ -218,7 +222,7 @@ describe("scheduling-bc domain lib tests", ()=>{
         await new Promise((resolve)=>{setTimeout(resolve, 1000)}); // wait for reminder to be triggered
 
         // Assert
-        expect(logger.error).toHaveBeenCalled(); //this ensures logger.error was called since fetch will fail
+        expect(logger.error).toHaveBeenCalled(); //this ensures logger.error was called since the http client will fail
     });
 
     test("scheduling bc- domain-lib: create reminder :should fail when storeReminder throws an error", async ()=>{
@@ -388,6 +392,7 @@ describe("scheduling-bc domain lib tests", ()=>{
         expect(messageProducer.send).not.toBeCalled();
         expect(returnedReminder).toEqual(reminder);
     });
+
 
     test("scheduling bc- domain-lib: get reminders :returned reminders should be greater than zero",async ()=>{
         // Act

@@ -33,13 +33,13 @@ import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {ILocks, IRepo, NoSuchReminderError, ReminderAlreadyExistsError,} from "@mojaloop/scheduling-bc-domain-lib";
 import { IMessageProducer, IMessage } from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import {IReminder} from "@mojaloop/scheduling-bc-public-types-lib";
-import {IAuthorizationClient, ITokenHelper} from "@mojaloop/security-bc-public-types-lib";
+import {CallSecurityContext, IAuthorizationClient, ITokenHelper} from "@mojaloop/security-bc-public-types-lib";
 
 export class SchedulingRepoMock implements IRepo {
     private reminders = new Map<String, IReminder>();
 
     deleteReminder(reminderId: string): Promise<void> {
-        if(!this.reminders.has(reminderId)){
+        if (!this.reminders.has(reminderId)) {
             throw new NoSuchReminderError();
         }
         this.reminders.delete(reminderId);
@@ -53,7 +53,7 @@ export class SchedulingRepoMock implements IRepo {
     getReminder(reminderId: string): Promise<IReminder | null> {
         const reminder = this.reminders.get(reminderId);
         // check if reminder is undefined.
-        if (!reminder){
+        if (!reminder) {
             return Promise.resolve(null);
         }
         return Promise.resolve(reminder);
@@ -61,7 +61,7 @@ export class SchedulingRepoMock implements IRepo {
 
     getReminders(): Promise<IReminder[]> {
         var remindersList: IReminder [] = [];
-        this.reminders.forEach(reminder=>{
+        this.reminders.forEach(reminder => {
             remindersList.push(reminder)
         });
         return Promise.resolve(remindersList);
@@ -72,14 +72,14 @@ export class SchedulingRepoMock implements IRepo {
     }
 
     reminderExists(reminderId: string): Promise<boolean> {
-        return Promise.resolve(this.reminders.has(reminderId ));
+        return Promise.resolve(this.reminders.has(reminderId));
     }
 
     storeReminder(reminder: IReminder): Promise<void> {
-        if(this.reminders.has(reminder.id)){
+        if (this.reminders.has(reminder.id)) {
             throw new ReminderAlreadyExistsError();
         }
-        this.reminders.set(reminder.id,reminder);
+        this.reminders.set(reminder.id, reminder);
         return Promise.resolve(undefined);
     }
 
@@ -108,9 +108,11 @@ export class LockMock implements ILocks {
     init(): Promise<void> {
         return Promise.resolve();
     }
+
     destroy(): Promise<void> {
         return Promise.resolve();
     }
+
     acquire(lockId: string, durationMs: number): Promise<boolean> {
         return Promise.resolve(false);
     }
@@ -134,7 +136,7 @@ export class AuthorizationClientMock implements IAuthorizationClient {
 
 }
 
-export class TokenHelperMock  implements ITokenHelper {
+export class TokenHelperMock implements ITokenHelper {
     private _logger: ILogger;
     private _jwksUrl: string;
     private _issuerName: string;
@@ -148,5 +150,9 @@ export class TokenHelperMock  implements ITokenHelper {
     }
     verifyToken(accessToken: string): Promise<boolean> {
         return Promise.resolve(true);
+    }
+
+    getCallSecurityContextFromAccessToken(accessToken: string): Promise<CallSecurityContext | null> {
+        throw new Error("Method not implemented.");
     }
 }
