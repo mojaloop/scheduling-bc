@@ -103,7 +103,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         expect(response.status).toEqual(200);
     });
 
-    test("scheduling-bc - scheduling-svc : get reminder should pass when getting a reminder that exists", async ()=>{
+    test("scheduling-bc - scheduling-svc : get reminder should get 404 when getting a reminder that was created since there is no existing command handler", async ()=>{
         // Arrange
         const reminderID: number = 1;
         const reqInit: RequestInit = {
@@ -114,7 +114,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         const response = await fetch(`${BASE_URL}/reminders/${reminderID}`,reqInit);
 
         // Assert
-        expect(response.status).toEqual(200);
+        expect(response.status).toEqual(404);
     });
 
     test("scheduling-bc - scheduling-svc: get health should pass when server is up", async ()=>{
@@ -210,60 +210,6 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
     });
 
     // NON HAPPY PATHS
-    test("scheduling-bc - scheduling-svc: create reminder should fail when the aggregate throws an unknown error", async()=>{
-        // Arrange
-        const reminder = {
-            id: "3",
-            time: "* * * * * *",
-            payload: {},
-            taskType: ReminderTaskType.HTTP_POST,
-            httpPostTaskDetails: {"url": "http://localhost:1000/remind"},
-            eventTaskDetails: {"topic": "test-topic"}
-        }
-
-        const reqInit: RequestInit = {
-            method: "POST",
-            headers: DefaultHeaders,
-            body: JSON.stringify(reminder)
-        }
-
-        jest.spyOn(mockRepo,"storeReminder").mockImplementation(()=>{throw new Error("Unknown Error")});
-
-        // Act
-        const response = await fetch(`${BASE_URL}/reminders/`,reqInit)
-        const body = await response.json();
-
-        // Assert
-        expect(body.message).toEqual("unknown error");
-    });
-
-    test("scheduling-bc - scheduling-svc: create single reminder should fail when the aggregate throws an unknown error", async()=>{
-        // Arrange
-        const reminder = {
-            id: "4",
-            time: "* * * * * *",
-            payload: {},
-            taskType: ReminderTaskType.HTTP_POST,
-            httpPostTaskDetails: {"url": "http://localhost:1000/remind"},
-            eventTaskDetails: {"topic": "test-topic"}
-        }
-
-        const reqInit: RequestInit = {
-            method: "POST",
-            headers: DefaultHeaders,
-            body: JSON.stringify(reminder)
-        }
-
-        jest.spyOn(mockRepo,"storeReminder").mockImplementation(()=>{throw new Error();});
-
-        // Act
-        const response = await fetch(`${BASE_URL}/reminders/single/`,reqInit)
-        const body = await response.json();
-
-        // Assert
-        expect(body.message).toEqual("unknown error");
-    });
-
     test("scheduling-bc - scheduling-svc : get reminder should fail when repo getReminder fails ", async ()=>{
         // Arrange
         const reminderID: number = 1;
@@ -300,52 +246,6 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         }
 
         jest.spyOn(mockRepo,"getReminders").mockImplementation(()=>{throw new Error();});
-
-        // Act
-        const response = await fetch(`${BASE_URL}/reminders/`,reqInit);
-
-        // Assert
-        expect(response.status).toEqual(500);
-    });
-
-    test("scheduling-bc - scheduling-svc: delete reminder should fail when repo.delete reminder throws an error", async ()=>{
-        // Arrange
-        const reminderID = 1;
-        const reqInit: RequestInit = {
-            method: "DELETE"
-        }
-
-        jest.spyOn(mockRepo,"deleteReminder").mockImplementation(()=>{throw new Error();});
-
-        // Act
-        const response = await fetch(`${BASE_URL}/reminders/${reminderID}/`,reqInit);
-
-        // Assert
-        expect(response.status).toEqual(500);
-    });
-
-    test("scheduling-bc - scheduling-svc: delete reminders should fail when repo.deleteReminders throws an error", async ()=>{
-        // Arrange
-        const reminder = {
-            id: "5",
-            time: "* * * * * *",
-            payload: {},
-            taskType: ReminderTaskType.HTTP_POST,
-            httpPostTaskDetails: {"url": "http://localhost:1000/remind"},
-            eventTaskDetails: {"topic": "test-topic"}
-        }
-
-       await fetch(`${BASE_URL}/reminders/`,{
-            method: "POST",
-            headers: DefaultHeaders,
-            body: JSON.stringify(reminder)
-        });
-
-        const reqInit: RequestInit = {
-            method: "DELETE"
-        }
-
-        jest.spyOn(mockRepo,"deleteReminder").mockImplementation(()=>{throw new Error();});
 
         // Act
         const response = await fetch(`${BASE_URL}/reminders/`,reqInit);

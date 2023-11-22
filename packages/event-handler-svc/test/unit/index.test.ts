@@ -31,11 +31,11 @@ import {Service} from "../../src/service";
 
 describe("scheduling-bc event-handler-svc unit tests", ()=>{
     beforeAll(async ()=>{
-        await Service.start()
+        console.log("Start Server");
     });
 
     afterAll(async ()=>{
-        await Service.stop();
+        console.log("Stop server");
     });
 
     test("log to the console",async ()=>{

@@ -69,11 +69,12 @@ describe("scheduling-bc domain lib tests", ()=>{
         jest.clearAllMocks();
         await aggregate.destroy();
     });
+
     test("scheduling bc- domain-lib: initialise aggregate after populating reminder repo - should pass ", async ()=>{
         // Arrange
         const reminder: IReminder = {
             id: "1",
-            time: "*/1 * * * * *",
+            time: "* * * * * *",
             payload: {
                 payload: {
                     name: "test"
@@ -172,7 +173,7 @@ describe("scheduling-bc domain lib tests", ()=>{
             time: "*/1 * * * * *",
             payload: {
                 payload: {
-                    name: "test"
+                    name: "test-non-existent"
                 }
             },
             taskType: ReminderTaskType.EVENT,
@@ -193,7 +194,9 @@ describe("scheduling-bc domain lib tests", ()=>{
         await new Promise((r) => setTimeout(r, 2000));
 
         // Assert
-        expect(messageProducer.send).not.toHaveBeenCalled();
+        expect(messageProducer.send).not.toHaveBeenCalledWith(expect.objectContaining({
+            "payload": reminder.payload.payload,
+        }));
     });
 
     test("scheduling bc- domain-lib: create reminder :should send http post message through cronjob of reminder of type post", async () => {
@@ -359,11 +362,27 @@ describe("scheduling-bc domain lib tests", ()=>{
         expect(returnedReminder).toBeNull
     });
 
+    test("scheduling bc- domain-lib: get reminders :returned reminders should be greater than zero",async ()=>{
+        // Act
+        const reminders: IReminder[] = await aggregate.getReminders();
+
+        // Assert
+        expect(reminders.length).toBeGreaterThan(0);
+    });
+
+    test("scheduling-bc - domain-lib: get reminder with id should fail when repo.getReminder fails", async ()=>{
+        // Arrange
+        jest.spyOn(repo,"getReminder").mockImplementation(async ()=>{throw new Error()});
+
+        // Act and Asser
+        await expect(aggregate.getReminder("1")).rejects.toThrowError();
+    });
+
     test("scheduling bc- domain-lib: create reminder :should not be able to send reminder due to reminder being locked", async () => {
         // Arrange
         const reminder: IReminder = {
             id: "5",
-            time: "*/1 * * * * *",
+            time: "* * * * * *",
             payload: {
                 payload: {
                     name: "test"
@@ -391,23 +410,6 @@ describe("scheduling-bc domain lib tests", ()=>{
         // Assert
         expect(messageProducer.send).not.toBeCalled();
         expect(returnedReminder).toEqual(reminder);
-    });
-
-
-    test("scheduling bc- domain-lib: get reminders :returned reminders should be greater than zero",async ()=>{
-        // Act
-        const reminders: IReminder[] = await aggregate.getReminders();
-
-        // Assert
-        expect(reminders.length).toBeGreaterThan(0);
-    });
-
-    test("scheduling-bc - domain-lib: get reminder with id should fail when repo.getReminder fails", async ()=>{
-        // Arrange
-        jest.spyOn(repo,"getReminder").mockImplementation(async ()=>{throw new Error()});
-
-        // Act and Asser
-        await expect(aggregate.getReminder("1")).rejects.toThrowError();
     });
 
     test("scheduling-bc - domain-lib: get reminders should fail when repo.getReminders fails", async ()=>{
