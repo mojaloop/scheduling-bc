@@ -111,7 +111,7 @@ export class Aggregate {
 		});
 	}
 
-    async processCmd(cmd: CommandMsg): Promise<void> {
+    async processCmd(cmd: CommandMsg | IMessage): Promise<void> {
         try{
             switch (cmd.msgName) {
                 case CreateReminderCmd.name:

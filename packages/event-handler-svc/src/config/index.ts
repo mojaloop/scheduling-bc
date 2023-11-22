@@ -33,9 +33,9 @@
 
 "use strict";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 import * as process from "process";
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageJSON = require("../../package.json");
 
 import {

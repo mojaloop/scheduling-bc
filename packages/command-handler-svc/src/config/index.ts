@@ -37,10 +37,10 @@ const packageJSON = require("../../package.json");
 const BC_NAME = "scheduling-bc";
 const APP_NAME = "command-handler-svc";
 const APP_VERSION = packageJSON.version;
-const CONFIGSET_VERSION = "0.0.1";
+// const CONFIGSET_VERSION = "0.0.1";
 
 // configs - non-constants
-const ENV_NAME = process.env["ENV_NAME"] || "dev";
+// const ENV_NAME = process.env["ENV_NAME"] || "dev";
 
 
 const configClient = {

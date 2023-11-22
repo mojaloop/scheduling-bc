@@ -105,7 +105,7 @@ export class CreateSingleReminderCmd extends CommandMsg {
  }
 
  validatePayload(): void {
-  SingleReminder.validateReminder(this.payload)
+  SingleReminder.validateReminder(this.payload);
  }
 }
 
@@ -140,7 +140,7 @@ export class DeleteRemindersCmd extends CommandMsg {
  boundedContextName: string = SCHEDULING_BOUNDED_CONTEXT_NAME;
  msgKey: string;
  msgTopic: string = SchedulingBcTopics.Commands;
- payload: any;
+ payload: unknown;
 
  constructor() {
   super();
