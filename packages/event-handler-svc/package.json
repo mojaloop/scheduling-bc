@@ -44,7 +44,7 @@
     "@mojaloop/auditing-bc-client-lib": "~0.0.15",
     "@mojaloop/auditing-bc-public-types-lib": "~0.3.2",
     "@mojaloop/platform-shared-lib-messaging-types-lib": "~0.2.103",
-    "@mojaloop/platform-shared-lib-public-messages-lib": "~0.1.163",
+    "@mojaloop/platform-shared-lib-public-messages-lib": "~0.1.164",
     "@mojaloop/platform-configuration-bc-public-types-lib": "~0.2.5",
     "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib": "~0.3.71",
     "@mojaloop/scheduling-bc-domain-lib": "*",

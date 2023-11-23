@@ -31,7 +31,7 @@
 
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {SchedulingClient} from "../../src";
-import {Service} from "../../../scheduling-svc/src/application/service"
+import {Service} from "../../../scheduling-api-svc/src/application/service"
 import {
     SchedulingRepoMock,
     LockMock,
