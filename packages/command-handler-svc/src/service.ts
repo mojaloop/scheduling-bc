@@ -214,6 +214,7 @@ export class Service {
 
   this.logger.info(`Scheduling Command Handler Service started, version: ${configClient.applicationVersion}`);
  }
+
  static async stop(): Promise<void> {
     this.logger.debug("Tearing down command handler");
     if(this.handler) await this.handler.stop();

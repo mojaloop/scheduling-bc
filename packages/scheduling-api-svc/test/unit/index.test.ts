@@ -52,7 +52,7 @@ const DefaultHeaders = new Headers();
 DefaultHeaders.append("Content-Type", "application/json");
 const BASE_URL: string = "http://localhost:3150";
 
-describe("scheduling-bc - scheduling-svc tests",()=>{
+describe("scheduling-bc - scheduling-api-svc tests",()=>{
     beforeAll(async ()=>{
         // Start the scheduling service
         await Service.start(
@@ -79,7 +79,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         });
     });
 
-    test("scheduling-bc - scheduling-svc : create reminder should pass", async ()=>{
+    test("scheduling-bc - scheduling-api-svc : create reminder should pass", async ()=>{
         // Arrange
         const reminder = {
             id: "1",
@@ -103,7 +103,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         expect(response.status).toEqual(200);
     });
 
-    test("scheduling-bc - scheduling-svc : get reminder should get 404 when getting a reminder that was created since there is no existing command handler", async ()=>{
+    test("scheduling-bc - scheduling-api-svc : get reminder should get 404 when getting a reminder that was created since there is no existing command handler", async ()=>{
         // Arrange
         const reminderID: number = 1;
         const reqInit: RequestInit = {
@@ -117,7 +117,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         expect(response.status).toEqual(404);
     });
 
-    test("scheduling-bc - scheduling-svc: get health should pass when server is up", async ()=>{
+    test("scheduling-bc - scheduling-api-svc: get health should pass when server is up", async ()=>{
         // Arrange
         const reqInit: RequestInit = {
             method: "GET"
@@ -132,7 +132,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         expect(body.status).toEqual("OK");
     });
 
-    test("scheduling-bc - scheduling-svc: get non existent endpoint should return 404", async ()=>{
+    test("scheduling-bc - scheduling-api-svc: get non existent endpoint should return 404", async ()=>{
         // Arrange
         const reqInit: RequestInit = {
             method: "GET"
@@ -145,7 +145,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         expect(response.status).toEqual(404);
     });
 
-    test("scheduling-bc - scheduling-svc: create single reminder with non existent id should pass", async ()=>{
+    test("scheduling-bc - scheduling-api-svc: create single reminder with non existent id should pass", async ()=>{
         // Arrange
         const reminder = {
             id: "2",
@@ -169,7 +169,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         expect(response.status).toEqual(200);
     });
 
-    test("scheduling-bc - scheduling-svc: get reminders should pass when reminders have been created", async ()=>{
+    test("scheduling-bc - scheduling-api-svc: get reminders should pass when reminders have been created", async ()=>{
         // Arrange
         const reqInit: RequestInit = {
             method: "GET"
@@ -182,7 +182,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         expect(response.status).toEqual(200);
     });
 
-    test("scheduling-bc - scheduling-svc: delete reminder should pass when given an existent id", async ()=>{
+    test("scheduling-bc - scheduling-api-svc: delete reminder should pass when given an existent id", async ()=>{
         // Arrange
         const reminderID = 1;
         const reqInit: RequestInit = {
@@ -196,7 +196,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         expect(response.status).toEqual(200);
     });
 
-    test("scheduling-bc - scheduling-svc: delete reminders should pass when reminders were created prior", async ()=>{
+    test("scheduling-bc - scheduling-api-svc: delete reminders should pass when reminders were created prior", async ()=>{
         // Arrange
         const reqInit: RequestInit = {
             method: "DELETE"
@@ -210,7 +210,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
     });
 
     // NON HAPPY PATHS
-    test("scheduling-bc - scheduling-svc : get reminder should fail when repo getReminder fails ", async ()=>{
+    test("scheduling-bc - scheduling-api-svc : get reminder should fail when repo getReminder fails ", async ()=>{
         // Arrange
         const reminderID: number = 1;
         const reqInit: RequestInit = {
@@ -225,7 +225,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         expect(response.status).toEqual(500);
     });
 
-    test("scheduling-bc - scheduling-svc : get reminder that does not exist should fail", async ()=>{
+    test("scheduling-bc - scheduling-api-svc : get reminder that does not exist should fail", async ()=>{
         // Arrange
         const reminderID: number = 22;
         const reqInit: RequestInit = {
@@ -239,7 +239,7 @@ describe("scheduling-bc - scheduling-svc tests",()=>{
         expect(response.status).toEqual(404);
     });
 
-    test("scheduling-bc - scheduling-svc: get reminders should fail when repo getReminders throws error", async ()=>{
+    test("scheduling-bc - scheduling-api-svc: get reminders should fail when repo getReminders throws error", async ()=>{
         // Arrange
         const reqInit: RequestInit = {
             method: "GET"

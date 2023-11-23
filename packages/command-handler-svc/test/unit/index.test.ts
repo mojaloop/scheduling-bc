@@ -28,18 +28,122 @@
 "use strict";
 
 import {Service} from "../../src/service";
+import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-public-types-lib";
+import {CreateReminderCmd, ILocks, IRepo} from "@mojaloop/scheduling-bc-domain-lib";
+import {
+    AuditClientMock,
+    LockMock,
+    MessageConsumerMock,
+    MessageProducerMock,
+    SchedulingRepoMock
+} from "./mocks/command-handler-mocks";
+import {IRawMessageProducer} from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
+import {MessageTypes} from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import {IAuditClient} from "@mojaloop/auditing-bc-public-types-lib";
+import {IReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
+
+
+// Create service start params
+const logger: ILogger = new ConsoleLogger();
+const mockRepo: IRepo = new SchedulingRepoMock();
+const mockMessageProducer: IRawMessageProducer = new MessageProducerMock();
+const mockLocks: ILocks = new LockMock();
+const mockMessageConsumer = new MessageConsumerMock();
+const auditClientMock: IAuditClient = new AuditClientMock();
 
 describe("scheduling-bc command-handler-svc unit tests", ()=>{
     beforeAll(async ()=>{
-        console.log("Start service")
+        await Service.start(
+            logger,
+            auditClientMock,
+            mockMessageConsumer,
+            mockMessageProducer,
+            mockRepo,
+            mockLocks
+        );
     });
 
     afterAll(async ()=>{
-        console.log("Stop Service")
+        await Service.stop();
     });
 
-    test("log to the console",async ()=>{
-        console.log("Test Log");
+    test("invoke msgHandler function should create a reminder in the repo",async ()=>{
+        // Arrange
+        const reminder: IReminder = {
+            id: "1",
+            time: "* * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": "test_topic"
+            }
+        }
+
+        const createReminderCmd = new CreateReminderCmd(reminder);
+
+        // Act
+        await mockMessageConsumer.invokeHandler(createReminderCmd);
+
+        // Assert
+        const createdReminder = await mockRepo.getReminder('1');
+        expect(createdReminder).toEqual(reminder);
+    });
+
+    test("invoke msgHandler function should fail if store repo method throws an exception",async ()=>{
+        // Arrange
+        const reminder: IReminder = {
+            id: "2",
+            time: "* * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": "test_topic"
+            }
+        }
+
+        const createReminderCmd = new CreateReminderCmd(reminder);
+
+        // Act
+        jest.spyOn(mockRepo,"storeReminder").mockImplementation(()=>{throw new Error()});
+        jest.spyOn(logger,"error");
+
+        await mockMessageConsumer.invokeHandler(createReminderCmd);
+
+        // Assert
+        expect(logger.error).toHaveBeenCalled();
+
+    });
+
+    test("invoke msgHandler function should not create a reminder in the repo with wrong msgType",async ()=>{
+        // Arrange
+        const reminder: IReminder = {
+            id: "3",
+            time: "* * * * * *",
+            payload: {},
+            taskType: ReminderTaskType.HTTP_POST,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": "test_topic"
+            }
+        }
+
+        const createReminderCmd = new CreateReminderCmd(reminder);
+        createReminderCmd.msgType = MessageTypes.DOMAIN_EVENT
+
+        // Act
+        await mockMessageConsumer.invokeHandler(createReminderCmd);
+
+        // Assert
+        const createdReminder = await mockRepo.getReminder('3');
+        expect(createdReminder).toBeNull();
     });
 });
 

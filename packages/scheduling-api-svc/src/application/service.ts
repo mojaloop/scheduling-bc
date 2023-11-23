@@ -80,7 +80,7 @@ import { IAuthorizationClient, ITokenHelper } from "@mojaloop/security-bc-public
 
 // Global vars
 const BC_NAME = "scheduling-bc";
-const APP_NAME = "scheduling-svc";
+const APP_NAME = "scheduling-api-svc";
 const APP_VERSION = process.env.npm_package_version || "0.0.0";
 // const PRODUCTION_MODE = process.env["PRODUCTION_MODE"] || false;
 
@@ -102,7 +102,7 @@ const MONGO_URL = process.env["MONGO_URL"] || "mongodb://root:mongoDbPas42@local
 const SVC_DEFAULT_HTTP_PORT = process.env["SVC_DEFAULT_HTTP_PORT"] || 3150;
 
 // Auth Requester
-// const SVC_CLIENT_ID = process.env["SVC_CLIENT_ID"] || "scheduling-bc-scheduling-svc";
+// const SVC_CLIENT_ID = process.env["SVC_CLIENT_ID"] || "scheduling-bc-scheduling-api-svc";
 // const SVC_CLIENT_SECRET = process.env["SVC_CLIENT_SECRET"] || "superServiceSecret";
 
 // const AUTH_N_SVC_BASEURL = process.env["AUTH_N_SVC_BASEURL"] || "http://localhost:3201";

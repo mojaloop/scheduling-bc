@@ -44,7 +44,7 @@ if (!process.env.npm_package_version) {
 
 // configs - constants / code dependent
 const BC_NAME = "scheduling-bc";
-const APP_NAME = "scheduling-svc";
+const APP_NAME = "scheduling-api-svc";
 const APP_VERSION = process.env.npm_package_version || "0.0.0";
 const CONFIGSET_VERSION = "0.0.1";
 
