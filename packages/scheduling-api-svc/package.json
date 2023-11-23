@@ -1,5 +1,5 @@
 {
-  "name": "@mojaloop/scheduling-bc-scheduling-svc",
+  "name": "@mojaloop/scheduling-bc-scheduling-api-svc",
   "version": "0.3.5",
   "description": "Mojaloop scheduling-bc service",
   "license": "Apache-2.0",
