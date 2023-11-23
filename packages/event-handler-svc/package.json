@@ -1,6 +1,6 @@
 {
   "name": "@mojaloop/scheduling-bc-event-handler-svc",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Mojaloop Scheduling-bc Event Handler service",
   "license": "Apache-2.0",
   "homepage": "https://github.com/mojaloop/scheduling-bc/",
