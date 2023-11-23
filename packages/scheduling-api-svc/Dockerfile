@@ -18,7 +18,7 @@ COPY package*.json ./
 COPY packages/public-types-lib/package.json ./packages/public-types-lib/
 COPY packages/domain-lib/package.json ./packages/domain-lib/
 COPY packages/implementations-lib/package.json ./packages/implementations-lib/
-COPY packages/scheduling-svc/package.json ./packages/scheduling-svc/
+COPY packages/scheduling-api-svc/package.json ./packages/scheduling-api-svc/
 
 #RUN ls -la
 
@@ -42,7 +42,7 @@ COPY packages/domain-lib ./packages/domain-lib
 COPY packages/implementations-lib ./packages/implementations-lib
 
 # copy service code
-COPY packages/scheduling-svc ./packages/scheduling-svc
+COPY packages/scheduling-api-svc ./packages/scheduling-api-svc
 
 # build
 RUN npm run build
