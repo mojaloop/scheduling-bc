@@ -38,7 +38,7 @@
     "@mojaloop/logging-bc-client-lib": "~0.1.30"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.8",
+    "@types/jest": "^29.5.10",
     "nock": "^13.3.8"
   }
 }

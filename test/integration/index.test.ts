@@ -34,7 +34,7 @@ import { ConsoleLogger, ILogger } from "@mojaloop/logging-bc-public-types-lib";
 import { MongoRepo, RedisLocks,FetchPostClient} from "../../packages/implementations-lib/src/index";
 import { UnableToCreateReminderError, UnableToDeleteReminderError } from "../../packages/client-lib/src/errors";
 import { IReminder, ISingleReminder, ReminderTaskType } from "@mojaloop/scheduling-bc-public-types-lib";
-import { Service } from "../../packages/scheduling-svc/src/application/service";
+import { Service } from "../../packages/scheduling-api-svc/src/application/service";
 import {SchedulingClientMock} from "./mocks/scheduling_client_mock";
 import {IHttpPostClient, Reminder} from "@mojaloop/scheduling-bc-domain-lib";
 
@@ -330,7 +330,7 @@ describe("scheduling client - integration tests", () => {
         ).rejects.toThrowError();
     });
 
-    test("scheduling-svc - integration tests: create non-existent reminder should pass", async () => {
+    test("scheduling-api-svc - integration tests: create non-existent reminder should pass", async () => {
         const reminderId: string = Date.now().toString();
         const reminder: Reminder = new Reminder(
             reminderId,
@@ -348,13 +348,13 @@ describe("scheduling client - integration tests", () => {
         expect(statusCodeResponse).toBe(200);
     });
 
-    test("scheduling-svc - integration tests:  get non-existent reminder should return 404", async () => {
+    test("scheduling-api-svc - integration tests:  get non-existent reminder should return 404", async () => {
         const reminderId: string = Date.now().toString();
         const statusCodeResponse: number = await schedulingClientMock.getReminder(reminderId);
         expect(statusCodeResponse).toBe(404);
     });
 
-    test("scheduling-svc - integration tests:  get non-existent endpoint should return 404", async () => {
+    test("scheduling-api-svc - integration tests:  get non-existent endpoint should return 404", async () => {
         // Arrange
         const reqInit: RequestInit = {
             method: "GET"
@@ -367,7 +367,7 @@ describe("scheduling client - integration tests", () => {
         expect(response.status).toBe(404);
     });
 
-    test("scheduling-svc - integration tests: get existent reminder should return 200", async () => {
+    test("scheduling-api-svc - integration tests: get existent reminder should return 200", async () => {
         const reminderId: string = Date.now().toString();
         const reminder: Reminder = new Reminder(
             reminderId,
@@ -387,12 +387,12 @@ describe("scheduling client - integration tests", () => {
         expect(statusCodeResponseGet).toBe(200);
     });
 
-    test("scheduling-svc - integration tests: get reminders should return 200 if reminders exist", async () => {
+    test("scheduling-api-svc - integration tests: get reminders should return 200 if reminders exist", async () => {
         const statusCodeResponse: number = await schedulingClientMock.getReminders();
         expect(statusCodeResponse).toBe(200);
     });
 
-    test("scheduling-svc - integration tests: delete existent reminder should return 200", async () => {
+    test("scheduling-api-svc - integration tests: delete existent reminder should return 200", async () => {
         const reminderId: string = Date.now().toString();
         const reminder: Reminder = new Reminder(
             reminderId,
@@ -412,7 +412,7 @@ describe("scheduling client - integration tests", () => {
         expect(statusCodeResponseDelete).toBe(200);
     });
 
-    test("scheduling-svc - integration tests:  delete reminders should pass with 200", async () => {
+    test("scheduling-api-svc - integration tests:  delete reminders should pass with 200", async () => {
         const statusCodeResponse: number = await schedulingClientMock.deleteReminders();
         expect(statusCodeResponse).toBe(200);
     });

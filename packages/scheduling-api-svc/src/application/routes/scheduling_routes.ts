@@ -32,24 +32,22 @@
 
 import express from "express";
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
-// import {IConfigurationClient} from "@mojaloop/platform-configuration-bc-public-types-lib";
 import {
     Aggregate,
-    InvalidReminderIdTypeError, InvalidReminderTaskDetailsTypeError,
-    InvalidReminderTaskTypeError,
-    InvalidReminderTaskTypeTypeError,
-    InvalidReminderTimeError,
-    InvalidReminderTimeTypeError,
-    MissingEssentialReminderPropertiesOrTaskDetailsError, NoSuchReminderError, ReminderAlreadyExistsError
+    InvalidReminderIdTypeError,
+    CreateReminderCmd,
+    CreateReminderCmdPayload,
+    CreateSingleReminderCmd,
+    CreateSingleReminderCmdPayload,
+    IRepo,
+    DeleteReminderCmd, DeleteRemindersCmd
 } from "@mojaloop/scheduling-bc-domain-lib";
-import { IReminder } from "@mojaloop/scheduling-bc-public-types-lib";
+import {IReminder, ISingleReminder} from "@mojaloop/scheduling-bc-public-types-lib";
 import { BaseRoutes } from "./base/base_routes";
 import {
-    ForbiddenError,
-    // MakerCheckerViolationError,
-    UnauthorizedError,
     CallSecurityContext, IAuthorizationClient, ITokenHelper,
 } from "@mojaloop/security-bc-public-types-lib";
+import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
 
 // Extend express request to include our security fields
 declare module "express-serve-static-core" {
@@ -61,13 +59,18 @@ declare module "express-serve-static-core" {
 export class SchedulingExpressRoutes extends BaseRoutes {
     private readonly _tokenHelper: ITokenHelper;
     private readonly _authorizationClient: IAuthorizationClient;
+    private readonly _messageProducer: IMessageProducer;
+    private readonly _schedulingRepo: IRepo;
+    private static readonly UNKNOWN_ERROR_MESSAGE: string = "unknown error";
 
 
-    constructor(logger: ILogger, schedulingAgg: Aggregate, tokenHelper: ITokenHelper, authorizationClient: IAuthorizationClient) {
+    constructor(logger: ILogger, schedulingAgg: Aggregate, tokenHelper: ITokenHelper, authorizationClient: IAuthorizationClient, messageProducer: IMessageProducer, schedulingRepo: IRepo) {
         super(logger, schedulingAgg);
 
         this._tokenHelper = tokenHelper;
         this._authorizationClient = authorizationClient;
+        this._messageProducer = messageProducer;
+        this._schedulingRepo = schedulingRepo;
 
         // inject authentication - all request below this require a valid token
         // this.mainRouter.use(this._authenticationMiddleware.bind(this));
@@ -156,123 +159,37 @@ export class SchedulingExpressRoutes extends BaseRoutes {
 
     private async postReminder(req: express.Request, res: express.Response): Promise<void> {
         try {
-            const reminderId: string = await this.schedulingAgg.createReminder(req.body);
-            res.status(200).json({
+            const createReminderCmd  = new CreateReminderCmd(req.body as CreateReminderCmdPayload);
+            await this._messageProducer.send(createReminderCmd);
+            this.sendSuccessResponse(res,200,{
                 status: "success",
-                reminderId: reminderId
+                reminderId: (req.body as IReminder).id
             });
         } catch (e: unknown) {
-            // istanbul ignore next
-            if (e instanceof MissingEssentialReminderPropertiesOrTaskDetailsError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "missing essential reminder properties or task details");
-            } else if (e instanceof InvalidReminderIdTypeError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "invalid reminder id type");
-            } else if (e instanceof InvalidReminderTimeTypeError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "invalid reminder time type");
-            } else if (e instanceof InvalidReminderTimeError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "invalid reminder time");
-            } else if (e instanceof InvalidReminderTaskTypeTypeError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "invalid reminder task type type (the type of the task type)");
-            } else if (e instanceof InvalidReminderTaskTypeError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "invalid reminder task type");
-            } else if (e instanceof InvalidReminderTaskDetailsTypeError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "invalid reminder task details type");
-            } else if (e instanceof ReminderAlreadyExistsError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "reminder already exists");
-            } else {
-                this.sendErrorResponse(
-                    res,
-                    500,
-                    "unknown error");
-            }
+            this.logger.error(e);
+            this.sendErrorResponse(res,500,(e as Error).message || SchedulingExpressRoutes.UNKNOWN_ERROR_MESSAGE );
         }
     }
 
     private async postSingleReminder(req: express.Request, res: express.Response): Promise<void> {
         try {
-            const reminderId: string = await this.schedulingAgg.createSingleReminder(req.body);
-            res.status(200).json({
+            const createSingleReminderCmd = new CreateSingleReminderCmd(
+                req.body as CreateSingleReminderCmdPayload
+            );
+            await this._messageProducer.send(createSingleReminderCmd);
+            this.sendSuccessResponse(res,200,{
                 status: "success",
-                reminderId: reminderId
+                reminderId: (req.body as ISingleReminder).id
             });
         } catch (e: unknown) {
-            // istanbul ignore next
-            if (e instanceof MissingEssentialReminderPropertiesOrTaskDetailsError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "missing essential reminder properties or task details");
-            } else if (e instanceof InvalidReminderIdTypeError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "invalid reminder id type");
-            } else if (e instanceof InvalidReminderTimeTypeError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "invalid reminder time type");
-            } else if (e instanceof InvalidReminderTimeError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "invalid reminder time");
-            } else if (e instanceof InvalidReminderTaskTypeTypeError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "invalid reminder task type type (the type of the task type)");
-            } else if (e instanceof InvalidReminderTaskTypeError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "invalid reminder task type");
-            } else if (e instanceof InvalidReminderTaskDetailsTypeError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "invalid reminder task details type");
-            } else if (e instanceof ReminderAlreadyExistsError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "reminder already exists");
-            } else {
-                this.sendErrorResponse(
-                    res,
-                    500,
-                    "unknown error");
-            }
+            this.logger.error(e);
+            this.sendErrorResponse(res,500,(e as Error).message || SchedulingExpressRoutes.UNKNOWN_ERROR_MESSAGE );
         }
     }
 
     private async getReminder(req: express.Request, res: express.Response): Promise<void> {
         try {
-            const reminder: IReminder | null = await this.schedulingAgg.getReminder(req.params.reminderId);
+            const reminder: IReminder | null = await this._schedulingRepo.getReminder(req.params.reminderId);
             if (reminder === null) {
                 this.sendErrorResponse(
                     res,
@@ -302,7 +219,7 @@ export class SchedulingExpressRoutes extends BaseRoutes {
 
     private async getReminders(req: express.Request, res: express.Response): Promise<void> {
         try {
-            const reminders: IReminder[] = await this.schedulingAgg.getReminders();
+            const reminders: IReminder[] = await this._schedulingRepo.getReminders();
             res.status(200).json({
                 status: "success",
                 reminders: reminders
@@ -317,45 +234,31 @@ export class SchedulingExpressRoutes extends BaseRoutes {
 
     private async deleteReminder(req: express.Request, res: express.Response): Promise<void> {
         try {
-            await this.schedulingAgg.deleteReminder(req.params.reminderId);
-            res.status(200).json({
+            const deleteReminderCmd = new DeleteReminderCmd(
+                {"id": req.params.reminderId}
+            );
+            await this._messageProducer.send(deleteReminderCmd);
+            this.sendSuccessResponse(res,200,{
                 status: "success",
                 message: "reminder deleted"
             });
         } catch (e: unknown) {
-            // istanbul ignore next
-            if (e instanceof InvalidReminderIdTypeError) {
-                this.sendErrorResponse(
-                    res,
-                    400,
-                    "invalid reminder id type");
-            } else if (e instanceof NoSuchReminderError) {
-                this.sendErrorResponse(
-                    res,
-                    404,
-                    "no such reminder");
-                return;
-            } else {
-                this.sendErrorResponse(
-                    res,
-                    500,
-                    "unknown error");
-            }
+            this.logger.error(e);
+            this.sendErrorResponse(res,500,(e as Error).message || SchedulingExpressRoutes.UNKNOWN_ERROR_MESSAGE );
         }
     }
 
     private async deleteReminders(req: express.Request, res: express.Response): Promise<void> {
         try {
-            await this.schedulingAgg.deleteReminders();
-            res.status(200).json({
+            const deleteRemindersCmd = new DeleteRemindersCmd();
+            await this._messageProducer.send(deleteRemindersCmd);
+            this.sendSuccessResponse(res,200,{
                 status: "success",
                 message: "reminders deleted"
             });
         } catch (e: unknown) {
-            this.sendErrorResponse(
-                res,
-                500,
-                "unknown error");
+            this.logger.error(e);
+            this.sendErrorResponse(res,500,(e as Error).message || SchedulingExpressRoutes.UNKNOWN_ERROR_MESSAGE );
         }
     }
 
@@ -365,5 +268,9 @@ export class SchedulingExpressRoutes extends BaseRoutes {
             result: "error",
             message: message
         });
+    }
+
+    private sendSuccessResponse(res: express.Response, statusCode: number, data: unknown){
+        res.status(statusCode).json(data);
     }
 }

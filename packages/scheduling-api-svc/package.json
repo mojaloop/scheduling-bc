@@ -1,7 +1,7 @@
 {
   "name": "@mojaloop/scheduling-bc-scheduling-svc",
   "version": "0.3.2",
-  "description": "mojaloop scheduling-bc service",
+  "description": "Mojaloop scheduling-bc service",
   "license": "Apache-2.0",
   "homepage": "https://github.com/mojaloop/scheduling-bc/",
   "private": true,
@@ -12,7 +12,8 @@
     "url": "https://github.com/mojaloop/scheduling-bc/issues#readme"
   },
   "contributors": [
-    "Pedro Sousa Barreto <pedrosousabarreto@gmail.com>"
+    "Pedro Sousa Barreto <pedrosousabarreto@gmail.com>",
+    "Elijah Okello <elijahokello90@gmail.com>"
   ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

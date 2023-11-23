@@ -23,7 +23,8 @@
  * Crosslake
  - Pedro Sousa Barreto <pedrob@crosslaketech.com>
 
- * Elijah Okello <elijahokello90@gmail.com>
+ * Alfajiri
+ - Elijah Okello <elijahokello90@gmail.com>
 
  --------------
  ******/

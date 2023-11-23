@@ -31,7 +31,7 @@
 "use strict";
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
-import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import {CommandMsg, IMessage, IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import { IReminder, ISingleReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
 import { Reminder, SingleReminder } from "./types";
 import {CronJob} from "cron";
@@ -44,6 +44,7 @@ import {
 } from "./errors";
 import {IHttpPostClient, ILocks, IRepo} from "./interfaces/infrastructure";
 import { TransferTimeoutEvt, TransfersBCTopics } from "@mojaloop/platform-shared-lib-public-messages-lib";
+import {CreateReminderCmd, CreateSingleReminderCmd, DeleteReminderCmd, DeleteRemindersCmd} from "./commands";
 
 // TODO: check error handling.
 export class Aggregate {
@@ -110,18 +111,38 @@ export class Aggregate {
 		});
 	}
 
+    async processCmd(cmd: CommandMsg | IMessage): Promise<void> {
+        try{
+            switch (cmd.msgName) {
+                case CreateReminderCmd.name:
+                    // this cast is ok because createReminder validates the payload
+                    await this._createReminder(cmd.payload as Reminder);
+                    break;
+                case CreateSingleReminderCmd.name:
+                    await this._createSingleReminder(cmd.payload as SingleReminder);
+                    break;
+                case DeleteReminderCmd.name:
+                    await this._deleteReminder(cmd.payload.id);
+                    break;
+                case DeleteRemindersCmd.name:
+                    await this._deleteReminders();
+                    break;
+            }
+        }catch (e:unknown) {
+            this.logger.error(e);
+            throw e;
+        }
+    }
+
 	async destroy(): Promise<void> {
 		this.cronJobs.forEach((cronJob: CronJob) => {
 			cronJob.stop();
 			// When running the unit tests - where no server (application) is present and the aggregate is tested with
 			// infrastructure mocks - if the cron jobs aren't stopped, the process is never terminated.
 		});
-		await this.messageProducer.destroy();
-		await this.repo.destroy();
-		await this.locks.destroy();
 	}
 
-	async createReminder(reminder: IReminder): Promise<string> { // TODO: Reminder or IReminder?
+	private async _createReminder(reminder: IReminder): Promise<string> { // TODO: Reminder or IReminder?
 		// To facilitate the creation of reminders, undefined/null ids are accepted and converted to empty strings
 		// (so that random UUIds are generated).
 		// istanbul ignore if
@@ -156,7 +177,7 @@ export class Aggregate {
 		return reminder.id;
 	}
 
-	async createSingleReminder(reminder: ISingleReminder): Promise<string> {
+	private async _createSingleReminder(reminder: ISingleReminder): Promise<string> {
 		// istanbul ignore if
 		if (reminder.id === undefined || reminder.id === null) {
 			reminder.id = "";
@@ -255,14 +276,14 @@ export class Aggregate {
 			throw Error(errorMessage);
 		}
 
-		timeoutEvent.fspiopOpaqueState = reminder.payload.fspiopOpaqueState,
+		timeoutEvent.fspiopOpaqueState = reminder.payload.fspiopOpaqueState;
 
 		await this.messageProducer.send(timeoutEvent);
 
 		// Delete the reminder if it's a valid date, since we use it to schedule a one-time task
 		const timestamp = Date.parse(reminder.time);
 		if (!isNaN(timestamp)) {
-			await this.deleteReminder(reminder.id);
+			await this._deleteReminder(reminder.id);
 		}
 
 		return;
@@ -290,7 +311,7 @@ export class Aggregate {
 		}
 	}
 
-	async deleteReminder(reminderId: string): Promise<void> {
+	private async _deleteReminder(reminderId: string): Promise<void> {
 		// istanbul ignore if
 		if (typeof reminderId !== "string") { // TODO.
 			throw new InvalidReminderIdTypeError();
@@ -313,7 +334,7 @@ export class Aggregate {
 		this.cronJobs.delete(reminderId);
 	}
 
-	async deleteReminders(): Promise<void> {
+	private async _deleteReminders(): Promise<void> {
 		for (const reminderId of this.cronJobs.keys()) { // TODO: const? of?
 			try {
 				// TODO: place everything here or just the deleteReminder() call?

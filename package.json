@@ -1,7 +1,7 @@
 {
     "name": "@mojaloop/scheduling-bc",
     "version": "0.0.1",
-    "description": "mojaloop typescript bounded context template and examples.",
+    "description": "mojaloop scheduling bounded context ",
     "license": "Apache-2.0",
     "homepage": "https://github.com/mojaloop/scheduling-bc",
     "private": true,
@@ -16,7 +16,9 @@
         "prepare": "husky install",
         "pre_commit_check": "npm run build && npm run lint && npm run test:unit",
         "start": "npm -ws run start",
-        "start:scheduling-svc": "npm -w packages/scheduling-svc run start",
+        "start:scheduling-svc": "npm -w packages/scheduling-api-svc run start",
+        "start:command-handler-svc": "npm -w packages/command-handler-svc run start",
+        "start:event-handler-svc": "npm -w packages/event-handler-svc run start",
         "build": "npm -ws run build",
         "watch": "npm -ws run watch",
         "clean": "npm run clean:dist; npm run clean:npm",
@@ -37,7 +39,7 @@
         "publish:public-types-lib": "npm -w @mojaloop/scheduling-bc-public-types-lib run pub"
     },
     "devDependencies": {
-        "@types/jest": "^29.5.8",
+        "@types/jest": "^29.5.10",
         "@types/node": "^18.11.19",
         "@typescript-eslint/eslint-plugin": "^5.50.0",
         "@typescript-eslint/parser": "^5.50.0",
@@ -57,5 +59,8 @@
     ],
     "engines": {
         "node": ">=18.13.0"
+    },
+    "dependencies": {
+        "@mojaloop/auditing-bc-client-lib": "^0.0.15"
     }
 }

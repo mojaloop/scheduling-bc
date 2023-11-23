@@ -80,7 +80,7 @@ import { IAuthorizationClient, ITokenHelper } from "@mojaloop/security-bc-public
 
 // Global vars
 const BC_NAME = "scheduling-bc";
-const APP_NAME = "scheduling-svc";
+const APP_NAME = "scheduling-api-svc";
 const APP_VERSION = process.env.npm_package_version || "0.0.0";
 // const PRODUCTION_MODE = process.env["PRODUCTION_MODE"] || false;
 
@@ -102,7 +102,7 @@ const MONGO_URL = process.env["MONGO_URL"] || "mongodb://root:mongoDbPas42@local
 const SVC_DEFAULT_HTTP_PORT = process.env["SVC_DEFAULT_HTTP_PORT"] || 3150;
 
 // Auth Requester
-// const SVC_CLIENT_ID = process.env["SVC_CLIENT_ID"] || "scheduling-bc-scheduling-svc";
+// const SVC_CLIENT_ID = process.env["SVC_CLIENT_ID"] || "scheduling-bc-scheduling-api-svc";
 // const SVC_CLIENT_SECRET = process.env["SVC_CLIENT_SECRET"] || "superServiceSecret";
 
 // const AUTH_N_SVC_BASEURL = process.env["AUTH_N_SVC_BASEURL"] || "http://localhost:3201";
@@ -208,14 +208,15 @@ export class Service {
 		// token helper
 		// istanbul ignore next
 		if(!tokenHelper){
-            this.tokenHelper = new TokenHelper(AUTH_N_SVC_JWKS_URL, logger, AUTH_N_TOKEN_ISSUER_NAME, AUTH_N_TOKEN_AUDIENCE);
-            await this.tokenHelper.init();
+            tokenHelper = new TokenHelper(AUTH_N_SVC_JWKS_URL, logger, AUTH_N_TOKEN_ISSUER_NAME, AUTH_N_TOKEN_AUDIENCE);
+            await tokenHelper.init();
 		}
-		this.tokenHelper = tokenHelper as ITokenHelper;
+		this.tokenHelper = tokenHelper;
 
 		// istanbul ignore next
 		if (!schedulingRepo) {
 			schedulingRepo = new MongoRepo(this.logger, MONGO_URL, DB_NAME, TIMEOUT_MS_REPO_OPERATIONS);
+            await schedulingRepo.init();
 		}
 		this.schedulingRepo = schedulingRepo;
 
@@ -239,6 +240,7 @@ export class Service {
 			const producerLogger = logger.createChild("producerLogger");
 			producerLogger.setLogLevel(LogLevel.INFO);
 			messageProducer = new MLKafkaJsonProducer(producerOptions, producerLogger);
+			await messageProducer.connect();
 		}
 		this.messageProducer = messageProducer;
 
@@ -286,7 +288,14 @@ export class Service {
 			this.app.use(express.urlencoded({extended: true})); // for parsing application/x-www-form-urlencoded
 
 			// Add client http routes
-			const schedulingClientRoutes = new SchedulingExpressRoutes(this.logger, this.aggregate, this.tokenHelper as TokenHelper, this.authorizationClient);
+			const schedulingClientRoutes = new SchedulingExpressRoutes(
+                this.logger,
+                this.aggregate,
+                this.tokenHelper as TokenHelper,
+                this.authorizationClient,
+                this.messageProducer,
+                this.schedulingRepo
+            );
 			this.app.use("/reminders", schedulingClientRoutes.mainRouter);
 
 			// Add health and metrics http routes

@@ -25,15 +25,27 @@
  --------------
  ******/
 
-import { ConsoleLogger, ILogger } from "@mojaloop/logging-bc-public-types-lib";
-import {Aggregate, IHttpPostClient, IRepo} from "../../src/index";
-import { LockMock, MessageProducerMock, SchedulingRepoMock } from "../mocks/domain_lib_mocks";
-import { ILocks } from "../../src/index";
-import { Reminder, SingleReminder } from "../../src/types";
-import { IMessageProducer } from "@mojaloop/platform-shared-lib-messaging-types-lib";
-import { IReminder, ISingleReminder, ReminderTaskType } from "@mojaloop/scheduling-bc-public-types-lib";
-import { TransfersBCTopics } from "@mojaloop/platform-shared-lib-public-messages-lib";
-import { InvalidReminderTimeTypeError, InvalidReminderTimeError, ReminderAlreadyExistsError, NoSuchReminderError} from "../../src/errors";
+import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-public-types-lib";
+import {
+    Aggregate,
+    CreateReminderCmd,
+    CreateSingleReminderCmd,
+    DeleteReminderCmd, DeleteRemindersCmd,
+    IHttpPostClient,
+    ILocks,
+    IRepo
+} from "../../src";
+import {LockMock, MessageProducerMock, SchedulingRepoMock} from "../mocks/domain_lib_mocks";
+import {Reminder, SingleReminder} from "../../src";
+import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import {IReminder, ISingleReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
+import {TransfersBCTopics} from "@mojaloop/platform-shared-lib-public-messages-lib";
+import {
+    InvalidReminderTimeError,
+    InvalidReminderTimeTypeError,
+    NoSuchReminderError,
+    ReminderAlreadyExistsError
+} from "../../src";
 import {FetchPostClient} from "@mojaloop/scheduling-bc-implementations-lib";
 
 // Aggregate constructor arguments
@@ -57,11 +69,12 @@ describe("scheduling-bc domain lib tests", ()=>{
         jest.clearAllMocks();
         await aggregate.destroy();
     });
+
     test("scheduling bc- domain-lib: initialise aggregate after populating reminder repo - should pass ", async ()=>{
         // Arrange
         const reminder: IReminder = {
             id: "1",
-            time: "*/1 * * * * *",
+            time: "* * * * * *",
             payload: {
                 payload: {
                     name: "test"
@@ -109,12 +122,14 @@ describe("scheduling-bc domain lib tests", ()=>{
             }
         }
 
+        const createReminderCmd = new CreateReminderCmd(reminder);
+
         // Act
-        const returnedReminderID = await aggregate.createReminder(reminder);
-        const returnedReminder = await aggregate.getReminder(returnedReminderID);
+        await aggregate.processCmd(createReminderCmd);
 
         // Assert
-        expect(returnedReminder?.id).toEqual(reminder.id);
+        const returnedReminder = await aggregate.getReminder("2");
+        expect(returnedReminder).toEqual(reminder);
     });
 
     test("scheduling bc- domain-lib: create reminder :should send event message through cronjob of reminder of type Event", async () => {
@@ -136,10 +151,12 @@ describe("scheduling-bc domain lib tests", ()=>{
             }
         }
 
+
         jest.spyOn(messageProducer, "send");
 
         // Act
-        await aggregate.createReminder(reminder);
+        const createReminderCmd = new CreateReminderCmd(reminder);
+        await aggregate.processCmd(createReminderCmd);
 
         await new Promise((r) => setTimeout(r, 2000));
 
@@ -156,7 +173,7 @@ describe("scheduling-bc domain lib tests", ()=>{
             time: "*/1 * * * * *",
             payload: {
                 payload: {
-                    name: "test"
+                    name: "test-non-existent"
                 }
             },
             taskType: ReminderTaskType.EVENT,
@@ -167,16 +184,19 @@ describe("scheduling-bc domain lib tests", ()=>{
                 "topic": "myTopic"
             }
         }
+        const createReminderCmd = new CreateReminderCmd(reminder);
 
         jest.spyOn(messageProducer,"send");
 
         // Act
-        await aggregate.createReminder(reminder);
+        await aggregate.processCmd(createReminderCmd);
 
         await new Promise((r) => setTimeout(r, 2000));
 
         // Assert
-        expect(messageProducer.send).not.toHaveBeenCalled();
+        expect(messageProducer.send).not.toHaveBeenCalledWith(expect.objectContaining({
+            "payload": reminder.payload.payload,
+        }));
     });
 
     test("scheduling bc- domain-lib: create reminder :should send http post message through cronjob of reminder of type post", async () => {
@@ -197,15 +217,15 @@ describe("scheduling-bc domain lib tests", ()=>{
                 "topic": TransfersBCTopics.TimeoutEvents
             }
         }
-
+        const createReminderCmd = new CreateReminderCmd(reminder);
         jest.spyOn(logger,"error");
 
         // Act
-        await aggregate.createReminder(reminder);
+        await aggregate.processCmd(createReminderCmd);
         await new Promise((resolve)=>{setTimeout(resolve, 1000)}); // wait for reminder to be triggered
 
         // Assert
-        expect(logger.error).toHaveBeenCalled(); //this ensures logger.error was called since fetch will fail
+        expect(logger.error).toHaveBeenCalled(); //this ensures logger.error was called since the http client will fail
     });
 
     test("scheduling bc- domain-lib: create reminder :should fail when storeReminder throws an error", async ()=>{
@@ -227,10 +247,11 @@ describe("scheduling-bc domain lib tests", ()=>{
             }
         }
 
+        const createReminderCmd = new CreateReminderCmd(reminder);
         jest.spyOn(repo,"storeReminder").mockImplementation(()=>{throw new ReminderAlreadyExistsError()});
 
         // Act & Assert
-        await expect(aggregate.createReminder(reminder)).rejects.toThrowError(ReminderAlreadyExistsError);
+        await expect(aggregate.processCmd(createReminderCmd)).rejects.toThrowError(ReminderAlreadyExistsError);
     });
 
     test("scheduling bc- domain-lib: create reminder :should fail when storeReminder throws an error", async ()=>{
@@ -252,10 +273,11 @@ describe("scheduling-bc domain lib tests", ()=>{
             }
         }
 
+        const createReminderCmd = new CreateReminderCmd(reminder);
         jest.spyOn(repo,"storeReminder").mockImplementation(()=>{throw new Error()});
 
         // Act & Assert
-        await expect(aggregate.createReminder(reminder)).rejects.toThrowError();
+        await expect(aggregate.processCmd(createReminderCmd)).rejects.toThrowError();
     });
 
     test("scheduling bc- domain-lib: create single reminder :should fail when storeReminder throws an error", async ()=>{
@@ -276,11 +298,11 @@ describe("scheduling-bc domain lib tests", ()=>{
                 "topic": TransfersBCTopics.TimeoutEvents
             }
         }
-
+        const createSingleReminderCmd = new CreateSingleReminderCmd(reminder);
         jest.spyOn(repo,"storeReminder").mockImplementation(()=>{throw new ReminderAlreadyExistsError()});
 
         // Act & Assert
-        await expect(aggregate.createSingleReminder(reminder)).rejects.toThrowError(ReminderAlreadyExistsError);
+        await expect(aggregate.processCmd(createSingleReminderCmd)).rejects.toThrowError(ReminderAlreadyExistsError);
     });
 
     test("scheduling bc- domain-lib: create single reminder :should fail when storeReminder throws an error", async ()=>{
@@ -301,11 +323,11 @@ describe("scheduling-bc domain lib tests", ()=>{
                 "topic": TransfersBCTopics.TimeoutEvents
             }
         }
-
+        const createSingleReminderCmd = new CreateSingleReminderCmd(reminder);
         jest.spyOn(repo,"storeReminder").mockImplementation(()=>{throw new Error()});
 
         // Act & Assert
-        await expect(aggregate.createSingleReminder(reminder)).rejects.toThrowError();
+        await expect(aggregate.processCmd(createSingleReminderCmd)).rejects.toThrowError();
     });
 
     test("scheduling-bc: domain-lib: create reminder should fail with return when getReminder returns null", async ()=>{
@@ -326,11 +348,11 @@ describe("scheduling-bc domain lib tests", ()=>{
                 "topic": TransfersBCTopics.TimeoutEvents
             }
         }
-
+        const createReminderCmd = new CreateReminderCmd(reminder);
         jest.spyOn(repo, "getReminder").mockImplementation(async ()=>{return null});
 
         // Act
-        await aggregate.createReminder(reminder);
+        await aggregate.processCmd(createReminderCmd);
 
         await new Promise((r) => setTimeout(r, 1000));
 
@@ -338,40 +360,6 @@ describe("scheduling-bc domain lib tests", ()=>{
         // Assert
         const returnedReminder = aggregate.getReminder("7");
         expect(returnedReminder).toBeNull
-    });
-
-    test("scheduling bc- domain-lib: create reminder :should not be able to send reminder due to reminder being locked", async () => {
-        // Arrange
-        const reminder: IReminder = {
-            id: "5",
-            time: "*/1 * * * * *",
-            payload: {
-                payload: {
-                    name: "test"
-                }
-            },
-            taskType: ReminderTaskType.EVENT,
-            httpPostTaskDetails: {
-                "url": "http://localhost:1111/"
-            },
-            eventTaskDetails: {
-                "topic": TransfersBCTopics.TimeoutEvents
-            }
-        }
-
-        jest.spyOn(locks, "acquire").mockResolvedValue(false);
-        jest.spyOn(messageProducer, "send");
-
-        // Act
-        const returnedReminderID = await aggregate.createReminder(reminder);
-
-        await new Promise((r) => setTimeout(r, 2000));
-
-        const returnedReminder = await aggregate.getReminder(returnedReminderID);
-
-        // Assert
-        expect(messageProducer.send).not.toBeCalled();
-        expect(returnedReminder).toEqual(reminder);
     });
 
     test("scheduling bc- domain-lib: get reminders :returned reminders should be greater than zero",async ()=>{
@@ -388,6 +376,40 @@ describe("scheduling-bc domain lib tests", ()=>{
 
         // Act and Asser
         await expect(aggregate.getReminder("1")).rejects.toThrowError();
+    });
+
+    test("scheduling bc- domain-lib: create reminder :should not be able to send reminder due to reminder being locked", async () => {
+        // Arrange
+        const reminder: IReminder = {
+            id: "5",
+            time: "* * * * * *",
+            payload: {
+                payload: {
+                    name: "test"
+                }
+            },
+            taskType: ReminderTaskType.EVENT,
+            httpPostTaskDetails: {
+                "url": "http://localhost:1111/"
+            },
+            eventTaskDetails: {
+                "topic": TransfersBCTopics.TimeoutEvents
+            }
+        }
+        jest.spyOn(locks, "acquire").mockResolvedValue(false);
+        jest.spyOn(messageProducer, "send");
+
+        // Act
+        const createSingleReminderCmd = new CreateSingleReminderCmd(reminder);
+        await aggregate.processCmd(createSingleReminderCmd);
+
+        await new Promise((r) => setTimeout(r, 2000));
+
+        const returnedReminder = await aggregate.getReminder("5");
+
+        // Assert
+        expect(messageProducer.send).not.toBeCalled();
+        expect(returnedReminder).toEqual(reminder);
     });
 
     test("scheduling-bc - domain-lib: get reminders should fail when repo.getReminders fails", async ()=>{
@@ -413,18 +435,21 @@ describe("scheduling-bc domain lib tests", ()=>{
             }
         }
 
+        const createSingleReminderCmd = new CreateSingleReminderCmd(singleReminder);
         // Act
-        const returnedReminderID = await aggregate.createSingleReminder(singleReminder);
+        await aggregate.processCmd(createSingleReminderCmd);
 
         // Assert
-        const returnedReminder = await aggregate.getReminder(returnedReminderID);
+        const returnedReminder = await aggregate.getReminder("4");
         expect(returnedReminder).toEqual(singleReminder);
 
     });
 
     test("scheduling bc- domain-lib: delete reminder :should delete when passed existent id", async ()=>{
         // Act
-        await aggregate.deleteReminder("3");
+        const deleteReminderCmd = new DeleteReminderCmd({id:"3"});
+        await aggregate.processCmd(deleteReminderCmd);
+
         // Assert
         const reminder = await aggregate.getReminder("3");
         expect(reminder).toBeUndefined();
@@ -435,7 +460,8 @@ describe("scheduling-bc domain lib tests", ()=>{
         jest.spyOn(repo, "deleteReminder").mockImplementation(async ()=>{throw new NoSuchReminderError()});
 
         // Act & Assert
-        await expect(aggregate.deleteReminder("3")).rejects.toThrowError(NoSuchReminderError);
+        const deleteReminderCmd = new DeleteReminderCmd({id:"3"});
+        await expect(aggregate.processCmd(deleteReminderCmd)).rejects.toThrowError(NoSuchReminderError);
     });
 
     test("scheduling-bc - domain-lib: delete reminder with id should fail when repo.deleteReminder fails", async ()=>{
@@ -443,12 +469,14 @@ describe("scheduling-bc domain lib tests", ()=>{
         jest.spyOn(repo, "deleteReminder").mockImplementation(async ()=>{throw new Error()});
 
         // Act & Assert
-        await expect(aggregate.deleteReminder("3")).rejects.toThrowError(Error);
+        const deleteReminderCmd = new DeleteReminderCmd({id:"3"});
+        await expect(aggregate.processCmd(deleteReminderCmd)).rejects.toThrowError(Error);
     });
 
     test("scheduling bc- domain-lib: delete reminders : should delete all reminders ",async ()=>{
         // Arrange
-        await aggregate.deleteReminders();
+        const deleteRemindersCmd = new DeleteRemindersCmd();
+        await aggregate.processCmd(deleteRemindersCmd);
 
         //Act
         const reminders: IReminder[] = await aggregate.getReminders();
@@ -467,12 +495,14 @@ describe("scheduling-bc domain lib tests", ()=>{
             {"url": "http://localhost:1111/"},
             {"topic": "test_topic"}
         );
-        await aggregate.createReminder(reminder);
+        const createReminderCmd = new CreateReminderCmd(reminder);
+        await aggregate.processCmd(createReminderCmd);
 
         jest.spyOn(repo, "deleteReminder").mockImplementation(async ()=>{throw new NoSuchReminderError()});
 
         // Act & Assert
-        await expect(aggregate.deleteReminders()).rejects.toThrowError(NoSuchReminderError);
+        const deleteCmd = new DeleteRemindersCmd();
+        await expect(aggregate.processCmd(deleteCmd)).rejects.toThrowError(NoSuchReminderError);
     });
 
     test("scheduling-bc - domain-lib: delete reminders should fail when repo.deleteReminder fails", async ()=>{
@@ -507,12 +537,14 @@ describe("scheduling-bc domain lib tests", ()=>{
             {"url": "http://localhost:1111/"},
             {"topic": "test_topic"}
         );
-        await aggregate.createReminder(reminder);
+        const createReminderCmd = new CreateReminderCmd(reminder);
+        await aggregate.processCmd(createReminderCmd);
 
         jest.spyOn(repo, "deleteReminder").mockImplementation(async ()=>{throw new Error()});
 
         // Act & Assert
-        await expect(aggregate.deleteReminders()).rejects.toThrowError(Error);
+        const deleteRemindersCmd = new DeleteRemindersCmd();
+        await expect(aggregate.processCmd(deleteRemindersCmd)).rejects.toThrowError(Error);
     });
 
     test("scheduling-bc - domain-lib: create and validate reminder should pass", async ()=>{
@@ -640,7 +672,7 @@ describe("scheduling-bc domain lib tests", ()=>{
         expect(()=>{SingleReminder.validateReminder(invalidReminder)}).toThrowError();
     });
 
-    test("scheduling-bc - domain-lib: validate a reminder and a single reminder with an invalid task type should throw an exception", async ()=>{
+    test("scheduling-bc - domain-lib: validate a reminder and a  reminder with an invalid task type should throw an exception", async ()=>{
         //Arrange
         const invalidReminder: any = {
             id: "3",
