@@ -37,7 +37,7 @@ import {CommandMsg} from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import {
     SCHEDULING_BOUNDED_CONTEXT_NAME,
     SCHEDULING_AGGREGATE_NAME,
-    SchedulingBcTopics,
+    SchedulingBcTopics, TransfersBCTopics,
 } from "@mojaloop/platform-shared-lib-public-messages-lib";
 import {Reminder, SingleReminder} from "../types";
 
@@ -46,13 +46,13 @@ import {Reminder, SingleReminder} from "../types";
 export type CreateReminderCmdPayload = {
  id: string;
  time: string; // TODO: Date.
- payload: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+ payload: unknown;
  taskType: ReminderTaskType;
  httpPostTaskDetails: null | {
   url: string
  };
  eventTaskDetails: null | {
-  topic: string
+  topic: TransfersBCTopics
  };
 }
 
@@ -79,13 +79,13 @@ export class CreateReminderCmd extends CommandMsg {
 export type CreateSingleReminderCmdPayload = {
  id: string;
  time: string | number; // TODO: Date.
- payload: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+ payload: unknown;
  taskType: ReminderTaskType;
  httpPostTaskDetails: null | {
   url: string
  };
  eventTaskDetails: null | {
-  topic: string
+  topic: TransfersBCTopics
  };
 }
 

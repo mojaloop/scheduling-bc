@@ -32,8 +32,15 @@
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {IAuditClient} from "@mojaloop/auditing-bc-public-types-lib";
-import {IMessageConsumer,IMessageProducer,IMessage} from "@mojaloop/platform-shared-lib-messaging-types-lib";
-import {SchedulingBcTopics} from "@mojaloop/platform-shared-lib-public-messages-lib";
+import {
+    CommandMsg,
+    IMessage,
+    IMessageConsumer,
+    IMessageProducer
+} from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import {TransferPreparedEvt, TransfersBCTopics} from "@mojaloop/platform-shared-lib-public-messages-lib";
+import {CreateReminderCmd, CreateReminderCmdPayload} from "@mojaloop/scheduling-bc-domain-lib";
+import {ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
 
 export class SchedulingEventHandler {
     private _logger: ILogger;
@@ -53,7 +60,7 @@ export class SchedulingEventHandler {
         await this._messageProducer.connect();
 
         // create and start the consumer handler
-        this._messageConsumer.setTopics([SchedulingBcTopics.DomainEvents]);
+        this._messageConsumer.setTopics([TransfersBCTopics.DomainEvents]);
 
         this._messageConsumer.setCallbackFn(this._msgHandler.bind(this));
         await this._messageConsumer.connect();
@@ -65,26 +72,43 @@ export class SchedulingEventHandler {
         return await new Promise<void>(async (resolve) => {
             this._logger.debug(`Got message in SchedulingEventHandler with name: ${message.msgName}`);
             try {
-                // const schedulingCmd: CommandMsg | null = null;
-                //
-                // switch (message.msgName) {
-                //     // event handler will be used in the future when transfers needs to send events
-                //     default: {
-                //         this._logger.isWarnEnabled() && this._logger.warn(`SchedulingEventHandler - Skipping unknown event - msgName: ${message?.msgName} msgKey: ${message?.msgKey} msgId: ${message?.msgId}`);
-                //     }
-                // }
-                //
-                // if (schedulingCmd) {
-                //     // this._logger.info(`SchedulingEventHandler - publishing cmd - ${message?.msgName}:${message?.msgKey}:${message?.msgId} - Cmd: ${schedulingCmd.msgName}:${schedulingCmd.msgId}`);
-                //     await this._messageProducer.send(schedulingCmd);
-                //     this._logger.info(`SchedulingEventHandler - publishing cmd Finished - ${message?.msgName}:${message?.msgKey}:${message?.msgId}`);
-                // }
+                let schedulingCmd: CommandMsg | null = null;
+
+                switch (message.msgName) {
+                    case TransferPreparedEvt.name:
+                        schedulingCmd = this._transferPreparedEvtToCreateReminderCmd(message as TransferPreparedEvt);
+                        break;
+                    default: {
+                        this._logger.isWarnEnabled() && this._logger.warn(`SchedulingEventHandler - Skipping unknown event - msgName: ${message?.msgName} msgKey: ${message?.msgKey} msgId: ${message?.msgId}`);
+                    }
+                }
+
+                if (schedulingCmd) {
+                    this._logger.info(`SchedulingEventHandler - publishing cmd - ${message?.msgName}:${message?.msgKey}:${message?.msgId} - Cmd: ${schedulingCmd.msgName}:${schedulingCmd.msgId}`);
+                    await this._messageProducer.send(schedulingCmd);
+                    this._logger.info(`SchedulingEventHandler - publishing cmd Finished - ${message?.msgName}:${message?.msgKey}:${message?.msgId}`);
+                }
             }catch(err: unknown){
                 this._logger.error(err, `SchedulingEventHandler - processing event - ${message?.msgName}:${message?.msgKey}:${message?.msgId} - Error: ${(err as Error)?.message?.toString()}`);
             }finally {
                 resolve();
             }
         });
+    }
+
+    private _transferPreparedEvtToCreateReminderCmd(event: TransferPreparedEvt): CreateReminderCmd {
+        const cmdPayload: CreateReminderCmdPayload = {
+            id: event.payload.transferId,
+            time: event.payload.expiration.toString(),
+            payload: undefined,
+            taskType: ReminderTaskType.EVENT,
+            httpPostTaskDetails: null,
+            eventTaskDetails:{
+                topic: TransfersBCTopics.TimeoutEvents
+            }
+
+        };
+        return new CreateReminderCmd(cmdPayload);
     }
 
     async stop():Promise<void>{
