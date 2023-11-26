@@ -29,7 +29,13 @@
 
 import {Service} from "../../src/service";
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-public-types-lib";
-import {CreateReminderCmd, ILocks, IRepo} from "@mojaloop/scheduling-bc-domain-lib";
+import {
+    CreateReminderCmd,
+    CreateReminderCmdPayload,
+    CreateSingleReminderCmdPayload,
+    ILocks,
+    IRepo
+} from "@mojaloop/scheduling-bc-domain-lib";
 import {
     AuditClientMock,
     LockMock,
@@ -82,7 +88,7 @@ describe("scheduling-bc command-handler-svc unit tests", ()=>{
             }
         }
 
-        const createReminderCmd = new CreateReminderCmd(reminder);
+        const createReminderCmd = new CreateReminderCmd(reminder as CreateReminderCmdPayload);
 
         // Act
         await mockMessageConsumer.invokeHandler(createReminderCmd);
@@ -107,7 +113,7 @@ describe("scheduling-bc command-handler-svc unit tests", ()=>{
             }
         }
 
-        const createReminderCmd = new CreateReminderCmd(reminder);
+        const createReminderCmd = new CreateReminderCmd(reminder as CreateReminderCmdPayload);
 
         // Act
         jest.spyOn(mockRepo,"storeReminder").mockImplementation(()=>{throw new Error()});
@@ -135,7 +141,7 @@ describe("scheduling-bc command-handler-svc unit tests", ()=>{
             }
         }
 
-        const createReminderCmd = new CreateReminderCmd(reminder);
+        const createReminderCmd = new CreateReminderCmd(reminder as CreateReminderCmdPayload);
         createReminderCmd.msgType = MessageTypes.DOMAIN_EVENT
 
         // Act

@@ -28,8 +28,8 @@
 import {ConsoleLogger, ILogger} from "@mojaloop/logging-bc-public-types-lib";
 import {
     Aggregate,
-    CreateReminderCmd,
-    CreateSingleReminderCmd,
+    CreateReminderCmd, CreateReminderCmdPayload,
+    CreateSingleReminderCmd, CreateSingleReminderCmdPayload,
     DeleteReminderCmd, DeleteRemindersCmd,
     IHttpPostClient,
     ILocks,
@@ -122,7 +122,7 @@ describe("scheduling-bc domain lib tests", ()=>{
             }
         }
 
-        const createReminderCmd = new CreateReminderCmd(reminder);
+        const createReminderCmd = new CreateReminderCmd(reminder as CreateReminderCmdPayload);
 
         // Act
         await aggregate.processCmd(createReminderCmd);
@@ -155,7 +155,7 @@ describe("scheduling-bc domain lib tests", ()=>{
         jest.spyOn(messageProducer, "send");
 
         // Act
-        const createReminderCmd = new CreateReminderCmd(reminder);
+        const createReminderCmd = new CreateReminderCmd(reminder as CreateReminderCmdPayload);
         await aggregate.processCmd(createReminderCmd);
 
         await new Promise((r) => setTimeout(r, 2000));
@@ -184,7 +184,7 @@ describe("scheduling-bc domain lib tests", ()=>{
                 "topic": "myTopic"
             }
         }
-        const createReminderCmd = new CreateReminderCmd(reminder);
+        const createReminderCmd = new CreateReminderCmd(reminder as CreateReminderCmdPayload);
 
         jest.spyOn(messageProducer,"send");
 
@@ -217,7 +217,7 @@ describe("scheduling-bc domain lib tests", ()=>{
                 "topic": TransfersBCTopics.TimeoutEvents
             }
         }
-        const createReminderCmd = new CreateReminderCmd(reminder);
+        const createReminderCmd = new CreateReminderCmd(reminder as CreateReminderCmdPayload);
         jest.spyOn(logger,"error");
 
         // Act
@@ -247,7 +247,7 @@ describe("scheduling-bc domain lib tests", ()=>{
             }
         }
 
-        const createReminderCmd = new CreateReminderCmd(reminder);
+        const createReminderCmd = new CreateReminderCmd(reminder as CreateReminderCmdPayload);
         jest.spyOn(repo,"storeReminder").mockImplementation(()=>{throw new ReminderAlreadyExistsError()});
 
         // Act & Assert
@@ -273,7 +273,7 @@ describe("scheduling-bc domain lib tests", ()=>{
             }
         }
 
-        const createReminderCmd = new CreateReminderCmd(reminder);
+        const createReminderCmd = new CreateReminderCmd(reminder as CreateReminderCmdPayload);
         jest.spyOn(repo,"storeReminder").mockImplementation(()=>{throw new Error()});
 
         // Act & Assert
@@ -298,7 +298,7 @@ describe("scheduling-bc domain lib tests", ()=>{
                 "topic": TransfersBCTopics.TimeoutEvents
             }
         }
-        const createSingleReminderCmd = new CreateSingleReminderCmd(reminder);
+        const createSingleReminderCmd = new CreateSingleReminderCmd(reminder as CreateSingleReminderCmdPayload);
         jest.spyOn(repo,"storeReminder").mockImplementation(()=>{throw new ReminderAlreadyExistsError()});
 
         // Act & Assert
@@ -323,7 +323,7 @@ describe("scheduling-bc domain lib tests", ()=>{
                 "topic": TransfersBCTopics.TimeoutEvents
             }
         }
-        const createSingleReminderCmd = new CreateSingleReminderCmd(reminder);
+        const createSingleReminderCmd = new CreateSingleReminderCmd(reminder as CreateSingleReminderCmdPayload);
         jest.spyOn(repo,"storeReminder").mockImplementation(()=>{throw new Error()});
 
         // Act & Assert
@@ -348,7 +348,7 @@ describe("scheduling-bc domain lib tests", ()=>{
                 "topic": TransfersBCTopics.TimeoutEvents
             }
         }
-        const createReminderCmd = new CreateReminderCmd(reminder);
+        const createReminderCmd = new CreateReminderCmd(reminder as CreateReminderCmdPayload);
         jest.spyOn(repo, "getReminder").mockImplementation(async ()=>{return null});
 
         // Act
@@ -400,7 +400,7 @@ describe("scheduling-bc domain lib tests", ()=>{
         jest.spyOn(messageProducer, "send");
 
         // Act
-        const createSingleReminderCmd = new CreateSingleReminderCmd(reminder);
+        const createSingleReminderCmd = new CreateSingleReminderCmd(reminder as CreateSingleReminderCmdPayload);
         await aggregate.processCmd(createSingleReminderCmd);
 
         await new Promise((r) => setTimeout(r, 2000));
@@ -435,7 +435,7 @@ describe("scheduling-bc domain lib tests", ()=>{
             }
         }
 
-        const createSingleReminderCmd = new CreateSingleReminderCmd(singleReminder);
+        const createSingleReminderCmd = new CreateSingleReminderCmd(singleReminder as CreateSingleReminderCmdPayload);
         // Act
         await aggregate.processCmd(createSingleReminderCmd);
 
@@ -495,7 +495,7 @@ describe("scheduling-bc domain lib tests", ()=>{
             {"url": "http://localhost:1111/"},
             {"topic": "test_topic"}
         );
-        const createReminderCmd = new CreateReminderCmd(reminder);
+        const createReminderCmd = new CreateReminderCmd(reminder as CreateReminderCmdPayload);
         await aggregate.processCmd(createReminderCmd);
 
         jest.spyOn(repo, "deleteReminder").mockImplementation(async ()=>{throw new NoSuchReminderError()});
@@ -537,7 +537,7 @@ describe("scheduling-bc domain lib tests", ()=>{
             {"url": "http://localhost:1111/"},
             {"topic": "test_topic"}
         );
-        const createReminderCmd = new CreateReminderCmd(reminder);
+        const createReminderCmd = new CreateReminderCmd(reminder as CreateReminderCmdPayload);
         await aggregate.processCmd(createReminderCmd);
 
         jest.spyOn(repo, "deleteReminder").mockImplementation(async ()=>{throw new Error()});
