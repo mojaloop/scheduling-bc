@@ -44,8 +44,8 @@ import {IAuthorizationClient, ITokenHelper} from "@mojaloop/security-bc-public-t
 import {IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import { IReminder, ISingleReminder, ReminderTaskType } from "@mojaloop/scheduling-bc-public-types-lib";
 
-const URL_REMINDERS: string = "http://localhost:3150/reminders";
-const FAULTY_URL_REMINDERS: string = "http://localhost:1000/reminders";
+const URL_REMINDERS: string = "http://localhost:3150";
+const FAULTY_URL_REMINDERS: string = "http://localhost:1000";
 const TIMEOUT_MS_HTTP_CLIENT: number = 10_000;
 const SHORT_TIMEOUT_MS_HTTP_CLIENT: number = 1;
 

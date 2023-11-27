@@ -45,18 +45,19 @@ export class SchedulingClient {
 	// Properties received through the constructor.
 	private readonly logger: ILogger;
 	// Other properties.
-	private readonly URL_REMINDERS:string;
-    private readonly TIMEOUT_MS_HTTP_CLIENT: number;
+	private readonly _baseUrlHttpService:string;
+    private readonly _requestTimeoutMs: number;
+    private readonly _remindersPath = "reminders";
 
 	constructor(
 		logger: ILogger,
-		URL_REMINDERS: string,
-        TIMEOUT_MS_HTTP_CLIENT = DEFAULT_TIMEOUT_MS
+		baseUrlHttpService: string,
+        requestTimeoutMs = DEFAULT_TIMEOUT_MS
 	) {
 		this.logger = logger;
 
-		this.URL_REMINDERS = URL_REMINDERS;
-        this.TIMEOUT_MS_HTTP_CLIENT = TIMEOUT_MS_HTTP_CLIENT;
+		this._baseUrlHttpService = baseUrlHttpService;
+        this._requestTimeoutMs = requestTimeoutMs;
 	}
 
 	async createReminder(reminder: IReminder): Promise<string> {
@@ -65,13 +66,13 @@ export class SchedulingClient {
             headers.append("Content-Type","application/json");
 
 			const res = await fetchWithTimeOut(
-                `${this.URL_REMINDERS}/`,
+                `${this._baseUrlHttpService}/${this._remindersPath}/`,
                 {
                     method:"POST",
                     headers: headers,
                     body:JSON.stringify(reminder)
                 },
-                this.TIMEOUT_MS_HTTP_CLIENT
+                this._requestTimeoutMs
             );
 
 			const data = await res.json();
@@ -98,13 +99,13 @@ export class SchedulingClient {
             headers.append("Content-Type","application/json");
 
             const res = await fetchWithTimeOut(
-                `${this.URL_REMINDERS}/single`,
+                `${this._baseUrlHttpService}/${this._remindersPath}/single`,
                 {
                     method:"POST",
                     headers: headers,
                     body:JSON.stringify(reminder)
                 },
-                this.TIMEOUT_MS_HTTP_CLIENT
+                this._requestTimeoutMs
             );
 
             const data = await res.json();
@@ -132,12 +133,12 @@ export class SchedulingClient {
             headers.append("Content-Type","application/json");
 
             const res = await fetchWithTimeOut(
-                `${this.URL_REMINDERS}/${reminderId}`,
+                `${this._baseUrlHttpService}/${this._remindersPath}/${reminderId}`,
                 {
                     method:"GET",
                     headers: headers,
                 },
-                this.TIMEOUT_MS_HTTP_CLIENT
+                this._requestTimeoutMs
             );
 
             if (res.status === 404) {
@@ -157,12 +158,12 @@ export class SchedulingClient {
             headers.append("Content-Type","application/json");
 
             const res = await fetchWithTimeOut(
-                `${this.URL_REMINDERS}/${reminderId}`,
+                `${this._baseUrlHttpService}/${this._remindersPath}/${reminderId}`,
                 {
                     method:"DELETE",
                     headers: headers,
                 },
-                this.TIMEOUT_MS_HTTP_CLIENT
+                this._requestTimeoutMs
             );
 
             const data = await res.json();
