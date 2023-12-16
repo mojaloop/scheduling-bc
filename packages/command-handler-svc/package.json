@@ -1,6 +1,6 @@
 {
     "name": "@mojaloop/scheduling-bc-command-handler-svc",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "description": "Mojaloop Scheduling-bc Command Handler Service",
     "license": "Apache-2.0",
     "homepage": "https://github.com/mojaloop/scheduling-bc/",
