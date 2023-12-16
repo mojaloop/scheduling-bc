@@ -134,6 +134,9 @@ export class AuthorizationClientMock implements IAuthorizationClient {
         return false;
     }
 
+    rolesHavePrivilege(roleIds: string[], privilegeId: string): boolean {
+        return false;
+    }
 }
 
 export class TokenHelperMock  implements ITokenHelper {
@@ -143,6 +146,9 @@ export class TokenHelperMock  implements ITokenHelper {
     private _audience:string;
     private _jwksClient:string;
     init(): Promise<void> {
+        return Promise.resolve();
+    }
+    destroy(): Promise<void> {
         return Promise.resolve();
     }
     decodeToken(accessToken: string) {
