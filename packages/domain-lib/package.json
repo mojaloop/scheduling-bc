@@ -35,8 +35,8 @@
     "dependencies": {
         "@mojaloop/auditing-bc-public-types-lib": "~0.5.1",
         "@mojaloop/logging-bc-public-types-lib": "~0.5.2",
-        "@mojaloop/platform-shared-lib-messaging-types-lib": "~0.5.2",
-        "@mojaloop/platform-shared-lib-public-messages-lib": "~0.5.4",
+        "@mojaloop/platform-shared-lib-messaging-types-lib": "~0.5.4",
+        "@mojaloop/platform-shared-lib-public-messages-lib": "~0.5.10",
         "@mojaloop/security-bc-public-types-lib": "~0.5.5",
         "@mojaloop/scheduling-bc-public-types-lib": "*",
         "cron": "^3.1.6",
@@ -44,7 +44,7 @@
     },
     "devDependencies": {
         "@types/cron": "^2.0.1",
-        "@types/uuid": "^9.0.7"
+        "@types/uuid": "^9.0.8"
     },
     "engines": {
         "node": ">=20.10.0"
