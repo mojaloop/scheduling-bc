@@ -29,57 +29,26 @@
  --------------
  ******/
 
+
 "use strict";
 
-import {
-    ConfigurationClient,
-    DefaultConfigProvider
-} from "@mojaloop/platform-configuration-bc-client-lib";
-import {ConfigParameterTypes} from "@mojaloop/platform-configuration-bc-public-types-lib";
-
-
-if (!process.env.npm_package_version) {
-    throw new Error("This application must be launched by npm");
-}
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const packageJSON = require("../../package.json");
 
 // configs - constants / code dependent
 const BC_NAME = "scheduling-bc";
 const APP_NAME = "scheduling-api-svc";
-const APP_VERSION = process.env.npm_package_version || "0.0.0";
-const CONFIGSET_VERSION = "0.0.1";
+const APP_VERSION = packageJSON.version;
+// const CONFIGSET_VERSION = "0.0.1";
 
 // configs - non-constants
-const ENV_NAME = process.env["ENV_NAME"] || "dev";
+// const ENV_NAME = process.env["ENV_NAME"] || "dev";
 
-/*
-* DefaultConfigProvider uses the PLATFORM_CONFIG_CENTRAL_URL env var
-* for its config if none is provided in the constructor
-*/
-//const defaultConfigProvider: DefaultConfigProvider = new DefaultConfigProvider(SPECIFIC_CONFIG_SVC_BASEURL);
-const defaultConfigProvider: DefaultConfigProvider = new DefaultConfigProvider();
 
-/*
-* Set the PLATFORM_CONFIG_STANDALONE env var to something or pass a null provider to the
-* AppConfiguration constructor to disable the provider and have the AppConfiguration
-* instance work in standalone mode
-*/
-const configClient = new ConfigurationClient(ENV_NAME, BC_NAME, APP_NAME, APP_VERSION, CONFIGSET_VERSION, defaultConfigProvider);
+const configClient = {
+    boundedContextName: BC_NAME,
+    applicationName: APP_NAME,
+    applicationVersion: APP_VERSION
+};
 
-/*
-* Add application parameters here
-* */
-configClient.appConfigs.addNewParam(
-    "service-http-port",
-    ConfigParameterTypes.INT_NUMBER,
-    3000,
-    "Http port where the webservice will listen in - v" + APP_VERSION
-);
-
-// configClient.appConfigs.addNewParam(
-//         "MAX_VALUE_PER_DEPOSIT",
-//         ConfigParameterTypes.BOOL,
-//         true,
-//         "Enable maker-checker enforcement in participants"
-// );
-
-export default configClient;
+export = configClient;

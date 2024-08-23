@@ -38,18 +38,18 @@
         "dep:update": "ncu -u"
     },
     "dependencies": {
-        "@mojaloop/logging-bc-client-lib": "~0.1.30",
-        "@mojaloop/logging-bc-public-types-lib": "~0.1.23",
-        "@mojaloop/auditing-bc-public-types-lib": "~0.3.2",
-        "@mojaloop/platform-configuration-bc-client-lib": "~0.1.22",
-        "@mojaloop/platform-shared-lib-messaging-types-lib": "~0.2.103",
-        "@mojaloop/platform-shared-lib-public-messages-lib": "~0.1.164",
-        "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib": "~0.3.71",
+        "@mojaloop/logging-bc-client-lib": "~0.5.8",
+        "@mojaloop/auditing-bc-public-types-lib": "~0.5.2",
+        "@mojaloop/auditing-bc-client-lib":  "~0.5.3",
+        "@mojaloop/platform-configuration-bc-client-lib": "~0.6.3",
+        "@mojaloop/platform-shared-lib-messaging-types-lib": "~0.6.2",
+        "@mojaloop/platform-shared-lib-public-messages-lib": "~0.5.26",
+        "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib": "~0.5.18",
+        "@mojaloop/logging-bc-public-types-lib": "~0.5.4",
         "@mojaloop/scheduling-bc-domain-lib": "*",
         "@mojaloop/scheduling-bc-implementations-lib": "*"
     },
     "devDependencies": {
-        "@mojaloop/logging-bc-public-types-lib": "^0.1.23",
         "@types/express": "^4.17.21",
         "@types/jest": "^29.4.4",
         "@types/node": "^18.11.19",

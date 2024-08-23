@@ -38,14 +38,20 @@ import {Aggregate as SchedulingAggregate, IHttpPostClient, ILocks, IRepo} from "
 import {SchedulingCommandHandler} from "./handler";
 import {KafkaLogger} from "@mojaloop/logging-bc-client-lib";
 import {LogLevel} from "@mojaloop/logging-bc-public-types-lib";
-import {MLKafkaJsonProducerOptions,MLKafkaJsonConsumer,MLKafkaJsonConsumerOptions,MLKafkaJsonProducer} from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
 import {
- AuditClient,
- KafkaAuditClientDispatcher,
- LocalAuditClientCryptoProvider
+    MLKafkaJsonProducerOptions,
+    MLKafkaJsonConsumer,
+    MLKafkaJsonConsumerOptions,
+    MLKafkaJsonProducer
+} from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
+import {
+    AuditClient,
+    KafkaAuditClientDispatcher,
+    LocalAuditClientCryptoProvider
 } from "@mojaloop/auditing-bc-client-lib";
 import configClient from "./config";
 import {FetchPostClient, MongoRepo, RedisLocks} from "@mojaloop/scheduling-bc-implementations-lib";
+import crypto from "crypto";
 
 const BC_NAME = configClient.boundedContextName;
 const APP_NAME = configClient.applicationName;
@@ -53,7 +59,16 @@ const APP_VERSION = configClient.applicationVersion;
 const PRODUCTION_MODE = process.env["PRODUCTION_MODE"] || false;
 const LOG_LEVEL: LogLevel = process.env["LOG_LEVEL"] as LogLevel || LogLevel.DEBUG;
 
+const INSTANCE_NAME = `${BC_NAME}_${APP_NAME}`;
+const INSTANCE_ID = `${INSTANCE_NAME}__${crypto.randomUUID()}`;
+
+// Message Consumer/Publisher
 const KAFKA_URL = process.env["KAFKA_URL"] || "localhost:9092";
+const KAFKA_AUTH_ENABLED = process.env["KAFKA_AUTH_ENABLED"] && process.env["KAFKA_AUTH_ENABLED"].toUpperCase() === "TRUE" || false;
+const KAFKA_AUTH_PROTOCOL = process.env["KAFKA_AUTH_PROTOCOL"] || "sasl_plaintext";
+const KAFKA_AUTH_MECHANISM = process.env["KAFKA_AUTH_MECHANISM"] || "plain";
+const KAFKA_AUTH_USERNAME = process.env["KAFKA_AUTH_USERNAME"] || "user";
+const KAFKA_AUTH_PASSWORD = process.env["KAFKA_AUTH_PASSWORD"] || "password";
 
 const KAFKA_AUDITS_TOPIC = process.env["KAFKA_AUDITS_TOPIC"] || "audits";
 const KAFKA_LOGS_TOPIC = process.env["KAFKA_LOGS_TOPIC"] || "logs";
@@ -78,162 +93,175 @@ const TIMEOUT_MS_HTTP_CLIENT = 10_000; // TODO.
 const DB_NAME = process.env.SCHEDULING_DB_NAME ?? "scheduling";
 const MONGO_URL = process.env["MONGO_URL"] || "mongodb://root:mongoDbPas42@localhost:27017/";
 
-const kafkaConsumerOptions: MLKafkaJsonConsumerOptions = {
+// kafka common options
+const kafkaProducerCommonOptions: MLKafkaJsonProducerOptions = {
     kafkaBrokerList: KAFKA_URL,
-    kafkaGroupId: `${BC_NAME}_${APP_NAME}`
+    producerClientId: `${INSTANCE_ID}`,
 };
-
-const kafkaProducerOptions: MLKafkaJsonProducerOptions = {
+const kafkaConsumerCommonOptions: MLKafkaJsonConsumerOptions = {
     kafkaBrokerList: KAFKA_URL
 };
+if (KAFKA_AUTH_ENABLED) {
+    kafkaProducerCommonOptions.authentication = kafkaConsumerCommonOptions.authentication = {
+        protocol: KAFKA_AUTH_PROTOCOL as "plaintext" | "ssl" | "sasl_plaintext" | "sasl_ssl",
+        mechanism: KAFKA_AUTH_MECHANISM as "PLAIN" | "GSSAPI" | "SCRAM-SHA-256" | "SCRAM-SHA-512",
+        username: KAFKA_AUTH_USERNAME,
+        password: KAFKA_AUTH_PASSWORD
+    };
+}
 
-let globalLogger:ILogger;
+const producerOptions: MLKafkaJsonProducerOptions = {
+    ...kafkaProducerCommonOptions,
+    producerClientId: `${INSTANCE_ID}`,
+};
+
+let globalLogger: ILogger;
 
 export class Service {
- static logger:ILogger;
- static auditClient: IAuditClient;
- static messageConsumer: IMessageConsumer;
- static messageProducer: IMessageProducer;
- static aggregate: SchedulingAggregate;
- static handler: SchedulingCommandHandler;
- static repo: IRepo;
- static locks: ILocks;
- static httpPostClient: IHttpPostClient;
+    static logger: ILogger;
+    static auditClient: IAuditClient;
+    static messageConsumer: IMessageConsumer;
+    static messageProducer: IMessageProducer;
+    static aggregate: SchedulingAggregate;
+    static handler: SchedulingCommandHandler;
+    static repo: IRepo;
+    static locks: ILocks;
+    static httpPostClient: IHttpPostClient;
 
- static async start(
-     logger?:ILogger,
-     auditClient?:IAuditClient,
-     messageConsumer?:IMessageConsumer,
-     messageProducer?: IMessageProducer,
-     repo?:IRepo,
-     locks?: ILocks,
-     httpPostClient?: IHttpPostClient
- ){
-  console.log(`Service starting with PID: ${process.pid}`);
+    static async start(
+        logger?: ILogger,
+        auditClient?: IAuditClient,
+        messageConsumer?: IMessageConsumer,
+        messageProducer?: IMessageProducer,
+        repo?: IRepo,
+        locks?: ILocks,
+        httpPostClient?: IHttpPostClient
+    ) {
+        console.log(`Service starting with PID: ${process.pid}`);
 
-  if (!logger) {
-   logger = new KafkaLogger(
-       BC_NAME,
-       APP_NAME,
-       APP_VERSION,
-       kafkaProducerOptions,
-       KAFKA_LOGS_TOPIC,
-       LOG_LEVEL
-   );
-   await (logger as KafkaLogger).init();
-  }
-  globalLogger = this.logger = logger;
+        if (!logger) {
+            logger = new KafkaLogger(
+                BC_NAME,
+                APP_NAME,
+                APP_VERSION,
+                producerOptions,
+                KAFKA_LOGS_TOPIC,
+                LOG_LEVEL
+            );
+            await (logger as KafkaLogger).init();
+        }
+        globalLogger = this.logger = logger;
 
-  if (!auditClient) {
-   if (!existsSync(AUDIT_KEY_FILE_PATH)) {
-    if (PRODUCTION_MODE) process.exit(9);
-    // create e tmp file
-    LocalAuditClientCryptoProvider.createRsaPrivateKeyFileSync(AUDIT_KEY_FILE_PATH, 2048);
-   }
-   const auditLogger = this.logger.createChild("auditDispatcher");
-   auditLogger.setLogLevel(LogLevel.INFO);
+        if (!auditClient) {
+            if (!existsSync(AUDIT_KEY_FILE_PATH)) {
+                if (PRODUCTION_MODE) process.exit(9);
+                // create e tmp file
+                LocalAuditClientCryptoProvider.createRsaPrivateKeyFileSync(AUDIT_KEY_FILE_PATH, 2048);
+            }
+            const auditLogger = this.logger.createChild("auditDispatcher");
+            auditLogger.setLogLevel(LogLevel.INFO);
 
-   const cryptoProvider = new LocalAuditClientCryptoProvider(
-       AUDIT_KEY_FILE_PATH
-   );
-   const auditDispatcher = new KafkaAuditClientDispatcher(
-       kafkaProducerOptions,
-       KAFKA_AUDITS_TOPIC,
-       auditLogger
-   );
-   // NOTE: to pass the same kafka logger to the audit client, make sure the logger is started/initialised already
-   auditClient = new AuditClient(
-       BC_NAME,
-       APP_NAME,
-       APP_VERSION,
-       cryptoProvider,
-       auditDispatcher
-   );
-   await auditClient.init();
-  }
-  this.auditClient = auditClient;
+            const cryptoProvider = new LocalAuditClientCryptoProvider(
+                AUDIT_KEY_FILE_PATH
+            );
+            const auditDispatcher = new KafkaAuditClientDispatcher(
+                producerOptions,
+                KAFKA_AUDITS_TOPIC,
+                auditLogger
+            );
+            // NOTE: to pass the same kafka logger to the audit client, make sure the logger is started/initialised already
+            auditClient = new AuditClient(
+                BC_NAME,
+                APP_NAME,
+                APP_VERSION,
+                cryptoProvider,
+                auditDispatcher
+            );
+            await auditClient.init();
+        }
+        this.auditClient = auditClient;
 
-  if(!messageConsumer){
-      messageConsumer = new MLKafkaJsonConsumer(kafkaConsumerOptions, logger);
-  }
-  this.messageConsumer = messageConsumer;
+        if (!messageConsumer) {
+            messageConsumer = new MLKafkaJsonConsumer(kafkaConsumerCommonOptions, logger);
+        }
+        this.messageConsumer = messageConsumer;
 
-  if(!messageProducer){
-      messageProducer = new MLKafkaJsonProducer(kafkaProducerOptions,logger);
-      await messageProducer.connect();
-  }
-  this.messageProducer = messageProducer;
+        if (!messageProducer) {
+            messageProducer = new MLKafkaJsonProducer(producerOptions, logger);
+            await messageProducer.connect();
+        }
+        this.messageProducer = messageProducer;
 
-  if(!repo){
-      repo = new MongoRepo(logger,MONGO_URL, DB_NAME, TIMEOUT_MS_REPO_OPERATIONS);
+        if (!repo) {
+            repo = new MongoRepo(logger, MONGO_URL, DB_NAME, TIMEOUT_MS_REPO_OPERATIONS);
 
-      await repo.init();
-      logger.info("Scheduling Registry Repo Initialized");
-  }
-  this.repo = repo;
+            await repo.init();
+            logger.info("Scheduling Registry Repo Initialized");
+        }
+        this.repo = repo;
 
-  if(!locks){
-      locks = new RedisLocks(
-          logger,
-          HOST_LOCKS,
-          CLOCK_DRIFT_FACTOR,
-          MAX_LOCK_SPINS,
-          DELAY_MS_LOCK_SPINS,
-          DELAY_MS_LOCK_SPINS_JITTER,
-          THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION
-      );
-      await locks.init();
-  }
-  this.locks = locks;
+        if (!locks) {
+            locks = new RedisLocks(
+                logger,
+                HOST_LOCKS,
+                CLOCK_DRIFT_FACTOR,
+                MAX_LOCK_SPINS,
+                DELAY_MS_LOCK_SPINS,
+                DELAY_MS_LOCK_SPINS_JITTER,
+                THRESHOLD_MS_LOCK_AUTOMATIC_EXTENSION
+            );
+            await locks.init();
+        }
+        this.locks = locks;
 
-  if(!httpPostClient){
-      httpPostClient = new FetchPostClient(logger);
-  }
-  this.httpPostClient = httpPostClient;
+        if (!httpPostClient) {
+            httpPostClient = new FetchPostClient(logger);
+        }
+        this.httpPostClient = httpPostClient;
 
-  this.aggregate = new SchedulingAggregate(
-      this.logger,
-      this.repo,
-      this.locks,
-      this.httpPostClient,
-      this.messageProducer,
-      TIME_ZONE,
-      TIMEOUT_MS_LOCK_ACQUIRED,
-      MIN_DURATION_MS_TASK,
-      TIMEOUT_MS_HTTP_CLIENT
-  );
+        this.aggregate = new SchedulingAggregate(
+            this.logger,
+            this.repo,
+            this.locks,
+            this.httpPostClient,
+            this.messageProducer,
+            TIME_ZONE,
+            TIMEOUT_MS_LOCK_ACQUIRED,
+            MIN_DURATION_MS_TASK,
+            TIMEOUT_MS_HTTP_CLIENT
+        );
 
-  // create handler and start it
-  this.handler = new SchedulingCommandHandler(
-      this.logger,
-      this.auditClient,
-      this.messageConsumer,
-      this.aggregate
-  );
-  await this.handler.start();
+        // create handler and start it
+        this.handler = new SchedulingCommandHandler(
+            this.logger,
+            this.auditClient,
+            this.messageConsumer,
+            this.aggregate
+        );
+        await this.handler.start();
 
-  this.logger.info(`Scheduling Command Handler Service started, version: ${configClient.applicationVersion}`);
- }
+        this.logger.info(`Scheduling Command Handler Service started, version: ${configClient.applicationVersion}`);
+    }
 
- static async stop(): Promise<void> {
-    this.logger.debug("Tearing down command handler");
-    if(this.handler) await this.handler.stop();
-    this.logger.debug("Tearing down aggregate");
-    if(this.aggregate) await this.aggregate.destroy();
-    this.logger.debug("Tearing down locks");
-    if(this.locks) await this.locks.destroy();
-    this.logger.debug("Tearing down repo");
-    if(this.repo) await this.repo.destroy();
-    this.logger.debug("Tearing down message producer");
-    if(this.messageProducer) await this.messageProducer.destroy();
-    this.logger.debug("Tearing down message consumer");
-    if (this.messageConsumer) await this.messageConsumer.destroy(true);
-    this.logger.debug("Destroying HTTP Post Client");
-    if(this.httpPostClient) await this.httpPostClient.destroy();
-    this.logger.debug("Tearing down audit Client");
-    if (this.auditClient) await this.auditClient.destroy();
-    this.logger.debug("Tearing down logger");
-    if (this.logger && this.logger instanceof KafkaLogger) await this.logger.destroy();
+    static async stop(): Promise<void> {
+        this.logger.debug("Tearing down command handler");
+        if (this.handler) await this.handler.stop();
+        this.logger.debug("Tearing down aggregate");
+        if (this.aggregate) await this.aggregate.destroy();
+        this.logger.debug("Tearing down locks");
+        if (this.locks) await this.locks.destroy();
+        this.logger.debug("Tearing down repo");
+        if (this.repo) await this.repo.destroy();
+        this.logger.debug("Tearing down message producer");
+        if (this.messageProducer) await this.messageProducer.destroy();
+        this.logger.debug("Tearing down message consumer");
+        if (this.messageConsumer) await this.messageConsumer.destroy(true);
+        this.logger.debug("Destroying HTTP Post Client");
+        if (this.httpPostClient) await this.httpPostClient.destroy();
+        this.logger.debug("Tearing down audit Client");
+        if (this.auditClient) await this.auditClient.destroy();
+        this.logger.debug("Tearing down logger");
+        if (this.logger && this.logger instanceof KafkaLogger) await this.logger.destroy();
     }
 
 }

@@ -31,44 +31,27 @@
  --------------
  ******/
 
-"use strict";
 
-import * as process from "process";
+
+"use strict";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageJSON = require("../../package.json");
-
-import {
-    ConfigurationClient,
-    DefaultConfigProvider
-} from "@mojaloop/platform-configuration-bc-client-lib";
-// import { ConfigParameterTypes } from "@mojaloop/platform-configuration-bc-public-types-lib";
 
 // configs - constants / code dependent
 const BC_NAME = "scheduling-bc";
 const APP_NAME = "event-handler-svc";
 const APP_VERSION = packageJSON.version;
-const CONFIGSET_VERSION = "0.0.1";
+// const CONFIGSET_VERSION = "0.0.1";
 
 // configs - non-constants
-const ENV_NAME = process.env["ENV_NAME"] || "dev";
+// const ENV_NAME = process.env["ENV_NAME"] || "dev";
 
-// use default url from PLATFORM_CONFIG_CENTRAL_URL env var
-const PLATFORM_CONFIG_CENTRAL_URL = process.env["PLATFORM_CONFIG_CENTRAL_URL"] || "http://platform-config-svc:3200 ";
-const defaultConfigProvider: DefaultConfigProvider = new DefaultConfigProvider(PLATFORM_CONFIG_CENTRAL_URL);
 
-const configClient = new ConfigurationClient(ENV_NAME, BC_NAME, APP_NAME, APP_VERSION, CONFIGSET_VERSION, defaultConfigProvider);
-
-/*
-* Add application parameters here
-* */
-
-// configClient.appConfigs.addNewParam(
-//         "PARAM_NAME",
-//         ConfigParameterTypes.BOOL,
-//         true,
-//         "param description"
-// );
+const configClient = {
+    boundedContextName: BC_NAME,
+    applicationName: APP_NAME,
+    applicationVersion: APP_VERSION
+};
 
 export = configClient;
-

@@ -30,9 +30,7 @@
 
 "use strict";
 
-import {existsSync} from "fs";
 import {ILogger, LogLevel} from "@mojaloop/logging-bc-public-types-lib";
-import {IAuditClient} from "@mojaloop/auditing-bc-public-types-lib";
 import {IMessageConsumer, IMessageProducer} from "@mojaloop/platform-shared-lib-messaging-types-lib";
 import {SchedulingEventHandler} from "./handler";
 import configClient from "./config";
@@ -43,11 +41,6 @@ import {
     MLKafkaJsonConsumerOptions,
     MLKafkaJsonProducerOptions
 } from "@mojaloop/platform-shared-lib-nodejs-kafka-client-lib";
-import {
-    AuditClient,
-    KafkaAuditClientDispatcher,
-    LocalAuditClientCryptoProvider
-} from "@mojaloop/auditing-bc-client-lib";
 
 
 const BC_NAME = configClient.boundedContextName;
@@ -76,7 +69,6 @@ const kafkaProducerOptions: MLKafkaJsonProducerOptions = {
 let globalLogger: ILogger;
 export class Service {
     static logger: ILogger;
-    static auditClient: IAuditClient;
     static messageConsumer: IMessageConsumer;
     static messageProducer: IMessageProducer;
     static handler: SchedulingEventHandler;
@@ -84,7 +76,6 @@ export class Service {
 
     static async start(
         logger?: ILogger,
-        auditClient?: IAuditClient,
         messageConsumer?: IMessageConsumer,
         messageProducer?: IMessageProducer
     ):Promise<void>{
@@ -93,10 +84,6 @@ export class Service {
         this.startupTimer = setTimeout(()=>{
             throw new Error("Service start timed-out");
         }, SERVICE_START_TIMEOUT_MS);
-
-        /// start config client - this is not mockable (can use STANDALONE MODE if desired)
-        await configClient.init();
-        await configClient.bootstrap(true);
 
         if (!logger) {
             logger = new KafkaLogger(
@@ -110,24 +97,6 @@ export class Service {
             await (logger as KafkaLogger).init();
         }
         globalLogger = this.logger = logger;
-
-        /// start auditClient
-        if (!auditClient) {
-            if (!existsSync(AUDIT_KEY_FILE_PATH)) {
-                if (PRODUCTION_MODE) process.exit(9);
-                // create e tmp file
-                LocalAuditClientCryptoProvider.createRsaPrivateKeyFileSync(AUDIT_KEY_FILE_PATH, 2048);
-            }
-            const auditLogger = logger.createChild("auditDispatcher");
-            auditLogger.setLogLevel(LogLevel.INFO);
-
-            const cryptoProvider = new LocalAuditClientCryptoProvider(AUDIT_KEY_FILE_PATH);
-            const auditDispatcher = new KafkaAuditClientDispatcher(kafkaProducerOptions, KAFKA_AUDITS_TOPIC, auditLogger);
-            // NOTE: to pass the same kafka logger to the audit client, make sure the logger is started/initialised already
-            auditClient = new AuditClient(BC_NAME, APP_NAME, APP_VERSION, cryptoProvider, auditDispatcher);
-            await auditClient.init();
-        }
-        this.auditClient = auditClient;
 
         if(!messageConsumer){
             const consumerHandlerLogger = logger.createChild("handlerConsumer");
@@ -144,7 +113,7 @@ export class Service {
         this.messageProducer = messageProducer;
 
         // create scheduling event handler and start it
-        this.handler = new SchedulingEventHandler(this.logger,this.auditClient,this.messageConsumer,this.messageProducer);
+        this.handler = new SchedulingEventHandler(this.logger, this.messageConsumer, this.messageProducer);
         await this.handler.start();
 
         this.logger.info(`Scheduling Event Handler Service started, version: ${configClient.applicationVersion}`);
@@ -158,7 +127,6 @@ export class Service {
         if (this.messageConsumer) await this.messageConsumer.destroy(true);
         if (this.messageProducer) await this.messageProducer.destroy();
 
-        if (this.auditClient) await this.auditClient.destroy();
         if (this.logger && this.logger instanceof KafkaLogger) await this.logger.destroy();
     }
 }

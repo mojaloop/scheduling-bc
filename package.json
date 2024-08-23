@@ -59,8 +59,5 @@
     ],
     "engines": {
         "node": ">=20.10.0"
-    },
-    "dependencies": {
-        "@mojaloop/auditing-bc-client-lib": "^0.0.15"
     }
 }
