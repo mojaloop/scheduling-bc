@@ -180,6 +180,8 @@ const TIMEOUT_MS_HTTP_CLIENT = 10_000; // TODO.
 const SERVICE_START_TIMEOUT_MS= (process.env["SERVICE_START_TIMEOUT_MS"] && parseInt(process.env["SERVICE_START_TIMEOUT_MS"])) || 60_000;
 
 // kafka logger
+let globalLogger: ILogger;
+
 export class Service {
 	static aggregate: Aggregate;
 	static app: Express;
@@ -215,7 +217,7 @@ export class Service {
 				TRANSFERS_BOUNDED_CONTEXT_NAME,
 				APP_NAME,
 				APP_VERSION,
-				kafkaProducerOptions,
+                producerOptions,
 				KAFKA_LOGS_TOPIC,
 				LOG_LEVEL
 			);
@@ -365,12 +367,6 @@ export class Service {
 	}
 
 }
-
-const kafkaProducerOptions = {
-	kafkaBrokerList: KAFKA_URL
-};
-
-let globalLogger: ILogger;
 
 /**
  * process termination and cleanup
