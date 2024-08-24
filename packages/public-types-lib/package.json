@@ -1,6 +1,6 @@
 {
     "name": "@mojaloop/scheduling-bc-public-types-lib",
-    "version": "0.5.1",
+    "version": "0.5.2",
     "description": "Scheduling BC - Public Types Library",
     "repository": {
         "type": "git",
