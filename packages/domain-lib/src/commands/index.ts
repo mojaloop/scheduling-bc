@@ -42,113 +42,113 @@ import {
 import {Reminder, SingleReminder} from "../types";
 
 
-
 export type CreateReminderCmdPayload = {
- id: string;
- time: string; // TODO: Date.
- payload: any; // eslint-disable-line @typescript-eslint/no-explicit-any
- taskType: ReminderTaskType;
- httpPostTaskDetails: null | {
-  url: string
- };
- eventTaskDetails: null | {
-  topic: string
- };
+    id: string;
+    time: string; // TODO: Date.
+    payload: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    taskType: ReminderTaskType;
+    httpPostTaskDetails: null | {
+        url: string
+    };
+    eventTaskDetails: null | {
+        topic: string
+    };
 }
 
 export class CreateReminderCmd extends CommandMsg {
- aggregateName: string = SCHEDULING_AGGREGATE_NAME;
- aggregateId: string;
- boundedContextName: string = SCHEDULING_BOUNDED_CONTEXT_NAME;
- msgKey: string;
- msgTopic: string = SchedulingBcTopics.Commands;
- payload: CreateReminderCmdPayload;
+    aggregateName: string = SCHEDULING_AGGREGATE_NAME;
+    aggregateId: string;
+    boundedContextName: string = SCHEDULING_BOUNDED_CONTEXT_NAME;
+    msgKey: string;
+    msgTopic: string = SchedulingBcTopics.Commands;
+    payload: CreateReminderCmdPayload;
 
- constructor(payload: CreateReminderCmdPayload) {
-  super();
-  this.aggregateId = this.msgKey = payload.id;
-  this.payload = payload;
- }
- validatePayload(): void {
-  Reminder.validateReminder(this.payload);
- }
+    constructor(payload: CreateReminderCmdPayload) {
+        super();
+        this.aggregateId = this.msgKey = payload.id;
+        this.payload = payload;
+    }
+
+    validatePayload(): void {
+        Reminder.validateReminder(this.payload);
+    }
 
 }
 
 
 export type CreateSingleReminderCmdPayload = {
- id: string;
- time: string | number; // TODO: Date.
- payload: any; // eslint-disable-line @typescript-eslint/no-explicit-any
- taskType: ReminderTaskType;
- httpPostTaskDetails: null | {
-  url: string
- };
- eventTaskDetails: null | {
-  topic: string
- };
+    id: string;
+    time: string | number; // TODO: Date.
+    payload: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    taskType: ReminderTaskType;
+    httpPostTaskDetails: null | {
+        url: string
+    };
+    eventTaskDetails: null | {
+        topic: string
+    };
 }
 
 
 export class CreateSingleReminderCmd extends CommandMsg {
- aggregateName: string = SCHEDULING_AGGREGATE_NAME;
- aggregateId: string;
- boundedContextName: string = SCHEDULING_BOUNDED_CONTEXT_NAME;
- msgKey: string;
- msgTopic: string = SchedulingBcTopics.Commands;
- payload: CreateSingleReminderCmdPayload;
+    aggregateName: string = SCHEDULING_AGGREGATE_NAME;
+    aggregateId: string;
+    boundedContextName: string = SCHEDULING_BOUNDED_CONTEXT_NAME;
+    msgKey: string;
+    msgTopic: string = SchedulingBcTopics.Commands;
+    payload: CreateSingleReminderCmdPayload;
 
- constructor(payload: CreateSingleReminderCmdPayload) {
-  super();
-  this.aggregateId = this.msgKey = payload.id;
-  this.payload = payload;
- }
+    constructor(payload: CreateSingleReminderCmdPayload) {
+        super();
+        this.aggregateId = this.msgKey = payload.id;
+        this.payload = payload;
+    }
 
- validatePayload(): void {
-  SingleReminder.validateReminder(this.payload);
- }
+    validatePayload(): void {
+        SingleReminder.validateReminder(this.payload);
+    }
 }
 
 export type DeleteReminderCmdPayload = {
- id:string;
+    id: string;
 }
 
 export class DeleteReminderCmd extends CommandMsg {
- aggregateId: string;
- aggregateName: string = SCHEDULING_AGGREGATE_NAME;
- boundedContextName: string = SCHEDULING_BOUNDED_CONTEXT_NAME;
- msgKey: string;
- msgTopic: string = SchedulingBcTopics.Commands;
- payload: DeleteReminderCmdPayload;
+    aggregateId: string;
+    aggregateName: string = SCHEDULING_AGGREGATE_NAME;
+    boundedContextName: string = SCHEDULING_BOUNDED_CONTEXT_NAME;
+    msgKey: string;
+    msgTopic: string = SchedulingBcTopics.Commands;
+    payload: DeleteReminderCmdPayload;
 
- constructor(payload: DeleteReminderCmdPayload) {
-  super();
-  this.aggregateId = this.msgKey = payload.id;
-  this.payload = payload;
- }
+    constructor(payload: DeleteReminderCmdPayload) {
+        super();
+        this.aggregateId = this.msgKey = payload.id;
+        this.payload = payload;
+    }
 
- validatePayload(): void {
-  // is validation needed?
- }
+    validatePayload(): void {
+        // is validation needed?
+    }
 
 }
 
 
 export class DeleteRemindersCmd extends CommandMsg {
- aggregateId: string;
- aggregateName: string = SCHEDULING_AGGREGATE_NAME;
- boundedContextName: string = SCHEDULING_BOUNDED_CONTEXT_NAME;
- msgKey: string;
- msgTopic: string = SchedulingBcTopics.Commands;
- payload: unknown;
+    aggregateId: string;
+    aggregateName: string = SCHEDULING_AGGREGATE_NAME;
+    boundedContextName: string = SCHEDULING_BOUNDED_CONTEXT_NAME;
+    msgKey: string;
+    msgTopic: string = SchedulingBcTopics.Commands;
+    payload: unknown;
 
- constructor() {
-  super();
-  this.aggregateId = this.msgKey = randomUUID();
- }
+    constructor() {
+        super();
+        this.aggregateId = this.msgKey = randomUUID();
+    }
 
- validatePayload(): void {
-  // is validation needed?
- }
+    validatePayload(): void {
+        // is validation needed?
+    }
 
 }

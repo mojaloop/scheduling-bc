@@ -25,7 +25,7 @@
 
  * Gonçalo Garcia <goncalogarcia99@gmail.com>
 
- --------------2
+ --------------
  ******/
 
 "use strict";
@@ -35,7 +35,6 @@ import {CommandMsg, IMessage, IMessageProducer} from "@mojaloop/platform-shared-
 import { IReminder, ISingleReminder, ReminderTaskType} from "@mojaloop/scheduling-bc-public-types-lib";
 import { Reminder, SingleReminder } from "./types";
 import {CronJob} from "cron";
-import * as uuid from "uuid";
 import {
     InvalidReminderIdTypeError,
     InvalidReminderTaskDetailsTypeError,
@@ -45,6 +44,7 @@ import {
 import {IHttpPostClient, ILocks, IRepo} from "./interfaces/infrastructure";
 import { TransferTimeoutEvt, TransfersBCTopics } from "@mojaloop/platform-shared-lib-public-messages-lib";
 import {CreateReminderCmd, CreateSingleReminderCmd, DeleteReminderCmd, DeleteRemindersCmd} from "./commands";
+import {randomUUID} from "crypto";
 
 // TODO: check error handling.
 export class Aggregate {
@@ -97,7 +97,7 @@ export class Aggregate {
 			throw e;
 		}
 
-
+        // TODO ensure that if we have errored timers we ignore/remove them (like past due)
 		reminders.forEach((reminder: IReminder) => {
 			this.cronJobs.set(reminder.id, new CronJob(
 				!isNaN(Date.parse(reminder.time)) ? new Date(reminder.time) : reminder.time,
@@ -154,7 +154,7 @@ export class Aggregate {
 			// istanbul ignore if
 			if (reminder.id === "") {
 				do {
-					reminder.id = uuid.v4();
+					reminder.id = randomUUID();
 				} while (await this.repo.reminderExists(reminder.id));
 			}
 			await this.repo.storeReminder(reminder);
@@ -187,7 +187,7 @@ export class Aggregate {
 			// istanbul ignore if
 			if (reminder.id === "") {
 				do {
-					reminder.id = uuid.v4();
+					reminder.id = randomUUID();
 				} while (await this.repo.reminderExists(reminder.id));
 			}
 			await this.repo.storeReminder(reminder as IReminder);

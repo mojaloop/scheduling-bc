@@ -31,19 +31,21 @@
 "use strict";
 
 import {ILogger} from "@mojaloop/logging-bc-public-types-lib";
-import {IAuditClient} from "@mojaloop/auditing-bc-public-types-lib";
-import {IMessageConsumer,IMessageProducer,IMessage} from "@mojaloop/platform-shared-lib-messaging-types-lib";
-import {SchedulingBcTopics} from "@mojaloop/platform-shared-lib-public-messages-lib";
+import {
+    IMessageConsumer,
+    IMessageProducer,
+    IMessage,
+    CommandMsg
+} from "@mojaloop/platform-shared-lib-messaging-types-lib";
+import {SchedulingBcTopics, TransferPreparedEvt} from "@mojaloop/platform-shared-lib-public-messages-lib";
 
 export class SchedulingEventHandler {
     private _logger: ILogger;
-    private _auditClient: IAuditClient;
     private _messageConsumer: IMessageConsumer;
     private _messageProducer: IMessageProducer;
 
-    constructor(logger:ILogger,auditClient:IAuditClient,messageConsumer:IMessageConsumer,messageProducer:IMessageProducer) {
+    constructor(logger:ILogger, messageConsumer:IMessageConsumer, messageProducer:IMessageProducer) {
         this._logger = logger.createChild(this.constructor.name);
-        this._auditClient = auditClient;
         this._messageConsumer = messageConsumer;
         this._messageProducer = messageProducer;
     }
@@ -61,30 +63,27 @@ export class SchedulingEventHandler {
     }
 
     private async _msgHandler(message: IMessage): Promise<void>{
-        // eslint-disable-next-line no-async-promise-executor
-        return await new Promise<void>(async (resolve) => {
-            this._logger.debug(`Got message in SchedulingEventHandler with name: ${message.msgName}`);
-            try {
-                // const schedulingCmd: CommandMsg | null = null;
-                //
-                // switch (message.msgName) {
-                //     // event handler will be used in the future when transfers needs to send events
-                //     default: {
-                //         this._logger.isWarnEnabled() && this._logger.warn(`SchedulingEventHandler - Skipping unknown event - msgName: ${message?.msgName} msgKey: ${message?.msgKey} msgId: ${message?.msgId}`);
-                //     }
-                // }
-                //
-                // if (schedulingCmd) {
-                //     // this._logger.info(`SchedulingEventHandler - publishing cmd - ${message?.msgName}:${message?.msgKey}:${message?.msgId} - Cmd: ${schedulingCmd.msgName}:${schedulingCmd.msgId}`);
-                //     await this._messageProducer.send(schedulingCmd);
-                //     this._logger.info(`SchedulingEventHandler - publishing cmd Finished - ${message?.msgName}:${message?.msgKey}:${message?.msgId}`);
-                // }
-            }catch(err: unknown){
-                this._logger.error(err, `SchedulingEventHandler - processing event - ${message?.msgName}:${message?.msgKey}:${message?.msgId} - Error: ${(err as Error)?.message?.toString()}`);
-            }finally {
-                resolve();
+        this._logger.debug(`Got message in SchedulingEventHandler with name: ${message.msgName}`);
+        try {
+            const schedulingCmd: CommandMsg | null = null;
+
+            if (message.msgName === TransferPreparedEvt.name){
+                // empty
+            }else{
+                // don't care about this message and at best we debug
+                this._logger.isDebugEnabled() && this._logger.debug(`SchedulingEventHandler - Skipping unknown event - msgName: ${message?.msgName} msgKey: ${message?.msgKey} msgId: ${message?.msgId}`);
             }
-        });
+
+
+            if (schedulingCmd) {
+                await this._messageProducer.send(schedulingCmd);
+                this._logger.isDebugEnabled() && this._logger.debug(`SchedulingEventHandler - publishing cmd Finished - ${message?.msgName}:${message?.msgKey}:${message?.msgId}`);
+            }
+        }catch(err: unknown){
+            this._logger.error(err, `SchedulingEventHandler - processing event - ${message?.msgName}:${message?.msgKey}:${message?.msgId} - Error: ${(err as Error)?.message?.toString()}`);
+        }finally {
+            await Promise.resolve();
+        }
     }
 
     async stop():Promise<void>{
