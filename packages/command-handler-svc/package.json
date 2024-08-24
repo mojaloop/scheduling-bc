@@ -1,6 +1,6 @@
 {
     "name": "@mojaloop/scheduling-bc-command-handler-svc",
-    "version": "0.5.2",
+    "version": "0.5.3",
     "description": "Mojaloop Scheduling-bc Command Handler Service",
     "license": "Apache-2.0",
     "homepage": "https://github.com/mojaloop/scheduling-bc/",
@@ -40,7 +40,7 @@
     "dependencies": {
         "@mojaloop/logging-bc-client-lib": "~0.5.8",
         "@mojaloop/auditing-bc-public-types-lib": "~0.5.2",
-        "@mojaloop/auditing-bc-client-lib":  "~0.5.3",
+        "@mojaloop/auditing-bc-client-lib": "~0.5.3",
         "@mojaloop/platform-configuration-bc-client-lib": "~0.6.3",
         "@mojaloop/platform-shared-lib-messaging-types-lib": "~0.6.2",
         "@mojaloop/platform-shared-lib-public-messages-lib": "~0.5.26",
